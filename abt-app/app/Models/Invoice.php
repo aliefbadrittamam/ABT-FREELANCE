@@ -65,17 +65,16 @@ class Invoice extends Model
 
         $basePattern = 'INV-' . $prefix . '-';
 
-        // Find highest sequence number for this category prefix
-        $lastInvoice = static::where('invoice_number', 'LIKE', $basePattern . '%')
-            ->orderBy('id', 'desc')
-            ->first();
+        // Find highest sequence number numerically for this category prefix
+        $maxSeq = static::where('invoice_number', 'LIKE', $basePattern . '%')
+            ->get()
+            ->map(function ($inv) {
+                $parts = explode('-', $inv->invoice_number);
+                return (int) end($parts);
+            })
+            ->max();
 
-        $nextNumber = 1;
-        if ($lastInvoice) {
-            $parts = explode('-', $lastInvoice->invoice_number);
-            $lastSeq = (int) end($parts);
-            $nextNumber = $lastSeq + 1;
-        }
+        $nextNumber = ($maxSeq ?: 0) + 1;
 
         return $basePattern . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
     }

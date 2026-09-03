@@ -219,7 +219,7 @@
                         </div>
                         <div class="text-right">
                             <h2 class="text-2xl sm:text-3xl font-bold tracking-widest text-secondary/20 uppercase mb-0.5">INVOICE</h2>
-                            <p class="font-bold text-on-surface text-xs sm:text-sm font-mono tracking-wider" x-text="'INV-' + currentCategory.prefix + '-PREVIEW'"></p>
+                            <p class="font-bold text-on-surface text-xs sm:text-sm font-mono tracking-wider" x-text="nextInvoiceNumber"></p>
                             <p class="text-secondary text-[11px] sm:text-xs mt-0.5">{{ date('d F Y') }}</p>
                         </div>
                     </div>
@@ -387,6 +387,7 @@ function invoiceForm() {
         clientName: @json(old('client_name', '')),
         categoryId: @json(old('category_id', $categories->first()->id ?? '')),
         categories: @json($categoriesData),
+        nextNumbers: @json($nextNumbers ?? []),
         deadlineVal: @json(old('deadline', date('Y-m-d\TH:i'))),
         description: @json(old('description', '')),
         paymentType: @json(old('payment_type', 'full')),
@@ -455,6 +456,10 @@ function invoiceForm() {
                 brand_name: 'ABT-FREELANCE',
                 tagline: 'Invoice & Jasa Professional'
             };
+        },
+
+        get nextInvoiceNumber() {
+            return this.nextNumbers[this.categoryId] || ('INV-' + this.currentCategory.prefix + '-PREVIEW');
         },
 
         get remainingAmount() {

@@ -11,7 +11,7 @@ class InvoiceController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Invoice::with('category')->latest();
+        $query = Invoice::with('category')->orderBy('id', 'desc');
 
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
@@ -29,7 +29,11 @@ class InvoiceController extends Controller
     public function create()
     {
         $categories = Category::all();
-        return view('invoices.create', compact('categories'));
+        $nextNumbers = [];
+        foreach ($categories as $cat) {
+            $nextNumbers[$cat->id] = Invoice::generateInvoiceNumber($cat->id);
+        }
+        return view('invoices.create', compact('categories', 'nextNumbers'));
     }
 
     public function store(Request $request)
