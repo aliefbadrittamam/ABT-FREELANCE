@@ -104,11 +104,17 @@ class DashboardController extends Controller
             $q->where('status', 'paid');
         }], 'total_amount')->get();
 
+        // 5 Invoice Terbaru untuk Aktivitas Cepat
+        $recentInvoices = Invoice::with('category')
+            ->latest()
+            ->take(5)
+            ->get();
+
         return view('dashboard', compact(
             'totalRevenue', 'todayRevenue', 'totalDpTerbayar', 'sisaPelunasan', 'totalPiutang',
             'totalInvoices', 'paidInvoices', 'dpPaidInvoices', 'unpaidInvoices', 'canceledInvoices',
             'dailyLabels', 'dailyValues', 'weeklyLabels', 'weeklyValues', 'monthlyLabels', 'monthlyValues',
-            'categoryBreakdown'
+            'categoryBreakdown', 'recentInvoices'
         ));
     }
 }

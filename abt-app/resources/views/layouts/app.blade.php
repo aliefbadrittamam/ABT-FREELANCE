@@ -18,7 +18,7 @@
     <title>@yield('title', 'ABT-FREELANCE')</title>
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}?v={{ time() }}">
     <link rel="shortcut icon" href="{{ asset('favicon.ico') }}?v={{ time() }}">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
     <script>
@@ -71,9 +71,9 @@
         }
     </style>
 </head>
-<body class="bg-surface dark:bg-[#121212] text-on-surface dark:text-[#f0f0f0] font-sans text-sm overflow-x-hidden transition-colors duration-200">
+<body class="bg-surface dark:bg-[#121212] text-on-surface dark:text-[#f0f0f0] font-sans text-sm overflow-x-hidden transition-colors duration-200 antialiased">
     <!-- Top Bar with Hamburger for Mobile -->
-    <header class="bg-white dark:bg-[#1a1a1a] fixed top-0 right-0 w-full lg:w-[calc(100%-260px)] h-16 border-b border-border-subtle dark:border-[#2a2a2a] flex items-center justify-between px-4 sm:px-8 z-20 transition-colors duration-200">
+    <header class="bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-sm fixed top-0 right-0 w-full lg:w-[calc(100%-260px)] h-16 border-b border-border-subtle dark:border-[#2a2a2a] flex items-center justify-between px-4 sm:px-8 z-20 transition-colors duration-200">
         <div class="flex items-center gap-3">
             <!-- Mobile Hamburger Button -->
             <button @click="sidebarOpen = !sidebarOpen" class="p-1.5 rounded-lg border border-border-subtle dark:border-[#333] lg:hidden text-on-surface dark:text-white hover:bg-surface-variant dark:hover:bg-[#252525]">
@@ -83,10 +83,16 @@
             @if(file_exists(storage_path('app/public/assets/logo.png')))
             <img src="{{ asset('storage/assets/logo.png') }}?v={{ time() }}" alt="ABT" class="w-8 h-8 rounded-lg object-contain border border-border-subtle dark:border-[#333] bg-white p-0.5">
             @endif
-            <h2 class="text-base sm:text-lg font-semibold text-on-surface dark:text-white tracking-tight truncate">@yield('header', 'ABT-FREELANCE')</h2>
+            <h2 class="text-base sm:text-lg font-bold text-on-surface dark:text-white tracking-tight truncate">@yield('header', 'ABT-FREELANCE')</h2>
         </div>
         
-        <div class="flex items-center gap-2 sm:gap-4">
+        <div class="flex items-center gap-3">
+            <!-- Quick Action "Buat Invoice" Button in Top Bar (Desktop) -->
+            <a href="{{ route('invoices.create') }}" class="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 bg-primary-container text-on-surface text-xs font-bold rounded-lg shadow-sm hover:brightness-95 transition-all">
+                <span class="material-symbols-outlined text-base">add</span>
+                Invoice Baru
+            </a>
+
             <!-- Dark / Light Mode Toggle Button -->
             <button @click="toggleTheme()" 
                     type="button"
@@ -98,7 +104,7 @@
             </button>
 
             <!-- Date -->
-            <div class="text-xs text-secondary dark:text-gray-400 hidden md:block">
+            <div class="text-xs text-secondary dark:text-gray-400 hidden md:block pl-2 border-l border-border-subtle dark:border-[#333]">
                 {{ now()->translatedFormat('l, d F Y') }}
             </div>
         </div>
@@ -121,59 +127,65 @@
     <nav class="bg-secondary-container dark:bg-[#181818] w-sidebar h-screen fixed left-0 top-0 border-r border-border-subtle dark:border-[#2a2a2a] flex flex-col p-4 z-40 lg:z-30 transition-transform duration-300 ease-in-out"
          :class="sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'">
         
-        <!-- Sidebar Brand Header -->
-        <div class="mb-6 px-2 mt-2 flex items-center justify-between">
+        <!-- Sidebar Brand Header Card -->
+        <div class="mb-6 p-2 rounded-xl bg-white/60 dark:bg-[#222]/60 border border-border-subtle/70 dark:border-[#2a2a2a] flex items-center justify-between shadow-sm">
             <div class="flex items-center gap-3">
                 @if(file_exists(storage_path('app/public/assets/logo.png')))
-                <img src="{{ asset('storage/assets/logo.png') }}?v={{ time() }}" alt="ABT Logo" class="w-12 h-12 rounded-xl object-contain border border-border-subtle dark:border-[#333] bg-white p-1 shadow-sm shrink-0">
+                <img src="{{ asset('storage/assets/logo.png') }}?v={{ time() }}" alt="ABT Logo" class="w-10 h-10 rounded-lg object-contain border border-border-subtle dark:border-[#333] bg-white p-0.5 shadow-sm shrink-0">
                 @endif
                 <div>
-                    <h1 class="text-base font-bold text-on-surface dark:text-white tracking-tight leading-tight">ABT-FREELANCE</h1>
-                    <p class="text-on-surface-variant dark:text-gray-400 text-[10px] font-semibold tracking-wider uppercase opacity-70 mt-0.5">Management Tool</p>
+                    <h1 class="text-sm font-extrabold text-on-surface dark:text-white tracking-tight leading-tight">ABT-FREELANCE</h1>
+                    <div class="flex items-center gap-1 mt-0.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-status-lunas animate-pulse"></span>
+                        <span class="text-on-surface-variant dark:text-gray-400 text-[10px] font-semibold tracking-wider uppercase opacity-80">Local Server</span>
+                    </div>
                 </div>
             </div>
             <!-- Close Button for Mobile -->
             <button @click="sidebarOpen = false" class="lg:hidden p-1 text-secondary dark:text-gray-400 hover:text-on-surface dark:hover:text-white">
-                <span class="material-symbols-outlined text-2xl">close</span>
+                <span class="material-symbols-outlined text-xl">close</span>
             </button>
         </div>
 
         <!-- Navigation Menu -->
-        <ul class="flex-1 space-y-1 mt-2">
+        <ul class="flex-1 space-y-1 mt-1">
             <li>
-                <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('dashboard') ? 'bg-primary dark:bg-primary text-on-primary font-semibold shadow-sm' : 'text-secondary dark:text-gray-300 hover:bg-surface-variant dark:hover:bg-[#252525]' }}">
+                <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 {{ request()->routeIs('dashboard') ? 'bg-primary dark:bg-primary text-on-primary font-bold shadow-sm' : 'text-secondary dark:text-gray-300 hover:bg-surface-variant dark:hover:bg-[#252525] font-medium' }}">
                     <span class="material-symbols-outlined text-xl" {{ request()->routeIs('dashboard') ? "style=font-variation-settings:'FILL'1" : '' }}>dashboard</span>
                     Dashboard
                 </a>
             </li>
             <li>
-                <a href="{{ route('categories.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('categories.*') ? 'bg-primary dark:bg-primary text-on-primary font-semibold shadow-sm' : 'text-secondary dark:text-gray-300 hover:bg-surface-variant dark:hover:bg-[#252525]' }}">
+                <a href="{{ route('categories.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 {{ request()->routeIs('categories.*') ? 'bg-primary dark:bg-primary text-on-primary font-bold shadow-sm' : 'text-secondary dark:text-gray-300 hover:bg-surface-variant dark:hover:bg-[#252525] font-medium' }}">
                     <span class="material-symbols-outlined text-xl" {{ request()->routeIs('categories.*') ? "style=font-variation-settings:'FILL'1" : '' }}>category</span>
-                    Kategori
+                    Kategori Jasa
                 </a>
             </li>
             <li>
-                <a href="{{ route('invoices.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('invoices.*') ? 'bg-primary dark:bg-primary text-on-primary font-semibold shadow-sm' : 'text-secondary dark:text-gray-300 hover:bg-surface-variant dark:hover:bg-[#252525]' }}">
-                    <span class="material-symbols-outlined text-xl" {{ request()->routeIs('invoices.*') ? "style=font-variation-settings:'FILL'1" : '' }}>receipt_long</span>
-                    Invoice
+                <a href="{{ route('invoices.index') }}" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-all duration-200 {{ request()->routeIs('invoices.*') ? 'bg-primary dark:bg-primary text-on-primary font-bold shadow-sm' : 'text-secondary dark:text-gray-300 hover:bg-surface-variant dark:hover:bg-[#252525] font-medium' }}">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-xl" {{ request()->routeIs('invoices.*') ? "style=font-variation-settings:'FILL'1" : '' }}>receipt_long</span>
+                        Invoice
+                    </div>
                 </a>
             </li>
             <li>
-                <a href="{{ route('testimonials.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('testimonials.*') ? 'bg-primary dark:bg-primary text-on-primary font-semibold shadow-sm' : 'text-secondary dark:text-gray-300 hover:bg-surface-variant dark:hover:bg-[#252525]' }}">
+                <a href="{{ route('testimonials.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 {{ request()->routeIs('testimonials.*') ? 'bg-primary dark:bg-primary text-on-primary font-bold shadow-sm' : 'text-secondary dark:text-gray-300 hover:bg-surface-variant dark:hover:bg-[#252525] font-medium' }}">
                     <span class="material-symbols-outlined text-xl" {{ request()->routeIs('testimonials.*') ? "style=font-variation-settings:'FILL'1" : '' }}>reviews</span>
                     Testimoni
                 </a>
             </li>
             <li>
-                <a href="{{ route('payment.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('payment.*') ? 'bg-primary dark:bg-primary text-on-primary font-semibold shadow-sm' : 'text-secondary dark:text-gray-300 hover:bg-surface-variant dark:hover:bg-[#252525]' }}">
+                <a href="{{ route('payment.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 {{ request()->routeIs('payment.*') ? 'bg-primary dark:bg-primary text-on-primary font-bold shadow-sm' : 'text-secondary dark:text-gray-300 hover:bg-surface-variant dark:hover:bg-[#252525] font-medium' }}">
                     <span class="material-symbols-outlined text-xl" {{ request()->routeIs('payment.*') ? "style=font-variation-settings:'FILL'1" : '' }}>payments</span>
                     Pembayaran
                 </a>
             </li>
+
             <!-- Tour Organizer with Submenu -->
             <li x-data="{ open: {{ request()->routeIs('tour-organizer.*') ? 'true' : 'false' }} }">
                 <button type="button" @click="open = !open" 
-                        class="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('tour-organizer.*') ? 'bg-primary dark:bg-primary text-on-primary font-semibold shadow-sm' : 'text-secondary dark:text-gray-300 hover:bg-surface-variant dark:hover:bg-[#252525]' }}">
+                        class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-all duration-200 {{ request()->routeIs('tour-organizer.*') ? 'bg-primary dark:bg-primary text-on-primary font-bold shadow-sm' : 'text-secondary dark:text-gray-300 hover:bg-surface-variant dark:hover:bg-[#252525] font-medium' }}">
                     <div class="flex items-center gap-3">
                         <span class="material-symbols-outlined text-xl" {{ request()->routeIs('tour-organizer.*') ? "style=font-variation-settings:'FILL'1" : '' }}>luggage</span>
                         Tour Organizer
@@ -181,16 +193,16 @@
                     <span class="material-symbols-outlined text-base transition-transform duration-200" :class="open ? 'rotate-180' : ''">expand_more</span>
                 </button>
                 <!-- Submenu items -->
-                <ul x-show="open" x-collapse x-cloak class="pl-11 pr-2 py-1.5 space-y-1">
+                <ul x-show="open" x-collapse x-cloak class="pl-10 pr-2 py-1.5 space-y-1">
                     <li>
                         <a href="{{ route('tour-organizer.index') }}" 
-                           class="block px-3 py-2 rounded-lg text-xs font-medium transition-colors {{ request()->routeIs('tour-organizer.index') ? 'text-primary dark:text-primary-container font-bold bg-primary-container/15' : 'text-secondary dark:text-gray-400 hover:text-on-surface dark:hover:text-white' }}">
+                           class="block px-3 py-1.5 rounded-lg text-xs font-medium transition-colors {{ request()->routeIs('tour-organizer.index') ? 'text-primary dark:text-primary-container font-bold bg-primary-container/15' : 'text-secondary dark:text-gray-400 hover:text-on-surface dark:hover:text-white' }}">
                             Overview
                         </a>
                     </li>
                     <li>
                         <a href="{{ route('tour-organizer.efootball') }}" 
-                           class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors {{ request()->routeIs('tour-organizer.efootball') ? 'text-primary dark:text-primary-container font-bold bg-primary-container/15' : 'text-secondary dark:text-gray-400 hover:text-on-surface dark:hover:text-white' }}">
+                           class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors {{ request()->routeIs('tour-organizer.efootball') ? 'text-primary dark:text-primary-container font-bold bg-primary-container/15' : 'text-secondary dark:text-gray-400 hover:text-on-surface dark:hover:text-white' }}">
                             <span class="material-symbols-outlined text-sm">sports_esports</span>
                             eFootball Mobile
                         </a>
@@ -199,8 +211,9 @@
             </li>
         </ul>
 
-        <div class="mt-auto pt-4 border-t border-border-subtle dark:border-[#2a2a2a]">
-            <p class="text-xs text-on-surface-variant/50 dark:text-gray-500 px-2">v1.0 &mdash; Local App</p>
+        <div class="mt-auto pt-4 border-t border-border-subtle dark:border-[#2a2a2a] flex items-center justify-between px-2">
+            <span class="text-[11px] text-secondary dark:text-gray-500 font-medium">ABT v1.0</span>
+            <span class="inline-flex items-center gap-1 text-[10px] bg-primary-container/20 text-on-surface dark:text-primary-container px-2 py-0.5 rounded font-bold">PRO</span>
         </div>
     </nav>
 
@@ -209,19 +222,19 @@
         <div class="max-w-7xl mx-auto">
             <!-- Flash Messages -->
             @if(session('success'))
-            <div class="mb-6 px-4 py-3 bg-status-lunas/10 border border-status-lunas/20 text-status-lunas rounded-xl text-sm flex items-center gap-2" x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)" x-transition>
+            <div class="mb-6 px-4 py-3 bg-status-lunas/10 border border-status-lunas/20 text-status-lunas rounded-xl text-sm flex items-center gap-2 shadow-sm" x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)" x-transition>
                 <span class="material-symbols-outlined text-lg">check_circle</span>
                 {{ session('success') }}
             </div>
             @endif
             @if(session('error'))
-            <div class="mb-6 px-4 py-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 rounded-xl text-sm flex items-center gap-2" x-data="{ show: true }" x-show="show">
+            <div class="mb-6 px-4 py-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 rounded-xl text-sm flex items-center gap-2 shadow-sm" x-data="{ show: true }" x-show="show">
                 <span class="material-symbols-outlined text-lg">error</span>
                 {{ session('error') }}
             </div>
             @endif
             @if(session('warning'))
-            <div class="mb-6 px-4 py-3 bg-status-pending/10 border border-status-pending/20 text-status-pending rounded-xl text-sm flex items-center gap-2" x-data="{ show: true }" x-show="show">
+            <div class="mb-6 px-4 py-3 bg-status-pending/10 border border-status-pending/20 text-status-pending rounded-xl text-sm flex items-center gap-2 shadow-sm" x-data="{ show: true }" x-show="show">
                 <span class="material-symbols-outlined text-lg">warning</span>
                 {{ session('warning') }}
             </div>

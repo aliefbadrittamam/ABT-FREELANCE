@@ -4,15 +4,24 @@
 @section('header', 'Dashboard')
 
 @section('content')
-<header class="mb-6 sm:mb-8">
-    <h1 class="text-2xl sm:text-[32px] font-bold text-on-surface dark:text-white tracking-tight leading-tight sm:leading-10">Dashboard Penghasilan</h1>
-    <p class="text-xs sm:text-sm text-on-surface-variant dark:text-gray-400 mt-1">Ringkasan performa finansial dan arus kas pesanan Anda.</p>
-</header>
+<!-- Header Greeting -->
+<div class="mb-6 sm:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div>
+        <h1 class="text-2xl sm:text-[30px] font-black text-on-surface dark:text-white tracking-tight leading-tight">Dashboard Penghasilan</h1>
+        <p class="text-xs sm:text-sm text-on-surface-variant dark:text-gray-400 mt-0.5">Ringkasan performa finansial dan pesanan aktif Anda.</p>
+    </div>
+    <div class="flex items-center gap-2">
+        <a href="{{ route('invoices.create') }}" class="px-4 py-2 bg-primary-container text-on-surface text-xs font-bold rounded-lg shadow-sm hover:brightness-95 transition-all flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-base">add</span>
+            Buat Invoice Baru
+        </a>
+    </div>
+</div>
 
 <!-- Summary Cards (4 Strategic Metrics) -->
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-6">
     <!-- Card 1: Pendapatan Hari Ini -->
-    <div class="bg-white dark:bg-[#1e1e1e] rounded-xl p-5 border-2 border-primary-container relative overflow-hidden group shadow-sm transition-colors duration-200">
+    <div class="bg-white dark:bg-[#1e1e1e] rounded-xl p-5 border-2 border-primary-container relative overflow-hidden shadow-sm transition-colors duration-200">
         <div class="flex items-center justify-between mb-2">
             <span class="text-[11px] font-bold text-on-surface-variant dark:text-gray-400 uppercase tracking-wider">Pendapatan Hari Ini</span>
             <span class="w-7 h-7 rounded-lg bg-primary-container/20 flex items-center justify-center text-primary dark:text-primary-container">
@@ -26,7 +35,7 @@
     </div>
 
     <!-- Card 2: Total Pendapatan -->
-    <div class="bg-white dark:bg-[#1e1e1e] rounded-xl p-5 border border-border-subtle dark:border-[#2a2a2a] relative overflow-hidden group shadow-sm transition-colors duration-200">
+    <div class="bg-white dark:bg-[#1e1e1e] rounded-xl p-5 border border-border-subtle dark:border-[#2a2a2a] relative overflow-hidden shadow-sm transition-colors duration-200">
         <div class="flex items-center justify-between mb-2">
             <span class="text-[11px] font-bold text-on-surface-variant dark:text-gray-400 uppercase tracking-wider">Total Pendapatan</span>
             <span class="w-7 h-7 rounded-lg bg-status-lunas/15 flex items-center justify-center text-status-lunas">
@@ -42,8 +51,8 @@
         </p>
     </div>
 
-    <!-- Card 3: DP yang Sudah Terbayar -->
-    <div class="bg-white dark:bg-[#1e1e1e] rounded-xl p-5 border border-border-subtle dark:border-[#2a2a2a] relative overflow-hidden group shadow-sm transition-colors duration-200">
+    <!-- Card 3: DP Terbayar -->
+    <div class="bg-white dark:bg-[#1e1e1e] rounded-xl p-5 border border-border-subtle dark:border-[#2a2a2a] relative overflow-hidden shadow-sm transition-colors duration-200">
         <div class="flex items-center justify-between mb-2">
             <span class="text-[11px] font-bold text-on-surface-variant dark:text-gray-400 uppercase tracking-wider">DP Terbayar</span>
             <span class="w-7 h-7 rounded-lg bg-status-dp/15 flex items-center justify-center text-status-dp">
@@ -58,8 +67,8 @@
         </p>
     </div>
 
-    <!-- Card 4: Sisa Pelunasan Belum Bayar -->
-    <div class="bg-white dark:bg-[#1e1e1e] rounded-xl p-5 border border-border-subtle dark:border-[#2a2a2a] relative overflow-hidden group shadow-sm transition-colors duration-200">
+    <!-- Card 4: Sisa Pelunasan -->
+    <div class="bg-white dark:bg-[#1e1e1e] rounded-xl p-5 border border-border-subtle dark:border-[#2a2a2a] relative overflow-hidden shadow-sm transition-colors duration-200">
         <div class="flex items-center justify-between mb-2">
             <span class="text-[11px] font-bold text-on-surface-variant dark:text-gray-400 uppercase tracking-wider">Sisa Pelunasan</span>
             <span class="w-7 h-7 rounded-lg bg-status-pending/15 flex items-center justify-center text-status-pending">
@@ -76,7 +85,7 @@
 </div>
 
 <!-- Dynamic Filterable Chart + Category Breakdown -->
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6" x-data="{ currentRange: 'daily' }">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8" x-data="{ currentRange: 'daily' }">
     <!-- Chart Section -->
     <div class="lg:col-span-2 bg-white dark:bg-[#1e1e1e] rounded-xl border border-border-subtle dark:border-[#2a2a2a] p-5 sm:p-6 flex flex-col shadow-sm transition-colors duration-200 min-h-[380px]">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
@@ -85,20 +94,20 @@
                 <p class="text-xs text-secondary dark:text-gray-400">Pantau pergerakan omset berkala</p>
             </div>
 
-            <!-- Time Range Selectors (Harian / Mingguan / Bulanan) -->
+            <!-- Time Range Selectors -->
             <div class="flex bg-surface-container dark:bg-[#252525] p-1 rounded-lg border border-border-subtle dark:border-[#333] text-xs font-semibold">
                 <button type="button" @click="currentRange = 'daily'; window.changeChartRange('daily')" 
-                        :class="currentRange === 'daily' ? 'bg-primary-container text-on-surface shadow-sm' : 'text-secondary dark:text-gray-400 hover:text-on-surface dark:hover:text-white'"
+                        :class="currentRange === 'daily' ? 'bg-primary-container text-on-surface shadow-sm font-bold' : 'text-secondary dark:text-gray-400 hover:text-on-surface dark:hover:text-white'"
                         class="px-3 py-1.5 rounded-md transition-all">
                     Harian (7 Hari)
                 </button>
                 <button type="button" @click="currentRange = 'weekly'; window.changeChartRange('weekly')" 
-                        :class="currentRange === 'weekly' ? 'bg-primary-container text-on-surface shadow-sm' : 'text-secondary dark:text-gray-400 hover:text-on-surface dark:hover:text-white'"
+                        :class="currentRange === 'weekly' ? 'bg-primary-container text-on-surface shadow-sm font-bold' : 'text-secondary dark:text-gray-400 hover:text-on-surface dark:hover:text-white'"
                         class="px-3 py-1.5 rounded-md transition-all">
                     Mingguan
                 </button>
                 <button type="button" @click="currentRange = 'monthly'; window.changeChartRange('monthly')" 
-                        :class="currentRange === 'monthly' ? 'bg-primary-container text-on-surface shadow-sm' : 'text-secondary dark:text-gray-400 hover:text-on-surface dark:hover:text-white'"
+                        :class="currentRange === 'monthly' ? 'bg-primary-container text-on-surface shadow-sm font-bold' : 'text-secondary dark:text-gray-400 hover:text-on-surface dark:hover:text-white'"
                         class="px-3 py-1.5 rounded-md transition-all">
                     Bulanan
                 </button>
@@ -135,6 +144,76 @@
             </div>
             @endforelse
         </div>
+    </div>
+</div>
+
+<!-- Recent Invoices Table (Quick Access) -->
+<div class="bg-white dark:bg-[#1e1e1e] rounded-xl border border-border-subtle dark:border-[#2a2a2a] overflow-hidden shadow-sm transition-colors duration-200">
+    <div class="p-5 sm:p-6 border-b border-border-subtle dark:border-[#2a2a2a] flex justify-between items-center">
+        <div>
+            <h3 class="text-base sm:text-lg font-bold text-on-surface dark:text-white">Invoice Terbaru</h3>
+            <p class="text-xs text-secondary dark:text-gray-400">5 pesanan dan tagihan terkini</p>
+        </div>
+        <a href="{{ route('invoices.index') }}" class="text-xs font-bold text-primary dark:text-primary-container hover:underline flex items-center gap-1">
+            Lihat Semua Invoice
+            <span class="material-symbols-outlined text-base">arrow_forward</span>
+        </a>
+    </div>
+
+    <div class="overflow-x-auto w-full">
+        <table class="w-full text-left border-collapse min-w-[600px]">
+            <thead>
+                <tr class="border-b border-border-subtle dark:border-[#2a2a2a] bg-surface-container-low dark:bg-[#181818] text-secondary dark:text-gray-400 text-[11px] uppercase tracking-wider font-semibold">
+                    <th class="py-3 px-6">Nomor Invoice</th>
+                    <th class="py-3 px-6">Klien & Proyek</th>
+                    <th class="py-3 px-6">Kategori</th>
+                    <th class="py-3 px-6 text-right">Total</th>
+                    <th class="py-3 px-6 text-center">Status</th>
+                    <th class="py-3 px-6 text-right">Aksi</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-border-subtle dark:divide-[#2a2a2a] text-xs sm:text-sm">
+                @forelse($recentInvoices as $inv)
+                <tr class="hover:bg-surface-variant/30 dark:hover:bg-[#252525] transition-colors">
+                    <td class="py-3.5 px-6 font-mono font-bold text-on-surface dark:text-gray-300">
+                        {{ $inv->invoice_number }}
+                    </td>
+                    <td class="py-3.5 px-6">
+                        <p class="font-bold text-on-surface dark:text-white">{{ $inv->client_name }}</p>
+                        <p class="text-xs text-secondary dark:text-gray-400">{{ Str::limit($inv->title, 40) }}</p>
+                    </td>
+                    <td class="py-3.5 px-6 text-secondary dark:text-gray-400">
+                        {{ $inv->category->name ?? '-' }}
+                    </td>
+                    <td class="py-3.5 px-6 text-right font-bold text-on-surface dark:text-white">
+                        Rp {{ number_format($inv->total_amount, 0, ',', '.') }}
+                    </td>
+                    <td class="py-3.5 px-6 text-center">
+                        @if($inv->status === 'paid')
+                        <span class="inline-flex items-center gap-1 text-[11px] font-semibold bg-status-lunas/10 text-status-lunas px-2.5 py-0.5 rounded-full">Lunas</span>
+                        @elseif($inv->status === 'dp_paid')
+                        <span class="inline-flex items-center gap-1 text-[11px] font-semibold bg-status-dp/10 text-status-dp px-2.5 py-0.5 rounded-full">DP Terbayar</span>
+                        @elseif($inv->status === 'canceled')
+                        <span class="inline-flex items-center gap-1 text-[11px] font-semibold bg-gray-200 dark:bg-[#333] text-gray-700 dark:text-gray-300 px-2.5 py-0.5 rounded-full">Dibatalkan</span>
+                        @else
+                        <span class="inline-flex items-center gap-1 text-[11px] font-semibold bg-status-pending/10 text-status-pending px-2.5 py-0.5 rounded-full">Belum Bayar</span>
+                        @endif
+                    </td>
+                    <td class="py-3.5 px-6 text-right">
+                        <a href="{{ route('invoices.show', $inv) }}" class="inline-flex items-center gap-1 text-xs font-bold text-primary dark:text-primary-container hover:underline">
+                            Lihat Detail
+                        </a>
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="6" class="py-8 text-center text-secondary dark:text-gray-400 text-xs">
+                        Belum ada invoice. Buat invoice pertama Anda!
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
 </div>
 
