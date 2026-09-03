@@ -47,7 +47,22 @@ class InvoiceController extends Controller
             'payment_type' => 'required|in:dp,full',
             'dp_amount' => 'nullable|numeric|min:0',
             'total_amount' => 'required|numeric|min:0',
+            'has_worker' => 'nullable|boolean',
+            'my_role' => 'nullable|in:none,hunter,worker',
+            'payment_flow' => 'nullable|in:client_to_me,client_to_partner',
+            'partner_name' => 'nullable|string|max:255',
+            'partner_phone' => 'nullable|string|max:50',
+            'worker_percentage' => 'nullable|numeric|min:1|max:99',
         ]);
+
+        $validated['has_worker'] = $request->boolean('has_worker');
+        if (!$validated['has_worker']) {
+            $validated['my_role'] = 'none';
+            $validated['partner_name'] = null;
+            $validated['partner_phone'] = null;
+        } else {
+            $validated['worker_percentage'] = $request->filled('worker_percentage') ? (float)$request->worker_percentage : 80.00;
+        }
 
         $validated['invoice_number'] = Invoice::generateInvoiceNumber($validated['category_id']);
 
@@ -86,7 +101,22 @@ class InvoiceController extends Controller
             'dp_amount' => 'nullable|numeric|min:0',
             'total_amount' => 'required|numeric|min:0',
             'status' => 'required|in:unpaid,dp_paid,paid,canceled',
+            'has_worker' => 'nullable|boolean',
+            'my_role' => 'nullable|in:none,hunter,worker',
+            'payment_flow' => 'nullable|in:client_to_me,client_to_partner',
+            'partner_name' => 'nullable|string|max:255',
+            'partner_phone' => 'nullable|string|max:50',
+            'worker_percentage' => 'nullable|numeric|min:1|max:99',
         ]);
+
+        $validated['has_worker'] = $request->boolean('has_worker');
+        if (!$validated['has_worker']) {
+            $validated['my_role'] = 'none';
+            $validated['partner_name'] = null;
+            $validated['partner_phone'] = null;
+        } else {
+            $validated['worker_percentage'] = $request->filled('worker_percentage') ? (float)$request->worker_percentage : 80.00;
+        }
 
         if ($validated['payment_type'] === 'full') {
             $validated['dp_amount'] = null;
@@ -98,6 +128,25 @@ class InvoiceController extends Controller
         $invoice->update($validated);
 
         return redirect()->route('invoices.show', $invoice)->with('success', 'Invoice berhasil diperbarui!');
+    }
+
+    public function togglePayout(Invoice $invoice)
+    {
+        if (!$invoice->has_worker) {
+            return back()->with('error', 'Invoice ini tidak menggunakan sistem partner/worker.');
+        }
+
+        $newStatus = $invoice->payout_status === 'paid' ? 'unpaid' : 'paid';
+        $invoice->update([
+            'payout_status' => $newStatus,
+            'payout_at' => $newStatus === 'paid' ? now() : null,
+        ]);
+
+        $msg = $newStatus === 'paid' 
+            ? 'Status payout berhasil ditandai Lunas / Sudah Ditransfer.' 
+            : 'Status payout berhasil diubah menjadi Belum Ditransfer.';
+
+        return back()->with('success', $msg);
     }
 
     public function cancel(Invoice $invoice)

@@ -167,6 +167,114 @@
                     </div>
                 </div>
 
+                <!-- Sistem Hunter & Worker (Bagi Hasil) - Optional & Flexible -->
+                <div class="pt-1">
+                    <div class="p-4 bg-surface dark:bg-[#181818] rounded-xl border border-border-subtle dark:border-[#2a2a2a] space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <label class="text-xs font-bold text-on-surface dark:text-white uppercase tracking-wider flex items-center gap-1.5 cursor-pointer" @click="hasWorker = !hasWorker">
+                                    <span class="material-symbols-outlined text-base text-primary dark:text-primary-container">handshake</span>
+                                    Sistem Hunter & Worker
+                                </label>
+                                <p class="text-[10px] text-secondary dark:text-gray-400 mt-0.5">Bagi hasil proyek (Opsional, default: 80% Worker / 20% Hunter)</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="has_worker" value="1" x-model="hasWorker" class="sr-only peer">
+                                <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-container"></div>
+                            </label>
+                        </div>
+
+                        <!-- Expanded Section When Toggle is ON -->
+                        <div x-show="hasWorker" x-transition class="space-y-4 pt-2 border-t border-border-subtle dark:border-[#2a2a2a]">
+                            <!-- 1. Peran Anda dalam Proyek -->
+                            <div>
+                                <label class="block text-[11px] font-bold text-on-surface-variant dark:text-gray-300 uppercase tracking-wider mb-1.5">Posisi / Peran Anda</label>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <button type="button" @click="myRole = 'hunter'"
+                                            :class="myRole === 'hunter' ? 'bg-primary-container text-on-surface font-bold shadow-xs' : 'bg-white dark:bg-[#252525] text-secondary dark:text-gray-300 border border-border-subtle dark:border-[#333]'"
+                                            class="p-2.5 rounded-lg text-xs text-left transition-all">
+                                        <div class="flex items-center gap-1.5 mb-0.5">
+                                            <span class="material-symbols-outlined text-sm">person_search</span>
+                                            <strong class="text-xs">Saya sebagai Hunter</strong>
+                                        </div>
+                                        <p class="text-[10px] opacity-80">Anda cari klien & terima komisi (<span x-text="hunterPercent"></span>%).</p>
+                                    </button>
+
+                                    <button type="button" @click="myRole = 'worker'"
+                                            :class="myRole === 'worker' ? 'bg-primary-container text-on-surface font-bold shadow-xs' : 'bg-white dark:bg-[#252525] text-secondary dark:text-gray-300 border border-border-subtle dark:border-[#333]'"
+                                            class="p-2.5 rounded-lg text-xs text-left transition-all">
+                                        <div class="flex items-center gap-1.5 mb-0.5">
+                                            <span class="material-symbols-outlined text-sm">engineering</span>
+                                            <strong class="text-xs">Saya sebagai Worker</strong>
+                                        </div>
+                                        <p class="text-[10px] opacity-80">Anda yang mengerjakan & terima fee (<span x-text="workerPercent"></span>%).</p>
+                                    </button>
+                                </div>
+                                <input type="hidden" name="my_role" :value="myRole">
+                            </div>
+
+                            <!-- 2. Alur Pembayaran -->
+                            <div>
+                                <label class="block text-[11px] font-bold text-on-surface-variant dark:text-gray-300 uppercase tracking-wider mb-1.5">Alur Penerimaan Dana</label>
+                                <select name="payment_flow" x-model="paymentFlow" class="w-full px-3 py-2 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs text-on-surface dark:text-white outline-none">
+                                    <option value="client_to_me">Klien bayar ke Saya (Admin) ➔ Saya transfer fee partner (Default)</option>
+                                    <option value="client_to_partner">Klien bayar ke Partner ➔ Partner setor komisi ke Saya</option>
+                                </select>
+                            </div>
+
+                            <!-- 3. Identitas Partner Luar (Worker / Hunter Luar) -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-[11px] font-bold text-on-surface-variant dark:text-gray-300 uppercase tracking-wider mb-1">
+                                        <span x-text="myRole === 'hunter' ? 'Nama Worker (Pekerja)' : 'Nama Hunter (Pemberi Job)'"></span>
+                                    </label>
+                                    <input type="text" name="partner_name" x-model="partnerName" placeholder="Contoh: Bagus / Dimas"
+                                           class="w-full px-3 py-2 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs text-on-surface dark:text-white outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-on-surface-variant dark:text-gray-300 uppercase tracking-wider mb-1">WhatsApp Partner</label>
+                                    <input type="text" name="partner_phone" x-model="partnerPhone" placeholder="08xxxxxxxxxx"
+                                           class="w-full px-3 py-2 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs text-on-surface dark:text-white outline-none">
+                                </div>
+                            </div>
+
+                            <!-- 4. Slider & Presets Persentase -->
+                            <div>
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <label class="block text-[11px] font-bold text-on-surface-variant dark:text-gray-300 uppercase tracking-wider">
+                                        Porsi Worker (<span class="text-primary dark:text-primary-container font-black" x-text="workerPercent + '%'"></span>) : Hunter (<span class="font-black" x-text="hunterPercent + '%'"></span>)
+                                    </label>
+                                    <div class="flex items-center gap-1">
+                                        <button type="button" @click="setWorkerPercent(80)" class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-white dark:bg-[#252525] border border-border-subtle hover:border-primary">80/20</button>
+                                        <button type="button" @click="setWorkerPercent(85)" class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-white dark:bg-[#252525] border border-border-subtle hover:border-primary">85/15</button>
+                                        <button type="button" @click="setWorkerPercent(75)" class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-white dark:bg-[#252525] border border-border-subtle hover:border-primary">75/25</button>
+                                        <button type="button" @click="setWorkerPercent(70)" class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-white dark:bg-[#252525] border border-border-subtle hover:border-primary">70/30</button>
+                                    </div>
+                                </div>
+                                <input type="range" min="50" max="95" step="1" x-model="workerPercent" 
+                                       class="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-black dark:accent-primary-container">
+                                <input type="hidden" name="worker_percentage" :value="workerPercent">
+                            </div>
+
+                            <!-- 5. Live Share Calculator Box -->
+                            <div class="p-3 bg-white dark:bg-[#222] rounded-lg border border-border-subtle dark:border-[#333] space-y-1.5 text-xs">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-secondary dark:text-gray-400 font-medium">
+                                        💼 Hak Anda (<span x-text="myRole === 'worker' ? 'Worker ' + workerPercent + '%' : 'Hunter ' + hunterPercent + '%'"></span>):
+                                    </span>
+                                    <strong class="text-emerald-600 dark:text-emerald-400 font-mono font-bold text-sm" x-text="'Rp ' + formatRupiah(myShareAmount)"></strong>
+                                </div>
+                                <div class="flex justify-between items-center text-[11px] text-secondary dark:text-gray-400 pt-1 border-t border-border-subtle dark:border-[#2a2a2a]">
+                                    <span>
+                                        🤝 Hak Partner (<span x-text="myRole === 'worker' ? 'Hunter ' + hunterPercent + '%' : 'Worker ' + workerPercent + '%'"></span>):
+                                    </span>
+                                    <span class="font-mono font-semibold text-on-surface dark:text-gray-300" x-text="'Rp ' + formatRupiah(partnerShareAmount)"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Submit Button -->
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-border-subtle dark:border-[#2a2a2a]">
                     <a href="{{ route('invoices.index') }}" class="px-5 py-2.5 bg-transparent dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs sm:text-sm text-on-surface-variant dark:text-gray-300 hover:bg-surface-variant dark:hover:bg-[#333] transition font-semibold">Batal</a>
@@ -394,6 +502,36 @@ function invoiceForm() {
         totalAmount: Number(@json(old('total_amount', 0))),
         dpAmount: Number(@json(old('dp_amount', 0))),
         isCustomDp: false,
+
+        // Hunter & Worker State
+        hasWorker: @json(old('has_worker', false)),
+        myRole: @json(old('my_role', 'hunter')),
+        paymentFlow: @json(old('payment_flow', 'client_to_me')),
+        partnerName: @json(old('partner_name', '')),
+        partnerPhone: @json(old('partner_phone', '')),
+        workerPercent: Number(@json(old('worker_percentage', 80))),
+
+        get hunterPercent() {
+            return 100 - Number(this.workerPercent);
+        },
+
+        setWorkerPercent(val) {
+            this.workerPercent = Number(val);
+        },
+
+        get myShareAmount() {
+            const total = Number(this.totalAmount) || 0;
+            if (!this.hasWorker || total <= 0) return total;
+            const wRate = Number(this.workerPercent) / 100;
+            const hRate = this.hunterPercent / 100;
+            return this.myRole === 'worker' ? Math.round(total * wRate) : Math.round(total * hRate);
+        },
+
+        get partnerShareAmount() {
+            const total = Number(this.totalAmount) || 0;
+            if (!this.hasWorker || total <= 0) return 0;
+            return Math.max(0, total - this.myShareAmount);
+        },
 
         init() {
             if (this.paymentType === 'dp' && (!this.dpAmount || this.dpAmount === 0)) {

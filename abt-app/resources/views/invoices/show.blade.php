@@ -170,6 +170,113 @@
         </div>
     </div>
 
+    @if($invoice->has_worker)
+    <!-- Alokasi Profit & Bagi Hasil Hunter / Worker (Internal Admin Only) -->
+    <div class="bg-white dark:bg-[#1e1e1e] rounded-xl border border-border-subtle dark:border-[#2a2a2a] p-4 sm:p-5 mb-6 shadow-sm transition-colors duration-200">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-border-subtle dark:border-[#2a2a2a]">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-primary-container/20 text-on-surface dark:text-primary-container flex items-center justify-center font-bold">
+                    <span class="material-symbols-outlined text-lg">handshake</span>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-on-surface dark:text-white flex items-center gap-2">
+                        Alokasi Profit & Bagi Hasil
+                        @if($invoice->my_role === 'worker')
+                        <span class="text-[10px] bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold px-2 py-0.5 rounded-full">
+                            Anda sebagai Worker ({{ (float)$invoice->worker_percentage }}%)
+                        </span>
+                        @else
+                        <span class="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold px-2 py-0.5 rounded-full">
+                            Anda sebagai Hunter ({{ (float)$invoice->hunter_percentage }}%)
+                        </span>
+                        @endif
+                    </h3>
+                    <p class="text-[11px] text-secondary dark:text-gray-400 mt-0.5">
+                        {{ $invoice->payment_flow === 'client_to_me' ? 'Klien transfer ke Rekening Anda ➔ Anda selesaikan bagi hasil ke Partner' : 'Klien transfer ke Partner ➔ Partner menyetorkan komisi ke Anda' }}
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                @if($invoice->payout_status === 'paid')
+                <span class="inline-flex items-center gap-1 text-xs font-bold bg-status-lunas/10 text-status-lunas border border-status-lunas/20 px-2.5 py-1 rounded-full">
+                    <span class="material-symbols-outlined text-sm">verified</span>
+                    Bagi Hasil Selesai
+                </span>
+                @else
+                <span class="inline-flex items-center gap-1 text-xs font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200 dark:border-amber-800 px-2.5 py-1 rounded-full">
+                    <span class="material-symbols-outlined text-sm">pending</span>
+                    Belum Ditransfer
+                </span>
+                @endif
+            </div>
+        </div>
+
+        <!-- 3-Column Metrics Breakdown -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 my-4">
+            <!-- Box 1: Total Invoice Klien -->
+            <div class="p-3 rounded-lg bg-surface dark:bg-[#181818] border border-border-subtle dark:border-[#333]">
+                <span class="text-[10px] uppercase font-semibold text-secondary dark:text-gray-400 block mb-0.5">Total Biaya Klien</span>
+                <span class="text-sm font-bold font-mono text-on-surface dark:text-white">Rp {{ number_format($invoice->total_amount, 0, ',', '.') }}</span>
+            </div>
+
+            <!-- Box 2: Hak Anda (Net Profit) -->
+            <div class="p-3 rounded-lg bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/40">
+                <span class="text-[10px] uppercase font-semibold text-emerald-800 dark:text-emerald-300 block mb-0.5">
+                    💼 Hak Anda ({{ $invoice->my_role === 'worker' ? (float)$invoice->worker_percentage : (float)$invoice->hunter_percentage }}%)
+                </span>
+                <span class="text-sm font-bold font-mono text-emerald-700 dark:text-emerald-400">Rp {{ number_format($invoice->my_share_amount, 0, ',', '.') }}</span>
+            </div>
+
+            <!-- Box 3: Hak Partner Luar -->
+            <div class="p-3 rounded-lg bg-surface dark:bg-[#181818] border border-border-subtle dark:border-[#333]">
+                <span class="text-[10px] uppercase font-semibold text-secondary dark:text-gray-400 block mb-0.5">
+                    🤝 Hak Partner ({{ $invoice->my_role === 'worker' ? (float)$invoice->hunter_percentage : (float)$invoice->worker_percentage }}%)
+                </span>
+                <span class="text-sm font-bold font-mono text-on-surface dark:text-white">Rp {{ number_format($invoice->partner_share_amount, 0, ',', '.') }}</span>
+                @if($invoice->partner_name)
+                <span class="text-[10px] text-secondary dark:text-gray-400 block truncate mt-0.5">Partner: {{ $invoice->partner_name }}</span>
+                @endif
+            </div>
+        </div>
+
+        <!-- Action Buttons: Toggle Payout & WhatsApp Partner -->
+        <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+            <div class="text-xs text-secondary dark:text-gray-400">
+                @if($invoice->payout_status === 'paid' && $invoice->payout_at)
+                Diselesaikan pada: <strong>{{ $invoice->payout_at->translatedFormat('d F Y, H:i') }} WIB</strong>
+                @else
+                Pastikan pembayaran klien sudah masuk sebelum menyelesaikan bagi hasil.
+                @endif
+            </div>
+
+            <div class="flex items-center gap-2">
+                @if($invoice->partner_phone)
+                @php
+                    $cleanPhone = preg_replace('/[^0-9]/', '', $invoice->partner_phone);
+                    if (str_starts_with($cleanPhone, '0')) $cleanPhone = '62' . substr($cleanPhone, 1);
+                    $waText = "Halo " . ($invoice->partner_name ?: 'Partner') . ", mengenai proyek *{$invoice->title}* (Invoice: {$invoice->invoice_number}), bagian fee sebesar *Rp " . number_format($invoice->partner_share_amount, 0, ',', '.') . "* statusnya: *" . ($invoice->payout_status === 'paid' ? 'Sudah Ditransfer' : 'Sedang Diproses') . "*. Terima kasih!";
+                @endphp
+                <a href="https://api.whatsapp.com/send?phone={{ $cleanPhone }}&text={{ urlencode($waText) }}" target="_blank"
+                   class="px-3 py-1.5 bg-[#25D366] text-white rounded-lg text-xs font-semibold hover:brightness-95 transition flex items-center gap-1.5 shadow-xs">
+                    <span class="material-symbols-outlined text-sm">chat</span>
+                    WA Partner
+                </a>
+                @endif
+
+                <form action="{{ route('invoices.togglePayout', $invoice) }}" method="POST" class="inline">
+                    @csrf
+                    <button type="submit" 
+                            class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 {{ $invoice->payout_status === 'paid' ? 'bg-gray-100 dark:bg-[#252525] text-secondary dark:text-gray-300 hover:bg-gray-200' : 'bg-status-lunas text-white hover:brightness-110 shadow-xs' }}">
+                        <span class="material-symbols-outlined text-sm">{{ $invoice->payout_status === 'paid' ? 'undo' : 'check' }}</span>
+                        {{ $invoice->payout_status === 'paid' ? 'Tandai Belum Ditransfer' : 'Tandai Sudah Ditransfer' }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- Task File Archive Card -->
     <div class="bg-white dark:bg-[#1e1e1e] rounded-xl border border-border-subtle dark:border-[#2a2a2a] p-4 sm:p-5 mb-6 shadow-sm transition-colors duration-200">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
