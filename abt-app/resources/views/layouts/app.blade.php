@@ -170,6 +170,12 @@
                     Pembayaran
                 </a>
             </li>
+            <li>
+                <a href="{{ route('tour-organizer.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('tour-organizer.*') ? 'bg-primary dark:bg-primary text-on-primary font-semibold shadow-sm' : 'text-secondary dark:text-gray-300 hover:bg-surface-variant dark:hover:bg-[#252525]' }}">
+                    <span class="material-symbols-outlined text-xl" {{ request()->routeIs('tour-organizer.*') ? "style=font-variation-settings:'FILL'1" : '' }}>luggage</span>
+                    Tour Organizer
+                </a>
+            </li>
         </ul>
 
         <div class="mt-auto pt-4 border-t border-border-subtle dark:border-[#2a2a2a]">
@@ -177,8 +183,8 @@
         </div>
     </nav>
 
-    <!-- Main Content Area (Responsive margins and paddings) -->
-    <main class="ml-0 lg:ml-sidebar pt-16 min-h-screen p-4 sm:p-6 lg:p-8 transition-all duration-300">
+    <!-- Main Content Area (Responsive margins and paddings, safe from fixed topbar) -->
+    <main class="ml-0 lg:ml-sidebar pt-20 sm:pt-24 min-h-screen px-4 sm:px-6 lg:px-8 pb-12 transition-all duration-300">
         <div class="max-w-7xl mx-auto">
             <!-- Flash Messages -->
             @if(session('success'))
