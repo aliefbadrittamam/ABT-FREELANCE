@@ -153,6 +153,7 @@
                                     Pulihkan
                                 </button>
                             </form>
+                            @if($t->isDeletable())
                             <!-- Permanent Delete Button -->
                             <button type="button" 
                                     @click="openDeleteModal('{{ route('testimonials.forceDelete', $t->id) }}', '{{ $t->testimonial_number }}', {{ $t->posted_to_telegram && $t->telegram_message_id ? 'true' : 'false' }}, true)"
@@ -160,19 +161,35 @@
                                 <span class="material-symbols-outlined text-sm">delete_forever</span>
                                 Hapus Permanen
                             </button>
+                            @else
+                            <span class="text-[10px] text-secondary dark:text-gray-500 font-medium flex items-center gap-0.5" title="Terkunci permanen (> 7 hari)">
+                                <span class="material-symbols-outlined text-xs">lock</span>
+                                Terkunci
+                            </span>
+                            @endif
                         @else
                             <!-- Edit Button -->
                             <a href="{{ route('testimonials.edit', $t) }}" class="text-xs text-secondary dark:text-gray-400 hover:text-on-surface dark:hover:text-white font-medium flex items-center gap-1 transition">
                                 <span class="material-symbols-outlined text-sm">edit</span>
                                 Edit
                             </a>
-                            <!-- Safe Soft Delete Button -->
+
+                            <!-- 7-Day Protection Gate -->
+                            @if($t->isDeletable())
                             <button type="button" 
                                     @click="openDeleteModal('{{ route('testimonials.destroy', $t) }}', '{{ $t->testimonial_number }}', {{ $t->posted_to_telegram && $t->telegram_message_id ? 'true' : 'false' }}, false)"
-                                    class="text-xs text-red-500 hover:text-red-700 font-medium flex items-center gap-0.5 transition">
+                                    class="text-xs text-red-500 hover:text-red-700 font-medium flex items-center gap-0.5 transition"
+                                    title="Dapat dihapus (Sisa {{ $t->getDaysRemainingForDeletion() }} hari)">
                                 <span class="material-symbols-outlined text-sm">delete</span>
                                 Hapus
                             </button>
+                            @else
+                            <span class="inline-flex items-center gap-1 text-[10px] font-medium text-secondary/70 dark:text-gray-500 bg-surface-container/60 dark:bg-[#252525] px-2 py-0.5 rounded" 
+                                  title="Testimoni ini sudah lebih dari 1 minggu (7 hari) dan telah dikunci otomatis untuk melindungi portofolio.">
+                                <span class="material-symbols-outlined text-xs">lock</span>
+                                Terproteksi (>7h)
+                            </span>
+                            @endif
                         @endif
                     </div>
                 </div>

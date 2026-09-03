@@ -220,23 +220,68 @@
     <!-- Main Content Area (Responsive margins and paddings, safe from fixed topbar) -->
     <main class="ml-0 lg:ml-sidebar pt-20 sm:pt-24 min-h-screen px-4 sm:px-6 lg:px-8 pb-12 transition-all duration-300">
         <div class="max-w-7xl mx-auto">
-            <!-- Flash Messages -->
+            <!-- Flash Messages & Error Event Handlers -->
             @if(session('success'))
-            <div class="mb-6 px-4 py-3 bg-status-lunas/10 border border-status-lunas/20 text-status-lunas rounded-xl text-sm flex items-center gap-2 shadow-sm" x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)" x-transition>
-                <span class="material-symbols-outlined text-lg">check_circle</span>
-                {{ session('success') }}
+            <div class="mb-6 p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 rounded-xl text-xs sm:text-sm flex items-start justify-between gap-3 shadow-sm" x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 8000)" x-transition>
+                <div class="flex items-start gap-2.5">
+                    <span class="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-lg sm:text-xl shrink-0">check_circle</span>
+                    <div class="space-y-0.5">
+                        <strong class="font-bold">Berhasil!</strong>
+                        <p class="leading-relaxed">{{ session('success') }}</p>
+                    </div>
+                </div>
+                <button type="button" @click="show = false" class="text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-white transition">
+                    <span class="material-symbols-outlined text-base">close</span>
+                </button>
             </div>
             @endif
+
             @if(session('error'))
-            <div class="mb-6 px-4 py-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 rounded-xl text-sm flex items-center gap-2 shadow-sm" x-data="{ show: true }" x-show="show">
-                <span class="material-symbols-outlined text-lg">error</span>
-                {{ session('error') }}
+            <div class="mb-6 p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300 rounded-xl text-xs sm:text-sm flex items-start justify-between gap-3 shadow-sm" x-data="{ show: true }" x-show="show" x-transition>
+                <div class="flex items-start gap-2.5">
+                    <span class="material-symbols-outlined text-red-600 dark:text-red-400 text-lg sm:text-xl shrink-0">error</span>
+                    <div class="space-y-0.5">
+                        <strong class="font-bold">Pemberitahuan Error / Gagal:</strong>
+                        <p class="leading-relaxed font-mono text-[11px] sm:text-xs bg-white/50 dark:bg-black/20 p-2 rounded-lg mt-1 border border-red-200/50 dark:border-red-900/30">{{ session('error') }}</p>
+                    </div>
+                </div>
+                <button type="button" @click="show = false" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-white transition">
+                    <span class="material-symbols-outlined text-base">close</span>
+                </button>
             </div>
             @endif
+
             @if(session('warning'))
-            <div class="mb-6 px-4 py-3 bg-status-pending/10 border border-status-pending/20 text-status-pending rounded-xl text-sm flex items-center gap-2 shadow-sm" x-data="{ show: true }" x-show="show">
-                <span class="material-symbols-outlined text-lg">warning</span>
-                {{ session('warning') }}
+            <div class="mb-6 p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-300 rounded-xl text-xs sm:text-sm flex items-start justify-between gap-3 shadow-sm" x-data="{ show: true }" x-show="show" x-transition>
+                <div class="flex items-start gap-2.5">
+                    <span class="material-symbols-outlined text-amber-600 dark:text-amber-400 text-lg sm:text-xl shrink-0">warning</span>
+                    <div class="space-y-0.5">
+                        <strong class="font-bold">Peringatan:</strong>
+                        <p class="leading-relaxed font-mono text-[11px] sm:text-xs bg-white/50 dark:bg-black/20 p-2 rounded-lg mt-1 border border-amber-200/50 dark:border-amber-900/30">{{ session('warning') }}</p>
+                    </div>
+                </div>
+                <button type="button" @click="show = false" class="text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-white transition">
+                    <span class="material-symbols-outlined text-base">close</span>
+                </button>
+            </div>
+            @endif
+
+            @if($errors->any())
+            <div class="mb-6 p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300 rounded-xl text-xs sm:text-sm flex items-start justify-between gap-3 shadow-sm" x-data="{ show: true }" x-show="show" x-transition>
+                <div class="flex items-start gap-2.5">
+                    <span class="material-symbols-outlined text-red-600 dark:text-red-400 text-lg sm:text-xl shrink-0">report</span>
+                    <div class="space-y-1">
+                        <strong class="font-bold">Terdapat kesalahan pada input form:</strong>
+                        <ul class="list-disc list-inside space-y-0.5 text-xs text-red-700 dark:text-red-400">
+                            @foreach($errors->all() as $err)
+                            <li>{{ $err }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </div>
+                <button type="button" @click="show = false" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-white transition">
+                    <span class="material-symbols-outlined text-base">close</span>
+                </button>
             </div>
             @endif
 
