@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Testimonial extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'testimonial_number',
         'major',
@@ -18,7 +21,7 @@ class Testimonial extends Model
 
     public static function getNextTestimonialNumber(): int
     {
-        $max = static::max('testimonial_number');
+        $max = static::withTrashed()->max('testimonial_number');
         return $max ? $max + 1 : 1;
     }
 

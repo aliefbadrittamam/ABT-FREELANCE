@@ -10,10 +10,20 @@ use Illuminate\Support\Facades\Storage;
 
 class TestimonialController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $testimonials = Testimonial::orderBy('testimonial_number', 'desc')->paginate(12);
-        return view('testimonials.index', compact('testimonials'));
+        $status = $request->query('status', 'active');
+
+        if ($status === 'trash') {
+            $testimonials = Testimonial::onlyTrashed()->orderBy('testimonial_number', 'desc')->paginate(12);
+        } else {
+            $testimonials = Testimonial::orderBy('testimonial_number', 'desc')->paginate(12);
+        }
+
+        $activeCount = Testimonial::count();
+        $trashCount = Testimonial::onlyTrashed()->count();
+
+        return view('testimonials.index', compact('testimonials', 'status', 'activeCount', 'trashCount'));
     }
 
     public function create()
@@ -169,22 +179,58 @@ class TestimonialController extends Controller
         return redirect()->route('testimonials.index')->with('success', "Testimoni #{$testiNumber} berhasil diperbarui!");
     }
 
-    public function destroy(Testimonial $testimonial, TelegramService $telegram)
+    public function destroy(Request $request, Testimonial $testimonial, TelegramService $telegram)
     {
-        if ($testimonial->posted_to_telegram && $testimonial->telegram_message_id) {
+        $testiNumber = $testimonial->testimonial_number;
+        $deleteFromTelegram = $request->boolean('delete_from_telegram');
+
+        // Only delete from Telegram if explicitly requested by user
+        if ($deleteFromTelegram && $testimonial->posted_to_telegram && $testimonial->telegram_message_id) {
+            $telegram->deleteMessage($testimonial->telegram_message_id);
+            $testimonial->update([
+                'posted_to_telegram' => false,
+                'telegram_message_id' => null,
+            ]);
+        }
+
+        // Soft delete the testimonial record (files remain safe in storage)
+        $testimonial->delete();
+
+        $msg = $deleteFromTelegram 
+            ? "Testimoni #{$testiNumber} berhasil dipindahkan ke Sampah & dihapus dari Telegram!"
+            : "Testimoni #{$testiNumber} berhasil dipindahkan ke Sampah. (Postingan di Telegram tetap aman terjaga).";
+
+        return redirect()->route('testimonials.index')->with('success', $msg);
+    }
+
+    public function restore(int $id)
+    {
+        $testimonial = Testimonial::onlyTrashed()->findOrFail($id);
+        $testiNumber = $testimonial->testimonial_number;
+        $testimonial->restore();
+
+        return redirect()->route('testimonials.index', ['status' => 'trash'])->with('success', "Testimoni #{$testiNumber} berhasil dipulihkan!");
+    }
+
+    public function forceDelete(Request $request, int $id, TelegramService $telegram)
+    {
+        $testimonial = Testimonial::onlyTrashed()->findOrFail($id);
+        $testiNumber = $testimonial->testimonial_number;
+        $deleteFromTelegram = $request->boolean('delete_from_telegram');
+
+        if ($deleteFromTelegram && $testimonial->posted_to_telegram && $testimonial->telegram_message_id) {
             $telegram->deleteMessage($testimonial->telegram_message_id);
         }
 
-        // Clean files
+        // Permanently clean files
         foreach (['image_tugas_path', 'image_chat_path', 'image_hasil_path', 'image_pelunasan_path', 'composed_image_path'] as $field) {
             if ($testimonial->$field && Storage::disk('public')->exists($testimonial->$field)) {
                 Storage::disk('public')->delete($testimonial->$field);
             }
         }
 
-        $testiNumber = $testimonial->testimonial_number;
-        $testimonial->delete();
+        $testimonial->forceDelete();
 
-        return redirect()->route('testimonials.index')->with('success', "Testimoni #{$testiNumber} berhasil dihapus!");
+        return redirect()->route('testimonials.index', ['status' => 'trash'])->with('success', "Testimoni #{$testiNumber} berhasil dihapus permanen!");
     }
 }
