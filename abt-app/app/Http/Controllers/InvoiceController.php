@@ -81,7 +81,7 @@ class InvoiceController extends Controller
             'payment_type' => 'required|in:dp,full',
             'dp_amount' => 'nullable|numeric|min:0',
             'total_amount' => 'required|numeric|min:0',
-            'status' => 'required|in:unpaid,dp_paid,paid',
+            'status' => 'required|in:unpaid,dp_paid,paid,canceled',
         ]);
 
         if ($validated['payment_type'] === 'full') {
@@ -94,6 +94,30 @@ class InvoiceController extends Controller
         $invoice->update($validated);
 
         return redirect()->route('invoices.show', $invoice)->with('success', 'Invoice berhasil diperbarui!');
+    }
+
+    public function cancel(Invoice $invoice)
+    {
+        $invoice->update(['status' => 'canceled']);
+        return redirect()->route('invoices.show', $invoice)->with('success', 'Status invoice berhasil diubah menjadi Dibatalkan.');
+    }
+
+    public function destroy(Invoice $invoice)
+    {
+        // Delete task file if exists
+        if ($invoice->task_file_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($invoice->task_file_path)) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($invoice->task_file_path);
+        }
+
+        // Delete generated PDF and PNG exports if exist
+        $exportPdf = storage_path('app/public/invoices/exports/' . $invoice->invoice_number . '.pdf');
+        $exportPng = storage_path('app/public/invoices/exports/' . $invoice->invoice_number . '.png');
+        if (file_exists($exportPdf)) @unlink($exportPdf);
+        if (file_exists($exportPng)) @unlink($exportPng);
+
+        $invoice->delete();
+
+        return redirect()->route('invoices.index')->with('success', 'Invoice ' . $invoice->invoice_number . ' berhasil dihapus secara permanen.');
     }
 
     public function uploadTaskFile(Request $request, Invoice $invoice)

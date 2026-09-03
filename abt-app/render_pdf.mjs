@@ -17,7 +17,7 @@ if (!inputHtmlPath || !outputPath) {
             args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--allow-file-access-from-files']
         });
         const page = await browser.newPage();
-        await page.setViewport({ width: 900, height: 1600, deviceScaleFactor: 2 });
+        await page.setViewport({ width: 1200, height: 1800, deviceScaleFactor: 2 });
 
         const htmlContent = fs.readFileSync(inputHtmlPath, 'utf8');
         await page.setContent(htmlContent, { waitUntil: 'domcontentloaded', timeout: 10000 });
@@ -26,9 +26,8 @@ if (!inputHtmlPath || !outputPath) {
 
         await page.pdf({
             path: outputPath,
-            format: 'A4',
-            printBackground: true,
-            margin: { top: '6mm', right: '6mm', bottom: '6mm', left: '6mm' }
+            preferCSSPageSize: true, // Honors Page 1 Landscape & Page 2 Portrait!
+            printBackground: true
         });
 
         await browser.close();

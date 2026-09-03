@@ -30,7 +30,7 @@ class Invoice extends Model
 
     public function getRemainingAmountAttribute(): float
     {
-        if ($this->status === 'paid') return 0;
+        if ($this->status === 'paid' || $this->status === 'canceled') return 0;
         if ($this->payment_type === 'dp' && $this->status === 'dp_paid') {
             return (float)$this->total_amount - (float)$this->dp_amount;
         }

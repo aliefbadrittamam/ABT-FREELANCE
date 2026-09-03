@@ -30,7 +30,22 @@
     </script>
     <style>
         body { margin: 0; padding: 20px; background: #ffffff; font-family: 'Inter', sans-serif; display: flex; justify-content: center; }
-        #invoice-document { width: 760px; max-width: 760px; background: #ffffff; box-sizing: border-box; }
+        .invoice-neon-grid {
+            background-color: #ffffff;
+            background-image: 
+                linear-gradient(to right, rgba(232, 255, 0, 0.08) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(232, 255, 0, 0.08) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        .qris-crisp-render {
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+        }
+        .neon-corner-tl { position: absolute; top: -1px; left: -1px; width: 14px; height: 14px; border-top: 2px solid rgba(232, 255, 0, 0.6); border-left: 2px solid rgba(232, 255, 0, 0.6); }
+        .neon-corner-tr { position: absolute; top: -1px; right: -1px; width: 14px; height: 14px; border-top: 2px solid rgba(232, 255, 0, 0.6); border-right: 2px solid rgba(232, 255, 0, 0.6); }
+        .neon-corner-bl { position: absolute; bottom: -1px; left: -1px; width: 14px; height: 14px; border-bottom: 2px solid rgba(232, 255, 0, 0.6); border-left: 2px solid rgba(232, 255, 0, 0.6); }
+        .neon-corner-br { position: absolute; bottom: -1px; right: -1px; width: 14px; height: 14px; border-bottom: 2px solid rgba(232, 255, 0, 0.6); border-right: 2px solid rgba(232, 255, 0, 0.6); }
+        #invoice-document { width: 760px; max-width: 760px; box-sizing: border-box; }
     </style>
 </head>
 <body>
@@ -69,13 +84,23 @@
         }
     @endphp
 
-    <div id="invoice-document" class="bg-white text-on-surface border border-border-subtle p-8 flex flex-col justify-between relative rounded-xl shadow-none">
+    <div id="invoice-document" class="invoice-neon-grid text-on-surface border border-border-subtle p-8 flex flex-col justify-between relative rounded-xl shadow-none overflow-hidden">
+        <!-- Neon Corner Accents -->
+        <div class="neon-corner-tl"></div>
+        <div class="neon-corner-tr"></div>
+        <div class="neon-corner-bl"></div>
+        <div class="neon-corner-br"></div>
+
         <!-- Decorative accent bar -->
         <div class="absolute top-0 left-0 w-full h-2 bg-on-surface"></div>
-        <div class="absolute top-0 right-10 w-16 h-3.5 bg-primary-container rounded-b-md"></div>
+        
+        <!-- Enlarged Top Right Neon Tab with "ABT" text -->
+        <div class="absolute top-0 right-10 w-20 h-5 sm:h-5.5 bg-primary-container rounded-b-lg shadow-sm flex items-center justify-center">
+            <span class="font-black text-[11px] text-on-surface tracking-widest leading-none">ABT</span>
+        </div>
 
         <!-- Top Section -->
-        <div>
+        <div class="relative z-10">
             <!-- Header with Logo & Invoice Info -->
             <div class="flex justify-between items-start mb-6 mt-1 pb-5 border-b border-border-subtle">
                 <div class="flex items-center gap-3.5">
@@ -115,6 +140,11 @@
                     <div class="inline-flex items-center px-3.5 py-1.5 rounded-full bg-status-dp/10 text-status-dp border border-status-dp/20">
                         <span class="w-2 h-2 rounded-full bg-status-dp mr-2"></span>
                         <span class="text-xs font-bold uppercase tracking-wider">DP Terbayar</span>
+                    </div>
+                    @elseif($invoice->status === 'canceled')
+                    <div class="inline-flex items-center px-3.5 py-1.5 rounded-full bg-gray-200 text-gray-700 border border-gray-300">
+                        <span class="w-2 h-2 rounded-full bg-gray-500 mr-2"></span>
+                        <span class="text-xs font-bold uppercase tracking-wider">Dibatalkan</span>
                     </div>
                     @else
                     <div class="inline-flex items-center px-3.5 py-1.5 rounded-full bg-status-pending/10 text-status-pending border border-status-pending/20">
@@ -201,14 +231,17 @@
                                     @elseif($invoice->status === 'dp_paid')
                                     <span class="text-xs font-bold text-on-surface">Sisa Pelunasan</span>
                                     <span class="text-base font-bold text-on-surface tracking-tight">Rp {{ number_format($invoice->remaining_amount, 0, ',', '.') }}</span>
+                                    @elseif($invoice->status === 'canceled')
+                                    <span class="text-xs font-bold text-gray-500">Tagihan Dibatalkan</span>
+                                    <span class="text-base font-bold text-gray-500 tracking-tight">Rp 0</span>
                                     @else
                                     <span class="text-xs font-bold text-status-lunas">Sisa Tagihan</span>
                                     <span class="text-base font-bold text-status-lunas tracking-tight">Rp 0 (LUNAS)</span>
                                     @endif
                                 @else
-                                    <span class="text-xs font-bold text-on-surface">{{ $invoice->status === 'paid' ? 'Total Terbayar' : 'Total Tagihan' }}</span>
+                                    <span class="text-xs font-bold text-on-surface">{{ $invoice->status === 'paid' ? 'Total Terbayar' : ($invoice->status === 'canceled' ? 'Tagihan Dibatalkan' : 'Total Tagihan') }}</span>
                                     <span class="text-base font-bold text-on-surface tracking-tight">
-                                        {{ $invoice->status === 'paid' ? 'Rp ' . number_format($invoice->total_amount, 0, ',', '.') . ' (LUNAS)' : 'Rp ' . number_format($invoice->total_amount, 0, ',', '.') }}
+                                        {{ $invoice->status === 'paid' ? 'Rp ' . number_format($invoice->total_amount, 0, ',', '.') . ' (LUNAS)' : ($invoice->status === 'canceled' ? 'Rp 0' : 'Rp ' . number_format($invoice->total_amount, 0, ',', '.')) }}
                                     </span>
                                 @endif
                             </div>
@@ -219,7 +252,7 @@
         </div>
 
         <!-- Bottom Section (QRIS Expanded + Bank Accounts Compact) -->
-        <div>
+        <div class="relative z-10">
             <div class="flex flex-col p-4 border border-border-subtle bg-surface border-dashed rounded-xl space-y-3.5">
                 <!-- Header Transfer Amount -->
                 <div class="text-center">
@@ -227,6 +260,10 @@
                     @if($invoice->status === 'paid')
                     <div class="inline-flex items-center gap-1.5 bg-status-lunas/15 text-status-lunas px-4 py-1.5 rounded-full text-sm font-bold">
                         Invoice Ini Telah Dibayar Lunas
+                    </div>
+                    @elseif($invoice->status === 'canceled')
+                    <div class="inline-flex items-center gap-1.5 bg-gray-200 text-gray-700 px-4 py-1.5 rounded-full text-sm font-bold">
+                        Invoice Ini Telah Dibatalkan
                     </div>
                     @else
                     <div class="inline-flex items-center justify-center gap-2 bg-white px-4 py-1.5 rounded-lg border border-border-subtle shadow-sm">
@@ -238,14 +275,14 @@
                     @endif
                 </div>
 
-                @if($invoice->status !== 'paid')
+                @if($invoice->status !== 'paid' && $invoice->status !== 'canceled')
                     <!-- QRIS Section (Centered & Maximized) -->
                     @if($qrisBase64)
                     <div class="text-center bg-white p-4 rounded-xl border border-border-subtle shadow-sm w-full max-w-md mx-auto">
                         <p class="text-xs font-bold text-on-surface uppercase tracking-wider mb-2">QRIS</p>
                         
                         <div class="p-2 bg-white rounded-lg border border-border-subtle inline-block w-full max-w-[340px]">
-                            <img src="{{ $qrisBase64 }}" alt="QRIS" class="w-full h-auto object-contain mx-auto rounded">
+                            <img src="{{ $qrisBase64 }}" alt="QRIS" class="w-full h-auto object-contain mx-auto rounded qris-crisp-render">
                         </div>
 
                         <p class="text-[11px] text-secondary font-medium mt-1.5">

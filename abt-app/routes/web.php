@@ -11,7 +11,8 @@ Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
 Route::resource('categories', CategoryController::class)->only(['index', 'store', 'update', 'destroy']);
 
-Route::resource('invoices', InvoiceController::class)->except(['destroy']);
+Route::resource('invoices', InvoiceController::class);
+Route::post('/invoices/{invoice}/cancel', [InvoiceController::class, 'cancel'])->name('invoices.cancel');
 Route::get('/invoices/{invoice}/export/{format}', [InvoiceController::class, 'export'])->name('invoices.export');
 Route::post('/invoices/{invoice}/task-file', [InvoiceController::class, 'uploadTaskFile'])->name('invoices.uploadTaskFile');
 Route::get('/invoices/{invoice}/task-file', [InvoiceController::class, 'downloadTaskFile'])->name('invoices.downloadTaskFile');

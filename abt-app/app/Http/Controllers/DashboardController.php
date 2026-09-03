@@ -4,44 +4,111 @@ namespace App\Http\Controllers;
 
 use App\Models\Invoice;
 use App\Models\Category;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        $totalRevenue = Invoice::where('status', 'paid')->sum('total_amount');
+        // 1. Total Pendapatan Keseluruhan (Paid invoices + DP amounts from dp_paid)
+        $totalPaidFull = Invoice::where('status', 'paid')->sum('total_amount');
+        $totalDpCollected = Invoice::where('status', 'dp_paid')->sum('dp_amount');
+        $totalRevenue = (float)$totalPaidFull + (float)$totalDpCollected;
 
-        $totalPiutang = Invoice::where('status', '!=', 'paid')->get()->sum(function ($inv) {
-            if ($inv->status === 'dp_paid') {
-                return (float)$inv->total_amount - (float)$inv->dp_amount;
-            }
-            return (float)$inv->total_amount;
+        // 2. Pendapatan Hari Ini
+        $todayPaidFull = Invoice::where('status', 'paid')
+            ->whereDate('paid_at', Carbon::today())
+            ->sum('total_amount');
+        $todayDpCollected = Invoice::where('status', 'dp_paid')
+            ->whereDate('created_at', Carbon::today())
+            ->sum('dp_amount');
+        $todayRevenue = (float)$todayPaidFull + (float)$todayDpCollected;
+
+        // 3. Total DP yang Sudah Terbayar (dari invoice dp_paid maupun paid)
+        $totalDpTerbayar = Invoice::whereIn('status', ['dp_paid', 'paid'])
+            ->where('payment_type', 'dp')
+            ->sum('dp_amount');
+
+        // 4. Sisa Pelunasan yang Belum Terbayar (Piutang riil)
+        $sisaPelunasan = Invoice::where('status', 'dp_paid')->get()->sum(function ($inv) {
+            return (float)$inv->total_amount - (float)$inv->dp_amount;
         });
 
-        $totalInvoices = Invoice::count();
+        // 5. Total Belum Bayar (Status unpaid total)
+        $totalUnpaid = Invoice::where('status', 'unpaid')->sum('total_amount');
+
+        // Total Outstanding Piutang (Belum DP + Sisa Pelunasan)
+        $totalPiutang = (float)$totalUnpaid + (float)$sisaPelunasan;
+
+        // Counts
+        $totalInvoices = Invoice::where('status', '!=', 'canceled')->count();
         $paidInvoices = Invoice::where('status', 'paid')->count();
+        $dpPaidInvoices = Invoice::where('status', 'dp_paid')->count();
+        $unpaidInvoices = Invoice::where('status', 'unpaid')->count();
+        $canceledInvoices = Invoice::where('status', 'canceled')->count();
 
-        $monthlyRevenue = Invoice::where('status', 'paid')
-            ->whereNotNull('paid_at')
-            ->selectRaw('MONTH(paid_at) as month, YEAR(paid_at) as year, SUM(total_amount) as total')
-            ->groupByRaw('YEAR(paid_at), MONTH(paid_at)')
-            ->orderByRaw('YEAR(paid_at), MONTH(paid_at)')
-            ->get();
+        // 6. Dataset Grafik Harian (7 Hari Terakhir)
+        $dailyLabels = [];
+        $dailyValues = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = Carbon::today()->subDays($i);
+            $dailyLabels[] = $date->translatedFormat('d M');
+            $paidSum = Invoice::where('status', 'paid')
+                ->whereDate('paid_at', $date)
+                ->sum('total_amount');
+            $dpSum = Invoice::where('status', 'dp_paid')
+                ->whereDate('created_at', $date)
+                ->sum('dp_amount');
+            $dailyValues[] = (float)$paidSum + (float)$dpSum;
+        }
 
-        $categoryBreakdown = Category::withCount('invoices')
-            ->withSum(['invoices as revenue' => function ($q) {
-                $q->where('status', 'paid');
-            }], 'total_amount')->get();
+        // 7. Dataset Grafik Mingguan (6 Minggu Terakhir)
+        $weeklyLabels = [];
+        $weeklyValues = [];
+        for ($w = 5; $w >= 0; $w--) {
+            $startWeek = Carbon::now()->subWeeks($w)->startOfWeek();
+            $endWeek = Carbon::now()->subWeeks($w)->endOfWeek();
+            $weeklyLabels[] = $startWeek->format('d/m') . '-' . $endWeek->format('d/m');
+            $paidSum = Invoice::where('status', 'paid')
+                ->whereBetween('paid_at', [$startWeek, $endWeek])
+                ->sum('total_amount');
+            $dpSum = Invoice::where('status', 'dp_paid')
+                ->whereBetween('created_at', [$startWeek, $endWeek])
+                ->sum('dp_amount');
+            $weeklyValues[] = (float)$paidSum + (float)$dpSum;
+        }
 
-        $monthlyOrders = Invoice::selectRaw('MONTH(created_at) as month, YEAR(created_at) as year, COUNT(*) as total')
-            ->groupByRaw('YEAR(created_at), MONTH(created_at)')
-            ->orderByRaw('YEAR(created_at), MONTH(created_at)')
-            ->get();
+        // 8. Dataset Grafik Bulanan (Tahun Berjalan)
+        $monthsName = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
+        $monthlyLabels = [];
+        $monthlyValues = [];
+        $currentYear = Carbon::now()->year;
+        for ($m = 1; $m <= 12; $m++) {
+            $monthlyLabels[] = $monthsName[$m - 1];
+            $paidSum = Invoice::where('status', 'paid')
+                ->whereYear('paid_at', $currentYear)
+                ->whereMonth('paid_at', $m)
+                ->sum('total_amount');
+            $dpSum = Invoice::where('status', 'dp_paid')
+                ->whereYear('created_at', $currentYear)
+                ->whereMonth('created_at', $m)
+                ->sum('dp_amount');
+            $monthlyValues[] = (float)$paidSum + (float)$dpSum;
+        }
+
+        // Breakdown per Kategori
+        $categoryBreakdown = Category::withCount(['invoices' => function ($q) {
+            $q->where('status', '!=', 'canceled');
+        }])->withSum(['invoices as revenue' => function ($q) {
+            $q->where('status', 'paid');
+        }], 'total_amount')->get();
 
         return view('dashboard', compact(
-            'totalRevenue', 'totalPiutang', 'totalInvoices', 'paidInvoices',
-            'monthlyRevenue', 'categoryBreakdown', 'monthlyOrders'
+            'totalRevenue', 'todayRevenue', 'totalDpTerbayar', 'sisaPelunasan', 'totalPiutang',
+            'totalInvoices', 'paidInvoices', 'dpPaidInvoices', 'unpaidInvoices', 'canceledInvoices',
+            'dailyLabels', 'dailyValues', 'weeklyLabels', 'weeklyValues', 'monthlyLabels', 'monthlyValues',
+            'categoryBreakdown'
         ));
     }
 }

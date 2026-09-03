@@ -32,7 +32,11 @@
             border: 1px solid #E4E4E7;
             padding: 24px 30px;
             position: relative;
-            background: #ffffff;
+            background-color: #ffffff;
+            background-image: 
+                linear-gradient(to right, rgba(232, 255, 0, 0.08) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(232, 255, 0, 0.08) 1px, transparent 1px);
+            background-size: 24px 24px;
             min-height: 188mm;
             box-sizing: border-box;
             display: flex;
@@ -46,7 +50,11 @@
             border: 1px solid #E4E4E7;
             padding: 26px 30px;
             position: relative;
-            background: #ffffff;
+            background-color: #ffffff;
+            background-image: 
+                linear-gradient(to right, rgba(232, 255, 0, 0.08) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(232, 255, 0, 0.08) 1px, transparent 1px);
+            background-size: 24px 24px;
             min-height: 275mm;
             box-sizing: border-box;
             display: flex;
@@ -54,21 +62,34 @@
             justify-content: space-between;
         }
 
+        .neon-corner-tl { position: absolute; top: -1px; left: -1px; width: 14px; height: 14px; border-top: 2px solid rgba(232, 255, 0, 0.6); border-left: 2px solid rgba(232, 255, 0, 0.6); }
+        .neon-corner-tr { position: absolute; top: -1px; right: -1px; width: 14px; height: 14px; border-top: 2px solid rgba(232, 255, 0, 0.6); border-right: 2px solid rgba(232, 255, 0, 0.6); }
+        .neon-corner-bl { position: absolute; bottom: -1px; left: -1px; width: 14px; height: 14px; border-bottom: 2px solid rgba(232, 255, 0, 0.6); border-left: 2px solid rgba(232, 255, 0, 0.6); }
+        .neon-corner-br { position: absolute; bottom: -1px; right: -1px; width: 14px; height: 14px; border-bottom: 2px solid rgba(232, 255, 0, 0.6); border-right: 2px solid rgba(232, 255, 0, 0.6); }
+
         .accent-top {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
-            height: 5px;
+            height: 4px;
             background: #1a1c1c;
         }
         .accent-neon {
             position: absolute;
             top: 0;
             right: 40px;
-            width: 50px;
-            height: 14px;
+            width: 65px;
+            height: 18px;
             background: #E8FF00;
+            border-bottom-left-radius: 6px;
+            border-bottom-right-radius: 6px;
+            text-align: center;
+            font-weight: 900;
+            font-size: 10px;
+            line-height: 18px;
+            color: #1a1c1c;
+            letter-spacing: 0.1em;
         }
 
         .header { 
@@ -360,8 +381,13 @@
     <!-- ================= PAGE 1: DETAIL PROYEK (A4 LANDSCAPE) ================= -->
     <div class="page-landscape">
         <div>
+            <div class="neon-corner-tl"></div>
+            <div class="neon-corner-tr"></div>
+            <div class="neon-corner-bl"></div>
+            <div class="neon-corner-br"></div>
+
             <div class="accent-top"></div>
-            <div class="accent-neon"></div>
+            <div class="accent-neon">ABT</div>
 
             <!-- Header with Logo -->
             <div class="header">
@@ -397,6 +423,8 @@
                     <div class="status-badge status-paid">LUNAS</div>
                     @elseif($invoice->status === 'dp_paid')
                     <div class="status-badge status-dp">DP TERBAYAR</div>
+                    @elseif($invoice->status === 'canceled')
+                    <div class="status-badge status-unpaid">DIBATALKAN</div>
                     @else
                     <div class="status-badge status-unpaid">BELUM BAYAR</div>
                     @endif
@@ -500,8 +528,13 @@
     <!-- ================= PAGE 2: INFORMASI PEMBAYARAN & QRIS (A4 PORTRAIT) ================= -->
     <div class="page-portrait">
         <div>
+            <div class="neon-corner-tl"></div>
+            <div class="neon-corner-tr"></div>
+            <div class="neon-corner-bl"></div>
+            <div class="neon-corner-br"></div>
+
             <div class="accent-top"></div>
-            <div class="accent-neon"></div>
+            <div class="accent-neon">ABT</div>
 
             <!-- Header Page 2 -->
             <div class="header">
@@ -532,6 +565,10 @@
                 <div style="font-size:12px; font-weight:700; color:#15803D;">
                     &check; Invoice Ini Telah Dibayar Lunas
                 </div>
+                @elseif($invoice->status === 'canceled')
+                <div style="font-size:12px; font-weight:700; color:#5d5e60;">
+                    &times; Invoice Ini Telah Dibatalkan
+                </div>
                 @else
                 <div style="font-size:12px; font-weight:700; color:#1a1c1c;">
                     {{ $transferLabel }} <span class="neon-pill">Rp {{ number_format($transferAmount, 0, ',', '.') }}</span>
@@ -539,7 +576,7 @@
                 @endif
             </div>
 
-            @if($invoice->status !== 'paid')
+            @if($invoice->status !== 'paid' && $invoice->status !== 'canceled')
                 <!-- Large QRIS Section (Page 2 Hero) -->
                 @if($qrisBase64)
                 <div class="qris-wrapper">

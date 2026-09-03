@@ -41,8 +41,16 @@
                 $isPaid = $invoice->status === 'paid';
                 $isDpPaid = $invoice->status === 'dp_paid';
                 $isUnpaid = $invoice->status === 'unpaid';
+                $isCanceled = $invoice->status === 'canceled';
             @endphp
 
+            @if($isCanceled)
+            <!-- Canceled State -->
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-bold">
+                <span class="material-symbols-outlined text-sm">cancel</span>
+                Invoice Dibatalkan
+            </div>
+            @else
             <!-- Step 1: Belum Bayar -->
             <div class="flex items-center shrink-0">
                 <div class="h-6 w-6 rounded-full {{ !$isUnpaid ? 'bg-status-lunas text-white' : 'bg-primary-container border-2 border-on-surface text-on-surface' }} flex items-center justify-center">
@@ -83,25 +91,43 @@
                 </div>
                 <span class="ml-1.5 sm:ml-2 text-xs sm:text-sm {{ $isPaid ? 'font-semibold text-on-surface dark:text-white' : 'text-secondary dark:text-gray-400' }}">Lunas</span>
             </div>
+            @endif
         </div>
 
-        <!-- Action Buttons -->
+        <!-- Action Buttons (Edit, Cancel, Delete, PNG, PDF) -->
         <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto pt-2 lg:pt-0 border-t lg:border-t-0 border-border-subtle dark:border-[#2a2a2a]">
             <a href="{{ route('invoices.edit', $invoice) }}" 
-               class="flex-1 sm:flex-none justify-center px-3.5 py-2 border border-border-subtle dark:border-[#333] bg-transparent text-on-surface dark:text-gray-300 font-semibold text-xs sm:text-sm rounded-lg hover:bg-surface-variant dark:hover:bg-[#252525] transition-colors flex items-center gap-1.5">
-                <span class="material-symbols-outlined text-base sm:text-lg">edit</span>
+               class="px-3.5 py-2 border border-border-subtle dark:border-[#333] bg-transparent text-on-surface dark:text-gray-300 font-semibold text-xs sm:text-sm rounded-lg hover:bg-surface-variant dark:hover:bg-[#252525] transition-colors flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-base">edit</span>
                 Edit
             </a>
+
+            @if($invoice->status !== 'canceled' && $invoice->status !== 'paid')
+            <form action="{{ route('invoices.cancel', $invoice) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan invoice ini?')" class="inline">
+                @csrf
+                <button type="submit" class="px-3.5 py-2 border border-yellow-300 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-400 font-semibold text-xs sm:text-sm rounded-lg hover:bg-yellow-100 transition-colors flex items-center gap-1">
+                    <span class="material-symbols-outlined text-base">block</span>
+                    Batalkan
+                </button>
+            </form>
+            @endif
+
+            <form action="{{ route('invoices.destroy', $invoice) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus invoice {{ $invoice->invoice_number }} secara permanen? Data yang dihapus tidak bisa dikembalikan.')" class="inline">
+                @csrf @method('DELETE')
+                <button type="submit" class="p-2 border border-red-200 dark:border-red-900/40 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition" title="Hapus Permanen">
+                    <span class="material-symbols-outlined text-base">delete</span>
+                </button>
+            </form>
             
             <a href="{{ route('invoices.export', [$invoice, 'png']) }}" 
-               class="flex-1 sm:flex-none justify-center px-3.5 py-2 border-2 border-primary-container bg-transparent text-on-surface dark:text-gray-200 font-semibold text-xs sm:text-sm rounded-lg hover:bg-primary-container/10 transition-colors flex items-center gap-1.5">
-                <span class="material-symbols-outlined text-base sm:text-lg">image</span>
+               class="px-3.5 py-2 border-2 border-primary-container bg-transparent text-on-surface dark:text-gray-200 font-semibold text-xs sm:text-sm rounded-lg hover:bg-primary-container/10 transition-colors flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-base">image</span>
                 Export Gambar (PNG)
             </a>
 
             <a href="{{ route('invoices.export', [$invoice, 'pdf']) }}" 
-               class="w-full sm:w-auto justify-center px-4 py-2 bg-primary-container text-on-surface font-semibold text-xs sm:text-sm rounded-lg hover:brightness-95 transition-colors shadow-sm flex items-center gap-1.5">
-                <span class="material-symbols-outlined text-base sm:text-lg">download</span>
+               class="px-4 py-2 bg-primary-container text-on-surface font-semibold text-xs sm:text-sm rounded-lg hover:brightness-95 transition-colors shadow-sm flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-base">download</span>
                 Export PDF
             </a>
         </div>
@@ -181,18 +207,58 @@
 
         $seaPath = storage_path('app/public/assets/banks/seabank.png');
         $seaBase64 = file_exists($seaPath) ? 'data:image/png;base64,' . base64_encode(file_get_contents($seaPath)) : null;
+
+        if ($invoice->payment_type === 'dp') {
+            if ($invoice->status === 'unpaid') {
+                $transferLabel = 'Transfer Pembayaran DP:';
+                $transferAmount = $invoice->dp_amount;
+            } elseif ($invoice->status === 'dp_paid') {
+                $transferLabel = 'Transfer Sisa Pelunasan:';
+                $transferAmount = $invoice->remaining_amount;
+            } else {
+                $transferLabel = 'Status Tagihan:';
+                $transferAmount = 0;
+            }
+        } else {
+            $transferLabel = 'Transfer Pembayaran Lunas:';
+            $transferAmount = $invoice->total_amount;
+        }
     @endphp
 
+    <style>
+        .invoice-neon-grid {
+            background-color: #ffffff;
+            background-image: 
+                linear-gradient(to right, rgba(232, 255, 0, 0.08) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(232, 255, 0, 0.08) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        .neon-corner-tl { position: absolute; top: -1px; left: -1px; width: 14px; height: 14px; border-top: 2px solid rgba(232, 255, 0, 0.6); border-left: 2px solid rgba(232, 255, 0, 0.6); }
+        .neon-corner-tr { position: absolute; top: -1px; right: -1px; width: 14px; height: 14px; border-top: 2px solid rgba(232, 255, 0, 0.6); border-right: 2px solid rgba(232, 255, 0, 0.6); }
+        .neon-corner-bl { position: absolute; bottom: -1px; left: -1px; width: 14px; height: 14px; border-bottom: 2px solid rgba(232, 255, 0, 0.6); border-left: 2px solid rgba(232, 255, 0, 0.6); }
+        .neon-corner-br { position: absolute; bottom: -1px; right: -1px; width: 14px; height: 14px; border-bottom: 2px solid rgba(232, 255, 0, 0.6); border-right: 2px solid rgba(232, 255, 0, 0.6); }
+    </style>
+
     <div class="flex justify-center w-full">
-        <div id="invoice-document" class="bg-white text-on-surface border border-border-subtle shadow-[0_10px_30px_-5px_rgba(0,0,0,0.08)] w-full max-w-[760px] p-8 sm:p-10 flex flex-col justify-between relative rounded-xl box-border overflow-hidden">
+        <div id="invoice-document" class="invoice-neon-grid text-on-surface border border-border-subtle shadow-[0_10px_30px_-5px_rgba(0,0,0,0.08)] w-full max-w-[760px] p-6 sm:p-8 flex flex-col justify-between relative rounded-xl box-border overflow-hidden">
+            <!-- Neon Corner Accents -->
+            <div class="neon-corner-tl"></div>
+            <div class="neon-corner-tr"></div>
+            <div class="neon-corner-bl"></div>
+            <div class="neon-corner-br"></div>
+
             <!-- Decorative accent bar -->
             <div class="absolute top-0 left-0 w-full h-2 bg-on-surface"></div>
-            <div class="absolute top-0 right-10 w-16 h-3.5 bg-primary-container rounded-b-md"></div>
+            
+            <!-- Enlarged Top Right Neon Tab with "ABT" text -->
+            <div class="absolute top-0 right-10 w-20 h-5 sm:h-5.5 bg-primary-container rounded-b-lg shadow-sm flex items-center justify-center">
+                <span class="font-black text-[11px] text-on-surface tracking-widest leading-none">ABT</span>
+            </div>
 
             <!-- Top Section (Header, Details, 1-Row Description & Pricing) -->
-            <div>
+            <div class="relative z-10">
                 <!-- Header with Logo & Invoice Info -->
-                <div class="flex justify-between items-start mb-6 mt-2 pb-5 border-b border-border-subtle">
+                <div class="flex justify-between items-start mb-5 pb-4 border-b border-border-subtle">
                     <div class="flex items-center gap-3.5">
                         @if($logoBase64)
                         <img src="{{ $logoBase64 }}" alt="Logo" class="w-12 h-12 sm:w-14 sm:h-14 object-contain rounded-xl border border-border-subtle p-1 bg-white shadow-sm shrink-0">
@@ -230,6 +296,11 @@
                         <div class="inline-flex items-center px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-status-dp/10 text-status-dp border border-status-dp/20">
                             <span class="w-2 h-2 rounded-full bg-status-dp mr-1.5 sm:mr-2 animate-pulse"></span>
                             <span class="text-[11px] sm:text-xs font-bold uppercase tracking-wider">DP Terbayar</span>
+                        </div>
+                        @elseif($invoice->status === 'canceled')
+                        <div class="inline-flex items-center px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-gray-200 dark:bg-[#333] text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600">
+                            <span class="w-2 h-2 rounded-full bg-gray-500 mr-1.5 sm:mr-2"></span>
+                            <span class="text-[11px] sm:text-xs font-bold uppercase tracking-wider">Dibatalkan</span>
                         </div>
                         @else
                         <div class="inline-flex items-center px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-status-pending/10 text-status-pending border border-status-pending/20">
@@ -316,14 +387,17 @@
                                         @elseif($invoice->status === 'dp_paid')
                                         <span class="text-xs font-bold text-on-surface">Sisa Pelunasan</span>
                                         <span class="text-sm sm:text-base font-bold text-on-surface tracking-tight">Rp {{ number_format($invoice->remaining_amount, 0, ',', '.') }}</span>
+                                        @elseif($invoice->status === 'canceled')
+                                        <span class="text-xs font-bold text-gray-500">Tagihan Dibatalkan</span>
+                                        <span class="text-sm sm:text-base font-bold text-gray-500 tracking-tight">Rp 0</span>
                                         @else
                                         <span class="text-xs font-bold text-status-lunas">Sisa Tagihan</span>
                                         <span class="text-sm sm:text-base font-bold text-status-lunas tracking-tight">Rp 0 (LUNAS)</span>
                                         @endif
                                     @else
-                                        <span class="text-xs font-bold text-on-surface">{{ $invoice->status === 'paid' ? 'Total Terbayar' : 'Total Tagihan' }}</span>
+                                        <span class="text-xs font-bold text-on-surface">{{ $invoice->status === 'paid' ? 'Total Terbayar' : ($invoice->status === 'canceled' ? 'Tagihan Dibatalkan' : 'Total Tagihan') }}</span>
                                         <span class="text-sm sm:text-base font-bold text-on-surface tracking-tight">
-                                            {{ $invoice->status === 'paid' ? 'Rp ' . number_format($invoice->total_amount, 0, ',', '.') . ' (LUNAS)' : 'Rp ' . number_format($invoice->total_amount, 0, ',', '.') }}
+                                            {{ $invoice->status === 'paid' ? 'Rp ' . number_format($invoice->total_amount, 0, ',', '.') . ' (LUNAS)' : ($invoice->status === 'canceled' ? 'Rp 0' : 'Rp ' . number_format($invoice->total_amount, 0, ',', '.')) }}
                                         </span>
                                     @endif
                                 </div>
@@ -334,34 +408,20 @@
             </div>
 
             <!-- Bottom Section (QRIS Expanded + Bank Accounts Compact) -->
-            <div>
-                <!-- Payment Section -->
-                @php
-                    if ($invoice->payment_type === 'dp') {
-                        if ($invoice->status === 'unpaid') {
-                            $transferLabel = 'Transfer Pembayaran DP:';
-                            $transferAmount = $invoice->dp_amount;
-                        } elseif ($invoice->status === 'dp_paid') {
-                            $transferLabel = 'Transfer Sisa Pelunasan:';
-                            $transferAmount = $invoice->remaining_amount;
-                        } else {
-                            $transferLabel = 'Status Tagihan:';
-                            $transferAmount = 0;
-                        }
-                    } else {
-                        $transferLabel = 'Transfer Pembayaran Lunas:';
-                        $transferAmount = $invoice->total_amount;
-                    }
-                @endphp
-
+            <div class="relative z-10">
                 <div class="flex flex-col p-4 border border-border-subtle bg-surface border-dashed rounded-xl space-y-3">
-                    <!-- Header Transfer Amount (Clean pill styling) -->
+                    <!-- Header Transfer Amount -->
                     <div class="text-center">
                         <p class="text-[10px] sm:text-xs font-semibold text-secondary uppercase tracking-widest mb-1">Instruksi Pembayaran</p>
                         @if($invoice->status === 'paid')
                         <div class="inline-flex items-center gap-1.5 bg-status-lunas/15 text-status-lunas px-4 py-1 rounded-full text-xs sm:text-sm font-bold">
                             <span class="material-symbols-outlined text-base">verified</span>
                             Invoice Ini Telah Dibayar Lunas
+                        </div>
+                        @elseif($invoice->status === 'canceled')
+                        <div class="inline-flex items-center gap-1.5 bg-gray-200 dark:bg-[#333] text-gray-700 dark:text-gray-300 px-4 py-1 rounded-full text-xs sm:text-sm font-bold">
+                            <span class="material-symbols-outlined text-base">block</span>
+                            Invoice Ini Telah Dibatalkan
                         </div>
                         @else
                         <div class="inline-flex items-center justify-center gap-2 bg-white px-3.5 py-1.5 rounded-lg border border-border-subtle shadow-sm">
@@ -373,7 +433,7 @@
                         @endif
                     </div>
 
-                    @if($invoice->status !== 'paid')
+                    @if($invoice->status !== 'paid' && $invoice->status !== 'canceled')
                         <!-- QRIS Section (MAXIMIZED & PROMINENT - STRETCHED WIDTH) -->
                         @if($qrisBase64)
                         <div class="text-center bg-white p-3 sm:p-4 rounded-xl border border-border-subtle shadow-sm w-full max-w-md mx-auto">
