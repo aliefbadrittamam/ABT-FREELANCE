@@ -133,6 +133,43 @@
         </div>
     </div>
 
+    <!-- Client Public Access Link Share Bar -->
+    <div class="bg-white dark:bg-[#1e1e1e] rounded-xl border border-border-subtle dark:border-[#2a2a2a] p-4 sm:p-5 mb-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-3.5"
+         x-data="{ linkCopied: false, clientUrl: '{{ $invoice->getClientViewUrl() }}' }">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-200 dark:border-blue-900/40">
+                <span class="material-symbols-outlined text-xl">share</span>
+            </div>
+            <div>
+                <h3 class="text-sm font-bold text-on-surface dark:text-white flex items-center gap-2">
+                    Portal Akses Klien (Customer View)
+                    <span class="text-[10px] bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold px-2 py-0.5 rounded-full">Link Publik</span>
+                </h3>
+                <p class="text-xs text-secondary dark:text-gray-400 mt-0.5">
+                    Klien dapat melihat status invoice, scan QRIS, dan download PDF secara mandiri melalui URL ini.
+                </p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 w-full md:w-auto">
+            <input type="text" readonly :value="clientUrl" 
+                   class="w-full md:w-64 px-3 py-1.5 bg-surface dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs font-mono text-secondary dark:text-gray-400 select-all outline-none">
+            
+            <button type="button" 
+                    @click="navigator.clipboard.writeText(clientUrl); linkCopied = true; setTimeout(() => linkCopied = false, 2500)"
+                    class="px-3.5 py-1.5 bg-on-surface text-white dark:bg-white dark:text-on-surface rounded-lg text-xs font-bold hover:brightness-110 transition shrink-0 flex items-center gap-1.5 shadow-xs">
+                <span class="material-symbols-outlined text-sm" x-text="linkCopied ? 'check' : 'content_copy'"></span>
+                <span x-text="linkCopied ? 'Tersalin!' : 'Salin Link'"></span>
+            </button>
+
+            <a :href="clientUrl" target="_blank" 
+               class="p-1.5 border border-border-subtle dark:border-[#333] rounded-lg text-secondary dark:text-gray-400 hover:text-on-surface dark:hover:text-white transition shrink-0" 
+               title="Buka Halaman Klien">
+                <span class="material-symbols-outlined text-base">open_in_new</span>
+            </a>
+        </div>
+    </div>
+
     <!-- Task File Archive Card -->
     <div class="bg-white dark:bg-[#1e1e1e] rounded-xl border border-border-subtle dark:border-[#2a2a2a] p-4 sm:p-5 mb-6 shadow-sm transition-colors duration-200">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">

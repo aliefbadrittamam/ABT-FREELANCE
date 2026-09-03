@@ -3,9 +3,15 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\ClientInvoiceController;
 use App\Http\Controllers\TestimonialController;
 use App\Http\Controllers\PaymentController;
 use Illuminate\Support\Facades\Route;
+
+// Public Customer/Client Invoice Portal (Standalone, No Auth/Sidebar required)
+Route::get('/i/{token}', [ClientInvoiceController::class, 'show'])->name('client.invoices.show');
+Route::get('/i/{token}/export/{format}', [ClientInvoiceController::class, 'export'])->name('client.invoices.export');
+Route::get('/i/{token}/task-file', [ClientInvoiceController::class, 'downloadTaskFile'])->name('client.invoices.downloadTaskFile');
 
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 

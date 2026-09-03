@@ -3,13 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Invoice extends Model
 {
     protected $fillable = [
         'invoice_number', 'title', 'client_name', 'category_id',
         'description', 'deadline', 'payment_type', 'dp_amount',
-        'total_amount', 'status', 'paid_at',
+        'total_amount', 'status', 'access_token', 'paid_at',
         'task_file_path', 'task_file_name',
     ];
 
@@ -31,10 +32,25 @@ class Invoice extends Model
     public function getRemainingAmountAttribute(): float
     {
         if ($this->status === 'paid' || $this->status === 'canceled') return 0;
-        if ($this->payment_type === 'dp' && $this->status === 'dp_paid') {
-            return (float)$this->total_amount - (float)$this->dp_amount;
+        if ($this->payment_type === 'dp') {
+            return max(0, (float)$this->total_amount - (float)$this->dp_amount);
         }
         return (float)$this->total_amount;
+    }
+
+    public function getClientViewUrl(): string
+    {
+        return route('client.invoices.show', $this->access_token ?? 'unknown');
+    }
+
+    public function getWhatsAppConfirmationUrl(): string
+    {
+        $phone = '6288989504780'; // fallback default / dynamic
+
+        $brand = $this->category->brand_name ?? 'ABT-FREELANCE';
+        $text = "Halo {$brand}, saya *{$this->client_name}* ingin konfirmasi pembayaran untuk *Invoice {$this->invoice_number}* (Proyek: {$this->title}).\n\nLink Invoice: " . $this->getClientViewUrl();
+
+        return "https://api.whatsapp.com/send?phone={$phone}&text=" . urlencode($text);
     }
 
     public static function generateInvoiceNumber(?int $categoryId = null): string
@@ -66,6 +82,12 @@ class Invoice extends Model
 
     protected static function booted(): void
     {
+        static::creating(function (Invoice $invoice) {
+            if (empty($invoice->access_token)) {
+                $invoice->access_token = Str::random(32);
+            }
+        });
+
         static::updating(function (Invoice $invoice) {
             if ($invoice->isDirty('status') && $invoice->status === 'paid') {
                 $invoice->paid_at = now();
