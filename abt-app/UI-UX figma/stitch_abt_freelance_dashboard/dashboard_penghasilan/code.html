@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+
+<html lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ABT-FREELANCE - Dashboard Penghasilan</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-variant": "#e2e2e2",
+                        "on-tertiary-container": "#6e6d71",
+                        "tertiary-container": "#f4f1f5",
+                        "background": "#f9f9f9",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed-dim": "#bed100",
+                        "on-tertiary-fixed-variant": "#47464a",
+                        "primary-container": "#e8ff00",
+                        "on-error-container": "#93000a",
+                        "secondary": "#5d5e60",
+                        "secondary-container": "#dfdfe0",
+                        "surface-container-highest": "#e2e2e2",
+                        "status-pending": "#F59E0B",
+                        "on-secondary": "#ffffff",
+                        "surface": "#f9f9f9",
+                        "status-lunas": "#22C55E",
+                        "on-background": "#1a1c1c",
+                        "on-primary": "#ffffff",
+                        "outline": "#77795f",
+                        "tertiary-fixed": "#e4e1e6",
+                        "tertiary-fixed-dim": "#c8c5ca",
+                        "outline-variant": "#c7c9ab",
+                        "on-secondary-fixed-variant": "#454748",
+                        "inverse-on-surface": "#f0f1f1",
+                        "surface-bright": "#f9f9f9",
+                        "surface-tint": "#5a6400",
+                        "inverse-primary": "#bed100",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#f3f3f4",
+                        "on-surface-variant": "#464832",
+                        "surface-dim": "#dadada",
+                        "on-secondary-container": "#616364",
+                        "surface-container": "#eeeeee",
+                        "on-secondary-fixed": "#1a1c1d",
+                        "error": "#ba1a1a",
+                        "on-primary-container": "#697400",
+                        "surface-container-high": "#e8e8e8",
+                        "secondary-fixed": "#e2e2e3",
+                        "border-subtle": "#E4E4E7",
+                        "secondary-fixed-dim": "#c6c6c7",
+                        "on-tertiary-fixed": "#1b1b1e",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed-variant": "#434b00",
+                        "primary-fixed": "#d9ef00",
+                        "tertiary": "#5f5e61",
+                        "on-error": "#ffffff",
+                        "on-primary-fixed": "#1a1e00",
+                        "on-surface": "#1a1c1c",
+                        "status-dp": "#3B82F6",
+                        "inverse-surface": "#2f3131",
+                        "primary": "#5a6400"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sidebar-width": "260px",
+                        "stack-sm": "0.5rem",
+                        "margin-page": "2rem",
+                        "stack-md": "1rem",
+                        "gutter-grid": "1.5rem"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Inter"],
+                        "label-bold": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "number-display": ["Inter"],
+                        "headline-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-bold": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "number-display": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.03em", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-sm overflow-x-hidden">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-background text-primary dark:text-primary-fixed-dim font-headline-md text-headline-md font-body-sm text-body-sm fixed top-0 right-0 w-[calc(100%-260px)] h-16 border-b border-border-subtle dark:border-outline-variant flex items-center justify-between px-margin-page z-20">
+<div class="font-headline-md text-headline-md text-on-background">ABT-FREELANCE</div>
+<div class="flex items-center gap-4 ml-auto">
+<div class="relative focus-within:ring-2 focus-within:ring-primary rounded-full hidden md:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="bg-surface-variant/50 border-none rounded-full pl-10 pr-4 py-2 text-sm w-64 focus:outline-none focus:ring-0" placeholder="Search..." type="text"/>
+</div>
+<button class="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-full hover:bg-surface-variant/50">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-full hover:bg-surface-variant/50">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-border-subtle shrink-0 ml-2">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="A highly detailed close-up portrait of a professional modern creative worker, looking confident. Bright, clean high-key lighting suitable for a modern SaaS avatar. Crisp white background to ensure the face stands out clearly." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCZz2bQbhIN6UNVb1Kz4fqlwpIFt2NkUUECJ6wyMlnEwLKKyqPLL0vfz2Ah24RqOlv8iwAWdodVBdeTbNtpBni0pAWHXZ_WoaGGQBQwUO1RecxybOB9WVtOcgN0NTpi3spNdDY_eeg8OTyPXPOr0QqGwYyTSnDY4CPgLM83VEGm8eT8wPWiPasUrYTGqHbsAMJwQqjqMaSGESmiecu6Ri0Bw5jofhLtYOBSisq0WYkP70C4m3W0ZmH4"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<nav class="bg-secondary-container dark:bg-surface-dim text-primary dark:text-primary-fixed font-body-sm text-body-sm font-label-bold text-label-bold w-sidebar-width h-full fixed left-0 top-0 border-r border-border-subtle dark:border-outline-variant flex flex-col p-stack-md h-screen z-30">
+<div class="mb-8 px-2 mt-4">
+<h1 class="text-headline-md font-headline-md text-on-background dark:text-on-surface mb-1">ABT-FREELANCE</h1>
+<p class="text-on-surface-variant font-label-bold text-label-bold opacity-70">Freelance Management</p>
+</div>
+<ul class="flex-1 space-y-2 mt-4">
+<li>
+<a class="flex items-center gap-3 px-4 py-3 bg-primary text-on-primary font-label-bold rounded-lg active:scale-95 transition-transform group" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+                    Dashboard
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-secondary dark:text-on-secondary-container hover:bg-surface-variant rounded-lg transition-colors duration-200 active:scale-95 transition-transform group" href="#">
+<span class="material-symbols-outlined group-hover:text-on-background transition-colors">category</span>
+<span class="group-hover:text-on-background transition-colors">Kategori</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-secondary dark:text-on-secondary-container hover:bg-surface-variant rounded-lg transition-colors duration-200 active:scale-95 transition-transform group" href="#">
+<span class="material-symbols-outlined group-hover:text-on-background transition-colors">receipt_long</span>
+<span class="group-hover:text-on-background transition-colors">Invoice</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-secondary dark:text-on-secondary-container hover:bg-surface-variant rounded-lg transition-colors duration-200 active:scale-95 transition-transform group" href="#">
+<span class="material-symbols-outlined group-hover:text-on-background transition-colors">reviews</span>
+<span class="group-hover:text-on-background transition-colors">Testimoni</span>
+</a>
+</li>
+</ul>
+<div class="mt-auto pt-6 border-t border-border-subtle dark:border-outline-variant/30">
+<button class="w-full bg-primary-container text-on-background hover:bg-primary hover:text-on-primary font-label-bold text-label-bold py-3 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">add</span>
+                New Project
+            </button>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="ml-sidebar-width pt-16 min-h-screen p-margin-page">
+<div class="max-w-7xl mx-auto">
+<header class="mb-8">
+<h1 class="font-headline-lg text-headline-lg text-on-background mb-2">Dashboard Penghasilan</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Ringkasan performa finansial Anda.</p>
+</header>
+<!-- Summary Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter-grid mb-gutter-grid">
+<!-- Total Pendapatan Card -->
+<div class="bg-surface rounded-xl p-6 border border-border-subtle border-l-4 border-l-primary-container relative overflow-hidden group">
+<div class="absolute -right-10 -top-10 opacity-5 group-hover:opacity-10 transition-opacity duration-300">
+<span class="material-symbols-outlined text-[120px]">account_balance_wallet</span>
+</div>
+<div class="relative z-10">
+<p class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-wider mb-2">Total Pendapatan</p>
+<h2 class="font-number-display text-number-display text-on-background">Rp 15.400.000</h2>
+<div class="flex items-center gap-2 mt-4 text-status-lunas font-label-bold text-label-bold">
+<span class="material-symbols-outlined text-sm">trending_up</span>
+<span>+12.5% dari bulan lalu</span>
+</div>
+</div>
+</div>
+<!-- Piutang Card -->
+<div class="bg-surface rounded-xl p-6 border border-border-subtle relative overflow-hidden group hover:border-on-surface-variant transition-colors duration-300">
+<div class="absolute -right-10 -top-10 opacity-5 group-hover:opacity-10 transition-opacity duration-300">
+<span class="material-symbols-outlined text-[120px]">pending_actions</span>
+</div>
+<div class="relative z-10">
+<p class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-wider mb-2">Piutang / Belum Lunas</p>
+<h2 class="font-number-display text-number-display text-on-background">Rp 2.500.000</h2>
+<div class="flex items-center gap-2 mt-4 text-status-pending font-label-bold text-label-bold">
+<span class="material-symbols-outlined text-sm">warning</span>
+<span>Menunggu 3 invoice</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Main Layout Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter-grid">
+<!-- Chart Section -->
+<div class="lg:col-span-2 bg-surface rounded-xl border border-border-subtle p-6 flex flex-col h-[400px]">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-headline-md text-headline-md text-on-background text-lg">Pendapatan per Bulan</h3>
+<div class="px-3 py-1 bg-surface-variant rounded-md text-label-bold font-label-bold text-on-surface-variant">
+                            6 Bulan Terakhir
+                        </div>
+</div>
+<div class="flex-1 relative w-full h-full">
+<canvas id="revenueChart"></canvas>
+</div>
+</div>
+<!-- List Section -->
+<div class="lg:col-span-1 bg-surface rounded-xl border border-border-subtle p-0 flex flex-col h-[400px]">
+<div class="p-6 border-b border-border-subtle">
+<h3 class="font-headline-md text-headline-md text-on-background text-lg">Pendapatan per Kategori Jasa</h3>
+</div>
+<div class="flex-1 overflow-y-auto p-4 space-y-2">
+<div class="flex items-center justify-between p-3 hover:bg-surface-variant/50 rounded-lg transition-colors group">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-md bg-secondary-container flex items-center justify-center text-on-background group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-sm">menu_book</span>
+</div>
+<div>
+<p class="font-label-bold text-label-bold text-on-background">Joki Tugas</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant text-xs">45 Proyek</p>
+</div>
+</div>
+<span class="font-label-bold text-label-bold text-on-background">Rp 10.200.000</span>
+</div>
+<div class="flex items-center justify-between p-3 hover:bg-surface-variant/50 rounded-lg transition-colors group">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-md bg-secondary-container flex items-center justify-center text-on-background group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-sm">code</span>
+</div>
+<div>
+<p class="font-label-bold text-label-bold text-on-background">Jasa Website</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant text-xs">12 Proyek</p>
+</div>
+</div>
+<span class="font-label-bold text-label-bold text-on-background">Rp 5.200.000</span>
+</div>
+<div class="flex items-center justify-between p-3 hover:bg-surface-variant/50 rounded-lg transition-colors group">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-md bg-secondary-container flex items-center justify-center text-on-background group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-sm">design_services</span>
+</div>
+<div>
+<p class="font-label-bold text-label-bold text-on-background">Desain Grafis</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant text-xs">8 Proyek</p>
+</div>
+</div>
+<span class="font-label-bold text-label-bold text-on-background">Rp 0</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(232, 255, 0, 0.5)'); // primary-container
+            gradient.addColorStop(1, 'rgba(232, 255, 0, 0.0)');
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun'],
+                    datasets: [{
+                        label: 'Pendapatan',
+                        data: [1200000, 1900000, 3000000, 5000000, 2000000, 2300000],
+                        borderColor: '#bed100', // inverse-primary to ensure visibility on light bg if needed, or use primary-container if background is dark enough. Using primary-fixed-dim for better contrast on white.
+                        backgroundColor: gradient,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#1a1c1c', // on-background
+                        pointBorderColor: '#e8ff00', // primary-container
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: '#1a1c1c',
+                            titleColor: '#ffffff',
+                            bodyColor: '#ffffff',
+                            padding: 12,
+                            cornerRadius: 8,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false,
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: '#6e6d71', // on-tertiary-container
+                                font: {
+                                    family: "'Inter', sans-serif",
+                                    size: 12,
+                                    weight: 600
+                                }
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: '#e2e2e2', // surface-variant
+                                drawBorder: false,
+                                borderDash: [5, 5]
+                            },
+                            ticks: {
+                                color: '#6e6d71',
+                                font: {
+                                    family: "'Inter', sans-serif",
+                                    size: 12
+                                },
+                                callback: function(value, index, values) {
+                                    if(value === 0) return '0';
+                                    return 'Rp ' + (value / 1000000) + 'M';
+                                }
+                            },
+                            beginAtZero: true
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index',
+                    },
+                }
+            });
+        });
+    </script>
+</body></html>

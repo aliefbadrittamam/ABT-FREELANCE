@@ -1,0 +1,26 @@
+<?php
+
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\TestimonialController;
+use App\Http\Controllers\PaymentController;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+
+Route::resource('categories', CategoryController::class)->only(['index', 'store', 'update', 'destroy']);
+
+Route::resource('invoices', InvoiceController::class)->except(['destroy']);
+Route::get('/invoices/{invoice}/export/{format}', [InvoiceController::class, 'export'])->name('invoices.export');
+Route::post('/invoices/{invoice}/task-file', [InvoiceController::class, 'uploadTaskFile'])->name('invoices.uploadTaskFile');
+Route::get('/invoices/{invoice}/task-file', [InvoiceController::class, 'downloadTaskFile'])->name('invoices.downloadTaskFile');
+Route::delete('/invoices/{invoice}/task-file', [InvoiceController::class, 'deleteTaskFile'])->name('invoices.deleteTaskFile');
+
+Route::resource('testimonials', TestimonialController::class)->only(['index', 'create', 'store', 'edit', 'update']);
+
+Route::get('/payment', [PaymentController::class, 'index'])->name('payment.index');
+Route::post('/payment', [PaymentController::class, 'update'])->name('payment.update');
+
+// Legacy redirect
+Route::get('/qris', fn() => redirect()->route('payment.index'));

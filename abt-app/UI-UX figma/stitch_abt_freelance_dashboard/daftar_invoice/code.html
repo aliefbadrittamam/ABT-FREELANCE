@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Daftar Invoice - ABT-FREELANCE</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "inverse-on-surface": "#f0f1f1",
+                      "primary-fixed": "#d9ef00",
+                      "secondary": "#5d5e60",
+                      "outline": "#77795f",
+                      "outline-variant": "#c7c9ab",
+                      "secondary-container": "#dfdfe0",
+                      "on-primary-fixed": "#1a1e00",
+                      "secondary-fixed-dim": "#c6c6c7",
+                      "border-subtle": "#E4E4E7",
+                      "surface-tint": "#5a6400",
+                      "background": "#f9f9f9",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-bright": "#f9f9f9",
+                      "error-container": "#ffdad6",
+                      "inverse-surface": "#2f3131",
+                      "tertiary-fixed-dim": "#c8c5ca",
+                      "on-tertiary-container": "#6e6d71",
+                      "tertiary-container": "#f4f1f5",
+                      "surface-container-low": "#f3f3f4",
+                      "status-lunas": "#22C55E",
+                      "on-error-container": "#93000a",
+                      "on-primary-fixed-variant": "#434b00",
+                      "status-pending": "#F59E0B",
+                      "surface-container": "#eeeeee",
+                      "tertiary-fixed": "#e4e1e6",
+                      "primary-container": "#e8ff00",
+                      "on-primary-container": "#697400",
+                      "on-tertiary": "#ffffff",
+                      "on-surface-variant": "#464832",
+                      "surface-variant": "#e2e2e2",
+                      "primary": "#5a6400",
+                      "surface-container-highest": "#e2e2e2",
+                      "on-error": "#ffffff",
+                      "on-primary": "#ffffff",
+                      "on-surface": "#1a1c1c",
+                      "on-tertiary-fixed": "#1b1b1e",
+                      "on-background": "#1a1c1c",
+                      "surface-container-high": "#e8e8e8",
+                      "on-secondary-fixed-variant": "#454748",
+                      "error": "#ba1a1a",
+                      "secondary-fixed": "#e2e2e3",
+                      "on-secondary": "#ffffff",
+                      "inverse-primary": "#bed100",
+                      "on-tertiary-fixed-variant": "#47464a",
+                      "on-secondary-fixed": "#1a1c1d",
+                      "tertiary": "#5f5e61",
+                      "surface": "#f9f9f9",
+                      "surface-dim": "#dadada",
+                      "primary-fixed-dim": "#bed100",
+                      "on-secondary-container": "#616364",
+                      "status-dp": "#3B82F6"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "gutter-grid": "1.5rem",
+                      "margin-page": "2rem",
+                      "sidebar-width": "260px",
+                      "stack-sm": "0.5rem",
+                      "stack-md": "1rem"
+              },
+              "fontFamily": {
+                      "headline-lg": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "number-display": [
+                              "Inter"
+                      ],
+                      "label-bold": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "number-display": [
+                              "40px",
+                              {
+                                      "lineHeight": "48px",
+                                      "letterSpacing": "-0.03em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "label-bold": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #f9f9f9; color: #1a1c1c; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+      </style>
+</head>
+<body class="flex h-screen overflow-hidden text-on-surface bg-background">
+<!-- Sidebar Navigation -->
+<aside class="w-sidebar-width h-full fixed left-0 top-0 bg-secondary-container dark:bg-surface-dim border-r border-border-subtle dark:border-outline-variant flex flex-col p-stack-md h-screen z-20 hidden md:flex">
+<div class="mb-8 px-4 py-2 flex items-center space-x-3">
+<div class="w-10 h-10 rounded-full bg-surface overflow-hidden flex items-center justify-center border border-border-subtle shrink-0">
+<img alt="Freelancer Profile" class="w-full h-full object-cover" data-alt="A small, stylized avatar image representing a creative freelancer. The avatar is illustrated in a modern, flat vector style with high contrast, set against a clean light background. The color palette is minimal, utilizing cool grays and sharp charcoal lines to ensure a crisp, professional appearance suitable for a SaaS dashboard." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA44UaK1P6npP4rpcSZsiZHpc-Au5FK49q4-2eo3vWpO6b9vC-vsDntpn9M5rIgDRXvnZO7sA8oxmo-mFOmcSeLseYbsoRjpQ-B2XK6R5S-XBMYgs8CYUUHFikEFl67CEAseas1MVhxP9H_T7Len9vqoFds1NNz8-Qc-eZGW8xYKfpctOzpuhufd5s5czdEbwhljtf_oA0uYJPVEZgtZYp_Vvfg6NXM6ewYw53xXMuyXmNm0vTYzrcf"/>
+</div>
+<div>
+<h1 class="text-headline-md font-headline-md text-on-background dark:text-on-surface truncate">ABT-FREELANCE</h1>
+<p class="font-body-sm text-body-sm text-secondary truncate">Freelance Management</p>
+</div>
+</div>
+<nav class="flex-1 space-y-2">
+<a class="flex items-center space-x-3 px-4 py-3 rounded-lg text-secondary dark:text-on-secondary-container hover:bg-surface-variant transition-colors duration-200 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="dashboard">dashboard</span>
+<span class="font-label-bold text-label-bold">Dashboard</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 rounded-lg text-secondary dark:text-on-secondary-container hover:bg-surface-variant transition-colors duration-200 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="category">category</span>
+<span class="font-label-bold text-label-bold">Kategori</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 rounded-lg bg-primary-container text-on-primary-container font-label-bold active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="receipt_long">receipt_long</span>
+<span class="font-label-bold text-label-bold">Invoice</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 rounded-lg text-secondary dark:text-on-secondary-container hover:bg-surface-variant transition-colors duration-200 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="reviews">reviews</span>
+<span class="font-label-bold text-label-bold">Testimoni</span>
+</a>
+</nav>
+<div class="mt-auto">
+<button class="w-full py-3 px-4 bg-primary-container text-on-primary-container font-label-bold rounded-lg hover:bg-inverse-primary transition-colors flex items-center justify-center space-x-2">
+<span class="material-symbols-outlined text-sm">add</span>
+<span>New Project</span>
+</button>
+</div>
+</aside>
+<!-- Top App Bar (Mobile Only) -->
+<header class="md:hidden fixed top-0 left-0 right-0 h-16 bg-surface border-b border-border-subtle flex items-center justify-between px-4 z-20">
+<div class="flex items-center space-x-2">
+<span class="font-headline-md text-headline-md text-on-background">ABT-FREELANCE</span>
+</div>
+<button class="p-2 rounded-lg text-on-surface hover:bg-surface-variant">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</header>
+<!-- Main Content Area -->
+<main class="flex-1 ml-0 md:ml-[260px] pt-16 md:pt-0 overflow-y-auto w-full h-full p-margin-page pb-24 md:pb-margin-page relative bg-background">
+<!-- Header Section -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Daftar Invoice</h2>
+<p class="font-body-sm text-body-sm text-secondary mt-1">Manage and track your client billings.</p>
+</div>
+<button class="bg-primary-container text-on-primary-container hover:brightness-95 transition-all active:scale-95 font-label-bold px-6 py-3 rounded-lg border border-transparent shadow-sm flex items-center space-x-2">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>Buat Invoice Baru</span>
+</button>
+</div>
+<!-- Filters Section -->
+<div class="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-6 gap-4 bg-surface p-2 rounded-xl border border-border-subtle shadow-[0_10px_15px_-3px_rgba(0,0,0,0.02)]">
+<!-- Status Tabs -->
+<div class="flex items-center space-x-1 overflow-x-auto w-full xl:w-auto pb-2 xl:pb-0 hide-scrollbar">
+<button class="px-4 py-2 rounded-lg bg-on-surface text-surface font-label-bold whitespace-nowrap shrink-0 transition-colors">Semua</button>
+<button class="px-4 py-2 rounded-lg text-secondary hover:bg-surface-variant font-label-bold whitespace-nowrap shrink-0 transition-colors">Belum Bayar</button>
+<button class="px-4 py-2 rounded-lg text-secondary hover:bg-surface-variant font-label-bold whitespace-nowrap shrink-0 transition-colors">DP Terbayar</button>
+<button class="px-4 py-2 rounded-lg text-secondary hover:bg-surface-variant font-label-bold whitespace-nowrap shrink-0 transition-colors">Lunas</button>
+</div>
+<!-- Category Dropdown & Search -->
+<div class="flex items-center space-x-3 w-full xl:w-auto">
+<div class="relative w-full xl:w-48">
+<select class="w-full appearance-none bg-surface border border-border-subtle rounded-lg py-2 pl-4 pr-10 font-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-on-surface focus:border-on-surface">
+<option value="">Semua Kategori</option>
+<option value="joki">Joki Tugas</option>
+<option value="web">Jasa Website</option>
+<option value="design">Design Grafis</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-secondary">
+<span class="material-symbols-outlined text-[18px]">expand_more</span>
+</div>
+</div>
+<div class="relative w-full xl:w-64 hidden md:block">
+<span class="absolute inset-y-0 left-0 flex items-center pl-3">
+<span class="material-symbols-outlined text-secondary text-[18px]">search</span>
+</span>
+<input class="w-full bg-surface border border-border-subtle rounded-lg py-2 pl-10 pr-4 font-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-on-surface focus:border-on-surface placeholder-secondary" placeholder="Cari invoice..." type="text"/>
+</div>
+</div>
+</div>
+<!-- Data Table -->
+<div class="bg-surface rounded-xl border border-border-subtle overflow-hidden shadow-[0_10px_15px_-3px_rgba(0,0,0,0.02)]">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-border-subtle bg-surface-bright">
+<th class="py-4 px-6 font-label-bold text-secondary uppercase tracking-wider text-xs">Nomor Invoice</th>
+<th class="py-4 px-6 font-label-bold text-secondary uppercase tracking-wider text-xs">Nama Klien</th>
+<th class="py-4 px-6 font-label-bold text-secondary uppercase tracking-wider text-xs">Kategori</th>
+<th class="py-4 px-6 font-label-bold text-secondary uppercase tracking-wider text-xs">Total</th>
+<th class="py-4 px-6 font-label-bold text-secondary uppercase tracking-wider text-xs">Status</th>
+<th class="py-4 px-6 font-label-bold text-secondary uppercase tracking-wider text-xs">Deadline</th>
+<th class="py-4 px-6 font-label-bold text-secondary uppercase tracking-wider text-xs text-right">Aksi</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-subtle">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-variant/50 transition-colors group">
+<td class="py-4 px-6 font-body-sm font-semibold text-on-surface whitespace-nowrap">INV-2024-001</td>
+<td class="py-4 px-6 font-body-sm text-on-surface whitespace-nowrap">PT. Teknologi Maju</td>
+<td class="py-4 px-6 font-body-sm text-secondary whitespace-nowrap">Jasa Website</td>
+<td class="py-4 px-6 font-body-sm font-semibold text-on-surface whitespace-nowrap">Rp 5.500.000</td>
+<td class="py-4 px-6 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-status-dp/10 text-status-dp">
+<span class="w-1.5 h-1.5 rounded-full bg-status-dp mr-1.5"></span>
+                                    DP Terbayar
+                                </span>
+</td>
+<td class="py-4 px-6 font-body-sm text-secondary whitespace-nowrap">24 Jun 2024</td>
+<td class="py-4 px-6 text-right whitespace-nowrap">
+<button class="text-secondary hover:text-on-surface transition-colors p-1 rounded-md hover:bg-surface">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-variant/50 transition-colors group">
+<td class="py-4 px-6 font-body-sm font-semibold text-on-surface whitespace-nowrap">INV-2024-002</td>
+<td class="py-4 px-6 font-body-sm text-on-surface whitespace-nowrap">Budi Santoso</td>
+<td class="py-4 px-6 font-body-sm text-secondary whitespace-nowrap">Joki Tugas</td>
+<td class="py-4 px-6 font-body-sm font-semibold text-on-surface whitespace-nowrap">Rp 350.000</td>
+<td class="py-4 px-6 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-status-pending/10 text-status-pending">
+<span class="w-1.5 h-1.5 rounded-full bg-status-pending mr-1.5"></span>
+                                    Belum Bayar
+                                </span>
+</td>
+<td class="py-4 px-6 font-body-sm text-secondary whitespace-nowrap">26 Jun 2024</td>
+<td class="py-4 px-6 text-right whitespace-nowrap">
+<button class="text-secondary hover:text-on-surface transition-colors p-1 rounded-md hover:bg-surface">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-variant/50 transition-colors group">
+<td class="py-4 px-6 font-body-sm font-semibold text-on-surface whitespace-nowrap">INV-2024-003</td>
+<td class="py-4 px-6 font-body-sm text-on-surface whitespace-nowrap">Creative Studio AB</td>
+<td class="py-4 px-6 font-body-sm text-secondary whitespace-nowrap">Design Grafis</td>
+<td class="py-4 px-6 font-body-sm font-semibold text-on-surface whitespace-nowrap">Rp 1.200.000</td>
+<td class="py-4 px-6 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-status-lunas/10 text-status-lunas">
+<span class="w-1.5 h-1.5 rounded-full bg-status-lunas mr-1.5"></span>
+                                    Lunas
+                                </span>
+</td>
+<td class="py-4 px-6 font-body-sm text-secondary whitespace-nowrap">20 Jun 2024</td>
+<td class="py-4 px-6 text-right whitespace-nowrap">
+<button class="text-secondary hover:text-on-surface transition-colors p-1 rounded-md hover:bg-surface">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-variant/50 transition-colors group">
+<td class="py-4 px-6 font-body-sm font-semibold text-on-surface whitespace-nowrap">INV-2024-004</td>
+<td class="py-4 px-6 font-body-sm text-on-surface whitespace-nowrap">Toko Kopi Senja</td>
+<td class="py-4 px-6 font-body-sm text-secondary whitespace-nowrap">Jasa Website</td>
+<td class="py-4 px-6 font-body-sm font-semibold text-on-surface whitespace-nowrap">Rp 2.800.000</td>
+<td class="py-4 px-6 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-status-dp/10 text-status-dp">
+<span class="w-1.5 h-1.5 rounded-full bg-status-dp mr-1.5"></span>
+                                    DP Terbayar
+                                </span>
+</td>
+<td class="py-4 px-6 font-body-sm text-secondary whitespace-nowrap">30 Jun 2024</td>
+<td class="py-4 px-6 text-right whitespace-nowrap">
+<button class="text-secondary hover:text-on-surface transition-colors p-1 rounded-md hover:bg-surface">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination Placeholder -->
+<div class="border-t border-border-subtle px-6 py-4 flex items-center justify-between bg-surface-bright">
+<span class="font-body-sm text-secondary text-sm">Menampilkan 1-4 dari 24 invoice</span>
+<div class="flex items-center space-x-2">
+<button class="p-1 rounded border border-border-subtle text-secondary hover:bg-surface disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined text-sm">chevron_left</span>
+</button>
+<button class="p-1 rounded border border-border-subtle text-secondary hover:bg-surface">
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+<style>
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</body></html>

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Edit Testimoni - ABT-FREELANCE</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "surface-bright": "#f9f9f9",
+                "on-background": "#1a1c1c",
+                "tertiary": "#5f5e61",
+                "tertiary-container": "#f4f1f5",
+                "surface-dim": "#dadada",
+                "tertiary-fixed": "#e4e1e6",
+                "secondary": "#5d5e60",
+                "on-tertiary-container": "#6e6d71",
+                "inverse-primary": "#bed100",
+                "on-surface-variant": "#464832",
+                "outline-variant": "#c7c9ab",
+                "on-secondary-fixed": "#1a1c1d",
+                "tertiary-fixed-dim": "#c8c5ca",
+                "border-subtle": "#E4E4E7",
+                "on-primary-fixed-variant": "#434b00",
+                "on-primary-fixed": "#1a1e00",
+                "status-pending": "#F59E0B",
+                "surface-container-highest": "#e2e2e2",
+                "surface-container-high": "#e8e8e8",
+                "on-error": "#ffffff",
+                "error": "#ba1a1a",
+                "on-secondary": "#ffffff",
+                "surface-variant": "#e2e2e2",
+                "secondary-container": "#dfdfe0",
+                "on-surface": "#1a1c1c",
+                "surface": "#f9f9f9",
+                "inverse-surface": "#2f3131",
+                "secondary-fixed-dim": "#c6c6c7",
+                "status-lunas": "#22C55E",
+                "surface-container": "#eeeeee",
+                "on-primary-container": "#697400",
+                "primary-container": "#e8ff00",
+                "on-secondary-fixed-variant": "#454748",
+                "on-primary": "#ffffff",
+                "surface-tint": "#5a6400",
+                "on-error-container": "#93000a",
+                "surface-container-low": "#f3f3f4",
+                "on-tertiary": "#ffffff",
+                "on-tertiary-fixed": "#1b1b1e",
+                "on-tertiary-fixed-variant": "#47464a",
+                "background": "#f9f9f9",
+                "primary-fixed-dim": "#bed100",
+                "secondary-fixed": "#e2e2e3",
+                "surface-container-lowest": "#ffffff",
+                "primary-fixed": "#d9ef00",
+                "outline": "#77795f",
+                "primary": "#5a6400",
+                "inverse-on-surface": "#f0f1f1",
+                "status-dp": "#3B82F6",
+                "on-secondary-container": "#616364",
+                "error-container": "#ffdad6"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+        },
+        "spacing": {
+                "gutter-grid": "1.5rem",
+                "margin-page": "2rem",
+                "stack-sm": "0.5rem",
+                "stack-md": "1rem",
+                "sidebar-width": "260px"
+        },
+        "fontFamily": {
+                "body-lg": [
+                        "Inter"
+                ],
+                "body-sm": [
+                        "Inter"
+                ],
+                "headline-lg": [
+                        "Inter"
+                ],
+                "number-display": [
+                        "Inter"
+                ],
+                "label-bold": [
+                        "Inter"
+                ],
+                "headline-md": [
+                        "Inter"
+                ]
+        },
+        "fontSize": {
+                "body-lg": [
+                        "16px",
+                        {
+                                "lineHeight": "24px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "body-sm": [
+                        "14px",
+                        {
+                                "lineHeight": "20px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "headline-lg": [
+                        "32px",
+                        {
+                                "lineHeight": "40px",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "number-display": [
+                        "40px",
+                        {
+                                "lineHeight": "48px",
+                                "letterSpacing": "-0.03em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "label-bold": [
+                        "12px",
+                        {
+                                "lineHeight": "16px",
+                                "letterSpacing": "0.05em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-md": [
+                        "24px",
+                        {
+                                "lineHeight": "32px",
+                                "letterSpacing": "-0.01em",
+                                "fontWeight": "600"
+                        }
+                ]
+        }
+    }
+  }
+</script>
+</head>
+<body class="bg-background text-on-background font-body-lg antialiased flex h-screen overflow-hidden">
+<!-- SideNavBar -->
+<aside class="w-sidebar-width h-full fixed left-0 top-0 bg-secondary-container dark:bg-surface-dim border-r border-border-subtle dark:border-outline-variant flex flex-col p-stack-md hidden md:flex z-50">
+<div class="mb-stack-md flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center font-headline-md text-on-primary-fixed">A</div>
+<div>
+<h1 class="text-headline-md font-headline-md text-on-background dark:text-on-surface">ABT-FREELANCE</h1>
+<p class="text-body-sm font-body-sm text-secondary">Freelance Management</p>
+</div>
+</div>
+<button class="w-full bg-primary-container text-on-primary-fixed font-label-bold py-2 px-4 rounded-lg mb-8 hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">add</span>
+    New Project
+  </button>
+<nav class="flex-1 flex flex-col gap-2">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-secondary dark:text-on-secondary-container hover:bg-surface-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-bold text-label-bold">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-secondary dark:text-on-secondary-container hover:bg-surface-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">category</span>
+<span class="font-label-bold text-label-bold">Kategori</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-secondary dark:text-on-secondary-container hover:bg-surface-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">receipt_long</span>
+<span class="font-label-bold text-label-bold">Invoice</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary text-on-primary font-label-bold" href="#">
+<span class="material-symbols-outlined">reviews</span>
+<span class="font-label-bold text-label-bold">Testimoni</span>
+</a>
+</nav>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-sidebar-width h-full overflow-y-auto bg-surface-bright flex flex-col relative w-full">
+<!-- TopAppBar -->
+<header class="sticky top-0 z-40 bg-surface dark:bg-background border-b border-border-subtle dark:border-outline-variant h-16 flex items-center justify-between px-margin-page md:hidden">
+<div class="font-headline-md text-headline-md text-on-background">ABT-FREELANCE</div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</header>
+<div class="px-margin-page py-margin-page max-w-5xl mx-auto w-full">
+<!-- Header -->
+<div class="flex items-center justify-between mb-8">
+<div class="flex items-center gap-4">
+<button class="flex items-center justify-center w-10 h-10 rounded-full border border-border-subtle hover:bg-surface-variant transition-colors text-on-background">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="font-headline-lg text-headline-lg text-on-background">Edit Testimoni</h1>
+</div>
+<button class="px-4 py-2 border border-border-subtle rounded-lg font-label-bold text-label-bold text-on-background hover:bg-surface-variant transition-colors">
+        Kembali
+      </button>
+</div>
+<!-- Layout Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter-grid">
+<!-- Left Column: Previews and Grid -->
+<div class="lg:col-span-7 flex flex-col gap-8">
+<!-- Preview Card -->
+<section class="bg-surface rounded-xl border border-border-subtle p-6">
+<h2 class="font-headline-md text-headline-md text-on-background mb-4">Preview Kolase Saat Ini</h2>
+<div class="w-full aspect-square rounded-lg border border-border-subtle overflow-hidden relative" data-alt="A high-quality 2x2 photo collage previewing project completion. The top left shows a modern code editor with colorful syntax highlighting. The top right shows a friendly chat interface. Bottom left shows a sleek web application dashboard. Bottom right shows a successful payment confirmation screen. The overall aesthetic is bright, professional, and modern corporate, utilizing a crisp white base with subtle neon yellow highlights indicating success. Clean lines and high resolution throughout." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAEKKnjQo-OvpMM7LObBx3BgMyxxdR0RCeGqL2sTDob-euGoNRfAzBSAeIO8Zgp2JDh8T0zuiHIemytdlN9TP4cLeEsrlegsBhf9q4_Q1Ol5idB8Z9Ex29bk3SkoJ1c314buaAZE3mxcmu5T9-J0qjlUxPTknLyIUmGOcj-e_l76eS7zE8T_TsO0RrfcM2xIkVSpRxbC8soJTkt7GcIpcFHn8RIyNCMx6EXiYILy6zcUmcQ-bhHMaET')">
+<div class="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-1 p-1 bg-surface-variant/50">
+<div class="bg-surface rounded-md"></div>
+<div class="bg-surface rounded-md"></div>
+<div class="bg-surface rounded-md"></div>
+<div class="bg-surface rounded-md"></div>
+</div>
+</div>
+</section>
+<!-- Edit Grid -->
+<section class="bg-surface rounded-xl border border-border-subtle p-6">
+<h2 class="font-headline-md text-headline-md text-on-background mb-4">Ubah Gambar per Slot</h2>
+<div class="grid grid-cols-2 gap-4">
+<!-- Slot 1 -->
+<div class="flex flex-col gap-2">
+<span class="font-label-bold text-label-bold text-secondary">Tugas</span>
+<div class="aspect-square rounded-lg border border-border-subtle relative group overflow-hidden" data-alt="A close up shot of a computer monitor displaying modern, colorful code syntax against a dark background, representing a software development task. Bright, crisp lighting highlights the text, maintaining a professional and technical aesthetic suitable for a high-end corporate portfolio." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCnC9GVhl-OJEuHRvwrYSuD-D5vPPMaEx2MVgAtvsB83DdfyYeUQS2dlbr7P6XVbV8ypIt8i2qoX0StzE3nkzk72qwUvh2Td3JSh8mbtd7cZvjcvrlTTD3tPfSMvvH8TUN6zastjiRnNTMs9AuzyDCGM_H9S6846ZTbuz4ScyxB5kTUMtG-UB6oj0__X8rd7y-cuuCK_AcfE_2jMyeWdE7K7tkDpUFbiafIEDnkS6OqtIDCuqH-a0RG')">
+<div class="absolute inset-0 bg-on-background/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+<button class="bg-primary-container text-on-primary-fixed font-label-bold px-3 py-1.5 rounded-full flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+                    Ganti
+                  </button>
+</div>
+</div>
+</div>
+<!-- Slot 2 -->
+<div class="flex flex-col gap-2">
+<span class="font-label-bold text-label-bold text-secondary">Chat dengan Customer</span>
+<div class="aspect-square rounded-lg border border-border-subtle relative group overflow-hidden" data-alt="A clean, modern chat interface on a mobile phone screen showing a friendly conversation with a client. The UI features soft white bubbles and a subtle neon yellow accent on the active message. The lighting is bright and airy, conveying smooth communication in a professional setting." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAzDcuVOxByigJBEjYF69CDw_Goyw4kgP3xnNxDBV7OfdXhLRWD2XZh_GZuaVJJ3AnY4RXCq6qw_QC83j8dS2IeGcj9-qtdBsvTEIcrqp3l2eZL97qmuxodXU0FuUgAC-8MM8nIX1-xjKGPzgFcvH69g6KG-fFtqEvkvoYg65-3Rm_MLrPMQcMQqn-XkU1gkatcZPtqG-lO_Kn9b1zmgrqCfIy-YoZpzTm871fCrUsV4vWT0TK9WnQg')">
+<div class="absolute inset-0 bg-on-background/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+<button class="bg-primary-container text-on-primary-fixed font-label-bold px-3 py-1.5 rounded-full flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+                    Ganti
+                  </button>
+</div>
+</div>
+</div>
+<!-- Slot 3 -->
+<div class="flex flex-col gap-2">
+<span class="font-label-bold text-label-bold text-secondary">Hasil</span>
+<div class="aspect-square rounded-lg border border-border-subtle relative group overflow-hidden" data-alt="A polished, high-fidelity web application dashboard displayed on a sleek laptop screen, representing the final delivered product. The design utilizes a strict grid, ample whitespace, and charcoal text, aligning with modern functional brutalism. Professional studio lighting highlights the sharp details of the screen." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBHNfsrFJweuAPtHSTMggBtHc3WWfAiruDDVk8t3TCLfobkMWFJlDqJVv15XQFPPE3R80wOZosUVHlhMHMeRQlfUOO5HUhOX4ArBv_26p-NokbLQ68enc9xWt8TroodUvyIT0Y2x9ZUrQ6FlsnAuI1JLtYMteHxv37C7SZGPnkPlRorYE2tRz4pQF58drFaF7bdMd3oRtN0CWAFpbaCUKs4agmN_vQrUVUto8tuKaHEbm50yrGT6u2o')">
+<div class="absolute inset-0 bg-on-background/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+<button class="bg-primary-container text-on-primary-fixed font-label-bold px-3 py-1.5 rounded-full flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+                    Ganti
+                  </button>
+</div>
+</div>
+</div>
+<!-- Slot 4 -->
+<div class="flex flex-col gap-2">
+<span class="font-label-bold text-label-bold text-secondary">Pelunasan</span>
+<div class="aspect-square rounded-lg border border-border-subtle relative group overflow-hidden" data-alt="A digital payment success screen showing a prominent green checkmark and transaction details. The UI is clean, minimal, and modern, set against a stark white background. The image conveys finalized business transactions with a crisp, high-contrast visual style typical of modern fintech applications." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA7eonoeEQvjwsQB1fbGtsW7W1OasbhPKyc3APwuQ6xqxeRDjciPTjaZzaFjJ0GquG62pmUoeAMWUM__rY26TZgOvmq-G5KFd8Fwyvd3NCDPZiLtztA2ZrhZv9gvfKMOC91YaeikeR1ZZNejyBhlV2hWCHjfunNDDGNUBwIGG9SQ7mFZRezBYbXQtlqbaP_JUBLw2s6j0NJtn_nm-fQmBb-Y64qI3nqYpA51FxuFYofws2RxkuE7FCK')">
+<div class="absolute inset-0 bg-on-background/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+<button class="bg-primary-container text-on-primary-fixed font-label-bold px-3 py-1.5 rounded-full flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+                    Ganti
+                  </button>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Forms and Actions -->
+<div class="lg:col-span-5 flex flex-col gap-8">
+<!-- Details Form -->
+<section class="bg-surface rounded-xl border border-border-subtle p-6">
+<div class="flex flex-col gap-6">
+<div class="flex flex-col gap-2">
+<label class="font-label-bold text-label-bold text-secondary">Nama Klien (opsional)</label>
+<input class="w-full bg-surface-bright border border-border-subtle rounded-lg px-4 py-2 font-body-sm text-body-sm text-on-background focus:outline-none focus:border-on-background focus:ring-1 focus:ring-on-background transition-colors" type="text" value="PT Jaya Makmur"/>
+</div>
+<div class="flex flex-col gap-2">
+<label class="font-label-bold text-label-bold text-secondary">Caption (opsional)</label>
+<textarea class="w-full bg-surface-bright border border-border-subtle rounded-lg px-4 py-2 font-body-sm text-body-sm text-on-background focus:outline-none focus:border-on-background focus:ring-1 focus:ring-on-background transition-colors resize-none" rows="4">Proyek redesign dashboard selesai tepat waktu! Klien sangat puas dengan hasil akhirnya yang lebih responsif dan mudah digunakan.</textarea>
+</div>
+</div>
+</section>
+<!-- Actions -->
+<section class="bg-surface rounded-xl border border-border-subtle p-6 flex flex-col gap-4">
+<button class="w-full bg-primary-container text-[#18181B] font-label-bold text-label-bold py-3 rounded-lg hover:bg-[#d4e600] transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">save</span>
+            Simpan Perubahan
+          </button>
+<p class="font-body-sm text-body-sm text-secondary text-center">Postingan Telegram yang sudah ada akan otomatis diperbarui</p>
+</section>
+</div>
+</div>
+</div>
+</main>
+</body></html>

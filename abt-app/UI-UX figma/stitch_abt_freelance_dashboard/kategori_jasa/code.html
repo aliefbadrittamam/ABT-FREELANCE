@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+
+<html lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Kategori Jasa - ABT-FREELANCE</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-fixed-variant": "#454748",
+                        "background": "#f9f9f9",
+                        "primary-fixed": "#d9ef00",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface": "#1a1c1c",
+                        "tertiary-fixed": "#e4e1e6",
+                        "surface-bright": "#f9f9f9",
+                        "inverse-surface": "#2f3131",
+                        "secondary-fixed-dim": "#c6c6c7",
+                        "surface-tint": "#5a6400",
+                        "error-container": "#ffdad6",
+                        "on-secondary-container": "#616364",
+                        "surface-dim": "#dadada",
+                        "outline-variant": "#c7c9ab",
+                        "surface-variant": "#e2e2e2",
+                        "on-tertiary-fixed-variant": "#47464a",
+                        "on-tertiary-fixed": "#1b1b1e",
+                        "inverse-on-surface": "#f0f1f1",
+                        "status-pending": "#F59E0B",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed": "#1a1e00",
+                        "status-dp": "#3B82F6",
+                        "primary": "#5a6400",
+                        "secondary-container": "#dfdfe0",
+                        "on-primary-fixed-variant": "#434b00",
+                        "surface-container-highest": "#e2e2e2",
+                        "secondary": "#5d5e60",
+                        "outline": "#77795f",
+                        "on-secondary-fixed": "#1a1c1d",
+                        "on-secondary": "#ffffff",
+                        "tertiary": "#5f5e61",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-fixed-dim": "#c8c5ca",
+                        "secondary-fixed": "#e2e2e3",
+                        "on-surface-variant": "#464832",
+                        "status-lunas": "#22C55E",
+                        "surface-container-low": "#f3f3f4",
+                        "surface-container": "#eeeeee",
+                        "on-background": "#1a1c1c",
+                        "on-error": "#ffffff",
+                        "on-primary-container": "#697400",
+                        "on-tertiary-container": "#6e6d71",
+                        "inverse-primary": "#bed100",
+                        "primary-container": "#e8ff00",
+                        "surface-container-high": "#e8e8e8",
+                        "primary-fixed-dim": "#bed100",
+                        "tertiary-container": "#f4f1f5",
+                        "error": "#ba1a1a",
+                        "on-primary": "#ffffff",
+                        "border-subtle": "#E4E4E7",
+                        "surface": "#f9f9f9"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sidebar-width": "260px",
+                        "gutter-grid": "1.5rem",
+                        "margin-page": "2rem",
+                        "stack-sm": "0.5rem",
+                        "stack-md": "1rem"
+                    },
+                    "fontFamily": {
+                        "number-display": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "label-bold": ["Inter"],
+                        "headline-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "number-display": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.03em", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-bold": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Custom scrollbar for webkit */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #E4E4E7;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #D4D4D8;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-sm overflow-hidden flex">
+<!-- SideNavBar (from JSON) -->
+<aside class="w-sidebar-width h-full fixed left-0 top-0 bg-secondary-container dark:bg-surface-dim border-r border-border-subtle dark:border-outline-variant flex flex-col p-stack-md z-20">
+<!-- Header / Brand -->
+<div class="mb-stack-md flex flex-col items-center justify-center p-stack-md border-b border-border-subtle pb-6">
+<div class="w-16 h-16 rounded-full bg-surface-container-lowest border border-border-subtle flex items-center justify-center mb-stack-sm overflow-hidden shadow-sm">
+<span class="material-symbols-outlined text-primary text-3xl">storefront</span>
+</div>
+<h1 class="text-headline-md font-headline-md text-on-background dark:text-on-surface text-center mt-2">ABT-FREELANCE</h1>
+<p class="text-body-sm font-body-sm text-secondary mt-1">Freelance Management</p>
+</div>
+<!-- Navigation Tabs -->
+<nav class="flex-1 space-y-1">
+<a class="flex items-center px-4 py-3 text-secondary dark:text-on-secondary-container hover:bg-surface-variant transition-colors duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined mr-3 text-secondary group-hover:text-on-background">dashboard</span>
+<span class="font-body-sm text-body-sm font-label-bold text-label-bold group-hover:text-on-background">Dashboard</span>
+</a>
+<a class="flex items-center px-4 py-3 bg-primary text-on-primary font-label-bold rounded-lg active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined mr-3">category</span>
+<span class="font-body-sm text-body-sm font-label-bold text-label-bold">Kategori</span>
+</a>
+<a class="flex items-center px-4 py-3 text-secondary dark:text-on-secondary-container hover:bg-surface-variant transition-colors duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined mr-3 text-secondary group-hover:text-on-background">receipt_long</span>
+<span class="font-body-sm text-body-sm font-label-bold text-label-bold group-hover:text-on-background">Invoice</span>
+</a>
+<a class="flex items-center px-4 py-3 text-secondary dark:text-on-secondary-container hover:bg-surface-variant transition-colors duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined mr-3 text-secondary group-hover:text-on-background">reviews</span>
+<span class="font-body-sm text-body-sm font-label-bold text-label-bold group-hover:text-on-background">Testimoni</span>
+</a>
+</nav>
+<!-- CTA -->
+<div class="mt-auto pt-stack-md">
+<button class="w-full flex items-center justify-center px-4 py-3 bg-primary-container text-on-primary-fixed-variant rounded-lg font-label-bold text-label-bold hover:bg-primary-fixed-dim transition-colors shadow-sm border border-transparent hover:border-on-primary-fixed-variant/20">
+<span class="material-symbols-outlined mr-2 text-[18px]">add</span>
+                New Project
+            </button>
+</div>
+</aside>
+<!-- Main Content Area Wrapper -->
+<div class="ml-sidebar-width flex-1 flex flex-col h-screen w-[calc(100%-260px)] relative">
+<!-- TopAppBar (from JSON) -->
+<header class="fixed top-0 right-0 w-[calc(100%-260px)] h-16 bg-surface dark:bg-background border-b border-border-subtle dark:border-outline-variant flex items-center justify-between px-margin-page z-10">
+<!-- Brand / Product Name (Desktop Context) -->
+<div class="hidden md:flex items-center">
+<h2 class="font-headline-md text-headline-md text-on-background tracking-tight">Kategori Jasa</h2>
+</div>
+<!-- Mobile Menu Toggle & Brand -->
+<div class="flex md:hidden items-center flex-1">
+<button class="mr-4 text-on-background">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<span class="font-headline-md text-headline-md text-on-background">ABT-FREELANCE</span>
+</div>
+<!-- Actions & Search -->
+<div class="flex items-center gap-4">
+<!-- Search -->
+<div class="relative hidden sm:block focus-within:ring-2 focus-within:ring-primary rounded-full transition-all">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary text-sm">search</span>
+<input class="pl-9 pr-4 py-1.5 bg-surface-container-low border border-border-subtle rounded-full text-body-sm font-body-sm text-on-background focus:outline-none w-48 lg:w-64" placeholder="Search..." type="text"/>
+</div>
+<!-- Trailing Actions -->
+<button class="text-on-surface-variant hover:text-primary transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-primary-container rounded-full border border-surface"></span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<!-- Profile -->
+<div class="w-8 h-8 rounded-full bg-tertiary-container border border-border-subtle overflow-hidden ml-2 cursor-pointer">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="A close up, high quality headshot portrait of a professional modern creative freelancer smiling subtly. The background is a clean, bright, out of focus light-mode office setting. The lighting is soft and flattering, highlighting a crisp corporate yet energetic aesthetic. Deep blacks and vibrant secondary hues subtly accent the composition." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdsbcuSEY0FeBF3bjotupd0jFBn5vqjIMBc2lrRwsCxsPgnKwibcEY8neJnjYOC197DQ3KFPfI6Cj1abwFJGub6uygg3cGZh4_4h1x632ykwX514fAUaKMdibxmcI_xvamP7vSbMrw--b4nhRRmjG4ehlk25oD8znOefx8u9cZu-QztIzjc0aaOHAo5Ws03RPb-GbM9ZdABQgylgPwpTC9lvyIxumPKtgG4Ur4asaOp9nzZ_RHvtkZ"/>
+</div>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-1 overflow-y-auto pt-20 px-margin-page pb-margin-page bg-background">
+<!-- Page Header Section -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+<div>
+<p class="text-secondary font-body-sm text-body-sm mb-1">Manajemen Data</p>
+<h2 class="font-headline-lg text-headline-lg text-on-background">Kategori Jasa</h2>
+</div>
+<button class="flex items-center px-5 py-2.5 bg-primary-container text-on-primary-fixed-variant rounded-lg font-label-bold text-label-bold shadow-sm border border-transparent hover:border-on-primary-fixed-variant/20 hover:bg-primary-fixed-dim transition-colors w-fit" onclick="document.getElementById('modal-tambah-kategori').classList.remove('hidden')">
+<span class="material-symbols-outlined mr-2 text-[18px]">add_box</span>
+                    Tambah Kategori
+                </button>
+</div>
+<!-- Content Container -->
+<div class="bg-surface-container-lowest border border-border-subtle rounded-xl overflow-hidden shadow-[0_10px_15px_-3px_rgba(0,0,0,0.05)]">
+<!-- Table Header (Filter/Search) -->
+<div class="px-6 py-4 border-b border-border-subtle bg-surface-container-low flex justify-between items-center">
+<h3 class="font-label-bold text-label-bold text-on-surface uppercase tracking-wider">Daftar Kategori</h3>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary text-sm">filter_list</span>
+<input class="pl-9 pr-4 py-1.5 bg-surface-container-lowest border border-border-subtle rounded-md text-body-sm font-body-sm text-on-background focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-48" placeholder="Filter kategori..." type="text"/>
+</div>
+</div>
+<!-- Table -->
+<div class="overflow-x-auto w-full">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-border-subtle text-secondary font-label-bold text-label-bold">
+<th class="px-6 py-4 font-semibold w-16 text-center">No</th>
+<th class="px-6 py-4 font-semibold">Nama Kategori</th>
+<th class="px-6 py-4 font-semibold">Total Invoice</th>
+<th class="px-6 py-4 font-semibold text-right">Aksi</th>
+</tr>
+</thead>
+<tbody class="text-body-sm font-body-sm text-on-background divide-y divide-border-subtle">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-variant transition-colors group">
+<td class="px-6 py-4 text-secondary text-center">1</td>
+<td class="px-6 py-4 font-medium flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-tertiary-container flex items-center justify-center text-primary border border-border-subtle/50">
+<span class="material-symbols-outlined text-sm">assignment</span>
+</div>
+                                    Joki Tugas
+                                </td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-container-high text-on-surface">
+                                        45 Invoice
+                                    </span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 text-secondary hover:text-primary hover:bg-surface-container rounded-md transition-colors" title="Edit">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-error hover:bg-error-container/20 rounded-md transition-colors" title="Delete">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-variant transition-colors group">
+<td class="px-6 py-4 text-secondary text-center">2</td>
+<td class="px-6 py-4 font-medium flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-tertiary-container flex items-center justify-center text-primary border border-border-subtle/50">
+<span class="material-symbols-outlined text-sm">language</span>
+</div>
+                                    Jasa Website
+                                </td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-container-high text-on-surface">
+                                        12 Invoice
+                                    </span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 text-secondary hover:text-primary hover:bg-surface-container rounded-md transition-colors" title="Edit">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-error hover:bg-error-container/20 rounded-md transition-colors" title="Delete">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-variant transition-colors group">
+<td class="px-6 py-4 text-secondary text-center">3</td>
+<td class="px-6 py-4 font-medium flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-tertiary-container flex items-center justify-center text-primary border border-border-subtle/50">
+<span class="material-symbols-outlined text-sm">brush</span>
+</div>
+                                    Desain Grafis
+                                </td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-container-high text-on-surface">
+                                        8 Invoice
+                                    </span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 text-secondary hover:text-primary hover:bg-surface-container rounded-md transition-colors" title="Edit">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-error hover:bg-error-container/20 rounded-md transition-colors" title="Delete">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Empty State (Hidden by default, shown for example structure) -->
+<!-- <div class="py-16 flex flex-col items-center justify-center text-center px-4">
+                    <div class="w-16 h-16 bg-surface-container rounded-full flex items-center justify-center mb-4 border border-border-subtle">
+                         <span class="material-symbols-outlined text-secondary text-3xl">category</span>
+                    </div>
+                    <h4 class="font-headline-md text-headline-md text-on-background mb-2">Belum ada kategori</h4>
+                    <p class="text-body-sm font-body-sm text-secondary max-w-md mb-6">Mulai organisir jasa Anda dengan menambahkan kategori baru untuk mempermudah pembuatan invoice.</p>
+                </div> -->
+</div>
+</main>
+</div>
+<!-- Modal: Tambah Kategori -->
+<!-- Default hidden state -->
+<div class="fixed inset-0 z-50 flex items-center justify-center hidden" id="modal-tambah-kategori">
+<!-- Backdrop -->
+<div class="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onclick="document.getElementById('modal-tambah-kategori').classList.add('hidden')"></div>
+<!-- Modal Content Card -->
+<div class="relative bg-surface-container-lowest border border-border-subtle rounded-xl w-[90%] max-w-md shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)] overflow-hidden flex flex-col transform transition-all">
+<!-- Modal Header -->
+<div class="px-6 py-5 border-b border-border-subtle flex justify-between items-center bg-surface-bright">
+<h3 class="font-headline-md text-headline-md text-on-background text-lg leading-6">Tambah Kategori Baru</h3>
+<button class="text-secondary hover:text-on-background transition-colors p-1" onclick="document.getElementById('modal-tambah-kategori').classList.add('hidden')">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Modal Body -->
+<div class="px-6 py-6 bg-surface-container-lowest">
+<div class="flex flex-col gap-2">
+<label class="font-label-bold text-label-bold text-on-surface" for="kategori-name">Nama Kategori</label>
+<input class="w-full px-4 py-2.5 bg-surface-bright border border-border-subtle rounded-lg text-body-sm font-body-sm text-on-background focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-shadow placeholder:text-secondary-fixed-dim" id="kategori-name" placeholder="Misal: Penulisan Artikel" type="text"/>
+</div>
+</div>
+<!-- Modal Footer (Actions) -->
+<div class="px-6 py-4 bg-surface-container-low border-t border-border-subtle flex justify-end gap-3">
+<button class="px-5 py-2.5 bg-transparent text-on-background border border-border-subtle rounded-lg font-label-bold text-label-bold hover:bg-surface-variant transition-colors" onclick="document.getElementById('modal-tambah-kategori').classList.add('hidden')">
+                    Batal
+                </button>
+<button class="px-5 py-2.5 bg-primary-container text-on-primary-fixed-variant border border-transparent rounded-lg font-label-bold text-label-bold shadow-sm hover:border-on-primary-fixed-variant/20 hover:bg-primary-fixed-dim transition-colors">
+                    Simpan
+                </button>
+</div>
+</div>
+</div>
+</body></html>

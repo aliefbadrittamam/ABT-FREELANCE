@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+
+<html lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ABT-FREELANCE - Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "border-subtle": "#E4E4E7",
+                        "on-primary-fixed": "#1a1e00",
+                        "on-secondary": "#ffffff",
+                        "surface-variant": "#e2e2e2",
+                        "on-tertiary-fixed-variant": "#47464a",
+                        "surface": "#f9f9f9",
+                        "status-lunas": "#22C55E",
+                        "error-container": "#ffdad6",
+                        "inverse-on-surface": "#f0f1f1",
+                        "error": "#ba1a1a",
+                        "on-tertiary-container": "#6e6d71",
+                        "on-secondary-fixed-variant": "#454748",
+                        "secondary-fixed-dim": "#c6c6c7",
+                        "tertiary": "#5f5e61",
+                        "primary-container": "#e8ff00",
+                        "status-pending": "#F59E0B",
+                        "on-error-container": "#93000a",
+                        "secondary-fixed": "#e2e2e3",
+                        "surface-container": "#eeeeee",
+                        "status-dp": "#3B82F6",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-high": "#e8e8e8",
+                        "on-tertiary": "#ffffff",
+                        "surface-dim": "#dadada",
+                        "surface-bright": "#f9f9f9",
+                        "secondary": "#5d5e60",
+                        "outline-variant": "#c7c9ab",
+                        "primary": "#5a6400",
+                        "surface-container-highest": "#e2e2e2",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#5a6400",
+                        "on-tertiary-fixed": "#1b1b1e",
+                        "on-primary-container": "#697400",
+                        "on-secondary-fixed": "#1a1c1d",
+                        "on-primary-fixed-variant": "#434b00",
+                        "tertiary-container": "#f4f1f5",
+                        "on-background": "#1a1c1c",
+                        "background": "#f9f9f9",
+                        "on-surface": "#1a1c1c",
+                        "inverse-surface": "#2f3131",
+                        "on-secondary-container": "#616364",
+                        "on-surface-variant": "#464832",
+                        "primary-fixed-dim": "#bed100",
+                        "tertiary-fixed-dim": "#c8c5ca",
+                        "inverse-primary": "#bed100",
+                        "surface-container-low": "#f3f3f4",
+                        "primary-fixed": "#d9ef00",
+                        "tertiary-fixed": "#e4e1e6",
+                        "on-error": "#ffffff",
+                        "secondary-container": "#dfdfe0",
+                        "outline": "#77795f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-sm": "0.5rem",
+                        "margin-page": "2rem",
+                        "stack-md": "1rem",
+                        "sidebar-width": "260px",
+                        "gutter-grid": "1.5rem"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Inter"],
+                        "number-display": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-bold": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "number-display": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.03em", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "label-bold": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-[#F4F4F5] min-h-screen flex items-center justify-center p-4">
+<div class="bg-surface-container-lowest w-full max-w-[420px] rounded-xl border border-border-subtle p-8 shadow-[0_10px_15px_-3px_rgba(0,0,0,0.05)]">
+<div class="text-center mb-10">
+<h1 class="font-headline-md text-headline-md text-on-background relative inline-block">
+                ABT-FREELANCE
+                <span class="absolute -top-1 -right-2 w-2 h-2 bg-primary-container rounded-full"></span>
+</h1>
+</div>
+<div class="mb-8">
+<h2 class="font-headline-lg text-headline-lg text-on-background mb-2">Masuk</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Silakan masukkan kata sandi Anda untuk melanjutkan.</p>
+</div>
+<form>
+<div class="mb-stack-md">
+<label class="block font-label-bold text-label-bold text-on-surface mb-stack-sm" for="password">Kata Sandi</label>
+<input class="w-full px-4 py-3 bg-surface-container-lowest border border-border-subtle rounded-lg font-body-lg text-body-lg text-on-surface focus:outline-none focus:border-on-background focus:ring-1 focus:ring-on-background transition-colors" id="password" placeholder="••••••••" type="password"/>
+</div>
+<button class="w-full py-3 bg-primary-container text-on-background font-label-bold text-label-bold rounded-lg hover:bg-[#D4E800] transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-container mb-6" type="submit">
+                Masuk
+            </button>
+</form>
+<div class="text-center mt-6">
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[16px]">lock</span>
+                Aplikasi ini hanya untuk pemakaian pribadi
+            </p>
+</div>
+</div>
+</body></html>
