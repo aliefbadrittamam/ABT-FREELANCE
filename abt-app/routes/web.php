@@ -18,7 +18,7 @@ Route::post('/invoices/{invoice}/task-file', [InvoiceController::class, 'uploadT
 Route::get('/invoices/{invoice}/task-file', [InvoiceController::class, 'downloadTaskFile'])->name('invoices.downloadTaskFile');
 Route::delete('/invoices/{invoice}/task-file', [InvoiceController::class, 'deleteTaskFile'])->name('invoices.deleteTaskFile');
 
-Route::resource('testimonials', TestimonialController::class)->only(['index', 'create', 'store', 'edit', 'update']);
+Route::resource('testimonials', TestimonialController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
 
 Route::get('/payment', [PaymentController::class, 'index'])->name('payment.index');
 Route::post('/payment', [PaymentController::class, 'update'])->name('payment.update');

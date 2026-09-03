@@ -168,4 +168,23 @@ class TestimonialController extends Controller
 
         return redirect()->route('testimonials.index')->with('success', "Testimoni #{$testiNumber} berhasil diperbarui!");
     }
+
+    public function destroy(Testimonial $testimonial, TelegramService $telegram)
+    {
+        if ($testimonial->posted_to_telegram && $testimonial->telegram_message_id) {
+            $telegram->deleteMessage($testimonial->telegram_message_id);
+        }
+
+        // Clean files
+        foreach (['image_tugas_path', 'image_chat_path', 'image_hasil_path', 'image_pelunasan_path', 'composed_image_path'] as $field) {
+            if ($testimonial->$field && Storage::disk('public')->exists($testimonial->$field)) {
+                Storage::disk('public')->delete($testimonial->$field);
+            }
+        }
+
+        $testiNumber = $testimonial->testimonial_number;
+        $testimonial->delete();
+
+        return redirect()->route('testimonials.index')->with('success', "Testimoni #{$testiNumber} berhasil dihapus!");
+    }
 }

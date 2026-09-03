@@ -70,4 +70,23 @@ class TelegramService
         Log::error('Telegram editMessageMedia failed', ['response' => $response->body()]);
         return false;
     }
+
+    public function deleteMessage(string $messageId): bool
+    {
+        if (!$this->isConfigured()) {
+            return false;
+        }
+
+        $response = Http::post("{$this->baseUrl}/deleteMessage", [
+            'chat_id' => $this->channelId,
+            'message_id' => $messageId,
+        ]);
+
+        if ($response->successful()) {
+            return true;
+        }
+
+        Log::error('Telegram deleteMessage failed', ['response' => $response->body()]);
+        return false;
+    }
 }

@@ -56,10 +56,19 @@
                 <span class="text-[10px] text-secondary dark:text-gray-400 font-mono">
                     #{{ $t->testimonial_number }}
                 </span>
-                <a href="{{ route('testimonials.edit', $t) }}" class="text-xs text-secondary dark:text-gray-400 hover:text-on-surface dark:hover:text-white font-medium flex items-center gap-1 transition">
-                    <span class="material-symbols-outlined text-sm">edit</span>
-                    Edit Testi
-                </a>
+                <div class="flex items-center gap-2">
+                    <a href="{{ route('testimonials.edit', $t) }}" class="text-xs text-secondary dark:text-gray-400 hover:text-on-surface dark:hover:text-white font-medium flex items-center gap-1 transition">
+                        <span class="material-symbols-outlined text-sm">edit</span>
+                        Edit
+                    </a>
+                    <form action="{{ route('testimonials.destroy', $t) }}" method="POST" onsubmit="return confirm('Hapus testimoni ini? Postingan di Telegram (jika ada) juga akan dihapus.')" class="inline">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="text-xs text-red-500 hover:text-red-700 font-medium flex items-center gap-0.5 transition">
+                            <span class="material-symbols-outlined text-sm">delete</span>
+                            Hapus
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
