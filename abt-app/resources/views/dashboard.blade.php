@@ -18,68 +18,95 @@
     </div>
 </div>
 
-<!-- Summary Cards (4 Strategic Metrics) -->
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-6">
+<!-- Summary Cards (5 Strategic Metrics) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-5 mb-6">
     <!-- Card 1: Pendapatan Hari Ini -->
-    <div class="bg-white dark:bg-[#1e1e1e] rounded-xl p-5 border-2 border-primary-container relative overflow-hidden shadow-sm transition-colors duration-200">
-        <div class="flex items-center justify-between mb-2">
-            <span class="text-[11px] font-bold text-on-surface-variant dark:text-gray-400 uppercase tracking-wider">Pendapatan Hari Ini</span>
-            <span class="w-7 h-7 rounded-lg bg-primary-container/20 flex items-center justify-center text-primary dark:text-primary-container">
-                <span class="material-symbols-outlined text-base">today</span>
-            </span>
+    <div class="bg-white dark:bg-[#1e1e1e] rounded-xl p-5 border-2 border-primary-container relative overflow-hidden shadow-sm transition-colors duration-200 flex flex-col justify-between">
+        <div>
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-[11px] font-bold text-on-surface-variant dark:text-gray-400 uppercase tracking-wider">Hari Ini</span>
+                <span class="w-7 h-7 rounded-lg bg-primary-container/20 flex items-center justify-center text-primary dark:text-primary-container">
+                    <span class="material-symbols-outlined text-base">today</span>
+                </span>
+            </div>
+            <h2 class="text-xl sm:text-2xl font-black text-on-surface dark:text-white tracking-tight">
+                Rp {{ number_format($todayRevenue, 0, ',', '.') }}
+            </h2>
         </div>
-        <h2 class="text-2xl sm:text-3xl font-black text-on-surface dark:text-white tracking-tight">
-            Rp {{ number_format($todayRevenue, 0, ',', '.') }}
-        </h2>
         <p class="text-[11px] text-secondary dark:text-gray-400 mt-2">Uang masuk hari ini</p>
     </div>
 
-    <!-- Card 2: Total Pendapatan -->
-    <div class="bg-white dark:bg-[#1e1e1e] rounded-xl p-5 border border-border-subtle dark:border-[#2a2a2a] relative overflow-hidden shadow-sm transition-colors duration-200">
-        <div class="flex items-center justify-between mb-2">
-            <span class="text-[11px] font-bold text-on-surface-variant dark:text-gray-400 uppercase tracking-wider">Total Pendapatan</span>
-            <span class="w-7 h-7 rounded-lg bg-status-lunas/15 flex items-center justify-center text-status-lunas">
-                <span class="material-symbols-outlined text-base">account_balance_wallet</span>
-            </span>
+    <!-- Card 2: Pendapatan Bulan Ini (tgl 1 s/d akhir bulan) -->
+    <div class="bg-white dark:bg-[#1e1e1e] rounded-xl p-5 border border-border-subtle dark:border-[#2a2a2a] relative overflow-hidden shadow-sm transition-colors duration-200 flex flex-col justify-between">
+        <div>
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-[11px] font-bold text-on-surface-variant dark:text-gray-400 uppercase tracking-wider">Bulan Ini</span>
+                <span class="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                    <span class="material-symbols-outlined text-base">calendar_month</span>
+                </span>
+            </div>
+            <h2 class="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
+                Rp {{ number_format($thisMonthRevenue, 0, ',', '.') }}
+            </h2>
         </div>
-        <h2 class="text-2xl sm:text-3xl font-black text-on-surface dark:text-white tracking-tight">
-            Rp {{ number_format($totalRevenue, 0, ',', '.') }}
-        </h2>
+        <div class="mt-2 text-[11px] text-secondary dark:text-gray-400 flex flex-col">
+            <span class="font-medium text-on-surface dark:text-gray-300">{{ $thisMonthPeriod }}</span>
+            <span class="text-emerald-600 dark:text-emerald-400 font-semibold">{{ $thisMonthInvoicesCount }} invoice lunas</span>
+        </div>
+    </div>
+
+    <!-- Card 3: Total Pendapatan -->
+    <div class="bg-white dark:bg-[#1e1e1e] rounded-xl p-5 border border-border-subtle dark:border-[#2a2a2a] relative overflow-hidden shadow-sm transition-colors duration-200 flex flex-col justify-between">
+        <div>
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-[11px] font-bold text-on-surface-variant dark:text-gray-400 uppercase tracking-wider">Total Pendapatan</span>
+                <span class="w-7 h-7 rounded-lg bg-status-lunas/15 flex items-center justify-center text-status-lunas">
+                    <span class="material-symbols-outlined text-base">account_balance_wallet</span>
+                </span>
+            </div>
+            <h2 class="text-xl sm:text-2xl font-black text-on-surface dark:text-white tracking-tight">
+                Rp {{ number_format($totalRevenue, 0, ',', '.') }}
+            </h2>
+        </div>
         <p class="text-[11px] text-status-lunas font-semibold mt-2 flex items-center gap-1">
             <span class="material-symbols-outlined text-sm">check_circle</span>
             {{ $paidInvoices }} invoice lunas
         </p>
     </div>
 
-    <!-- Card 3: DP Terbayar -->
-    <div class="bg-white dark:bg-[#1e1e1e] rounded-xl p-5 border border-border-subtle dark:border-[#2a2a2a] relative overflow-hidden shadow-sm transition-colors duration-200">
-        <div class="flex items-center justify-between mb-2">
-            <span class="text-[11px] font-bold text-on-surface-variant dark:text-gray-400 uppercase tracking-wider">DP Terbayar</span>
-            <span class="w-7 h-7 rounded-lg bg-status-dp/15 flex items-center justify-center text-status-dp">
-                <span class="material-symbols-outlined text-base">payments</span>
-            </span>
+    <!-- Card 4: DP Terbayar -->
+    <div class="bg-white dark:bg-[#1e1e1e] rounded-xl p-5 border border-border-subtle dark:border-[#2a2a2a] relative overflow-hidden shadow-sm transition-colors duration-200 flex flex-col justify-between">
+        <div>
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-[11px] font-bold text-on-surface-variant dark:text-gray-400 uppercase tracking-wider">DP Terbayar</span>
+                <span class="w-7 h-7 rounded-lg bg-status-dp/15 flex items-center justify-center text-status-dp">
+                    <span class="material-symbols-outlined text-base">payments</span>
+                </span>
+            </div>
+            <h2 class="text-xl sm:text-2xl font-black text-on-surface dark:text-white tracking-tight">
+                Rp {{ number_format($totalDpTerbayar, 0, ',', '.') }}
+            </h2>
         </div>
-        <h2 class="text-2xl sm:text-3xl font-black text-on-surface dark:text-white tracking-tight">
-            Rp {{ number_format($totalDpTerbayar, 0, ',', '.') }}
-        </h2>
         <p class="text-[11px] text-status-dp font-semibold mt-2">
-            {{ $dpPaidInvoices }} order dalam pengerjaan
+            {{ $dpPaidInvoices }} order pengerjaan
         </p>
     </div>
 
-    <!-- Card 4: Sisa Pelunasan -->
-    <div class="bg-white dark:bg-[#1e1e1e] rounded-xl p-5 border border-border-subtle dark:border-[#2a2a2a] relative overflow-hidden shadow-sm transition-colors duration-200">
-        <div class="flex items-center justify-between mb-2">
-            <span class="text-[11px] font-bold text-on-surface-variant dark:text-gray-400 uppercase tracking-wider">Sisa Pelunasan</span>
-            <span class="w-7 h-7 rounded-lg bg-status-pending/15 flex items-center justify-center text-status-pending">
-                <span class="material-symbols-outlined text-base">pending_actions</span>
-            </span>
+    <!-- Card 5: Sisa Pelunasan -->
+    <div class="bg-white dark:bg-[#1e1e1e] rounded-xl p-5 border border-border-subtle dark:border-[#2a2a2a] relative overflow-hidden shadow-sm transition-colors duration-200 flex flex-col justify-between">
+        <div>
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-[11px] font-bold text-on-surface-variant dark:text-gray-400 uppercase tracking-wider">Sisa Pelunasan</span>
+                <span class="w-7 h-7 rounded-lg bg-status-pending/15 flex items-center justify-center text-status-pending">
+                    <span class="material-symbols-outlined text-base">pending_actions</span>
+                </span>
+            </div>
+            <h2 class="text-xl sm:text-2xl font-black text-status-pending tracking-tight">
+                Rp {{ number_format($sisaPelunasan, 0, ',', '.') }}
+            </h2>
         </div>
-        <h2 class="text-2xl sm:text-3xl font-black text-status-pending tracking-tight">
-            Rp {{ number_format($sisaPelunasan, 0, ',', '.') }}
-        </h2>
         <p class="text-[11px] text-secondary dark:text-gray-400 mt-2">
-            Total Piutang: <strong class="text-on-surface dark:text-white">Rp {{ number_format($totalPiutang, 0, ',', '.') }}</strong>
+            Piutang: <strong class="text-on-surface dark:text-white">Rp {{ number_format($totalPiutang, 0, ',', '.') }}</strong>
         </p>
     </div>
 </div>

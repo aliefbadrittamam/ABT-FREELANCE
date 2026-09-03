@@ -25,7 +25,22 @@ class DashboardController extends Controller
             ->sum('dp_amount');
         $todayRevenue = (float)$todayPaidFull + (float)$todayDpCollected;
 
-        // 3. Total DP yang Sudah Terbayar (dari invoice dp_paid maupun paid)
+        // 3. Pendapatan Bulan Ini (tgl 1 sampai akhir bulan berjalan)
+        $startOfMonth = Carbon::now()->startOfMonth();
+        $endOfMonth = Carbon::now()->endOfMonth();
+        $monthPaidFull = Invoice::where('status', 'paid')
+            ->whereBetween('paid_at', [$startOfMonth, $endOfMonth])
+            ->sum('total_amount');
+        $monthDpCollected = Invoice::where('status', 'dp_paid')
+            ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
+            ->sum('dp_amount');
+        $thisMonthRevenue = (float)$monthPaidFull + (float)$monthDpCollected;
+        $thisMonthInvoicesCount = Invoice::where('status', 'paid')
+            ->whereBetween('paid_at', [$startOfMonth, $endOfMonth])
+            ->count();
+        $thisMonthPeriod = $startOfMonth->format('d') . ' - ' . $endOfMonth->translatedFormat('d F Y');
+
+        // 4. Total DP yang Sudah Terbayar (dari invoice dp_paid maupun paid)
         $totalDpTerbayar = Invoice::whereIn('status', ['dp_paid', 'paid'])
             ->where('payment_type', 'dp')
             ->sum('dp_amount');
@@ -106,12 +121,13 @@ class DashboardController extends Controller
 
         // 5 Invoice Terbaru untuk Aktivitas Cepat
         $recentInvoices = Invoice::with('category')
-            ->latest()
+            ->orderBy('id', 'desc')
             ->take(5)
             ->get();
 
         return view('dashboard', compact(
-            'totalRevenue', 'todayRevenue', 'totalDpTerbayar', 'sisaPelunasan', 'totalPiutang',
+            'totalRevenue', 'todayRevenue', 'thisMonthRevenue', 'thisMonthPeriod', 'thisMonthInvoicesCount',
+            'totalDpTerbayar', 'sisaPelunasan', 'totalPiutang',
             'totalInvoices', 'paidInvoices', 'dpPaidInvoices', 'unpaidInvoices', 'canceledInvoices',
             'dailyLabels', 'dailyValues', 'weeklyLabels', 'weeklyValues', 'monthlyLabels', 'monthlyValues',
             'categoryBreakdown', 'recentInvoices'
