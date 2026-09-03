@@ -9,7 +9,7 @@
     <p class="text-xs sm:text-sm text-on-surface-variant dark:text-gray-400 mt-1">Ringkasan performa finansial dan arus kas pesanan Anda.</p>
 </header>
 
-<!-- Summary Cards (5 Strategic Metrics) -->
+<!-- Summary Cards (4 Strategic Metrics) -->
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-6">
     <!-- Card 1: Pendapatan Hari Ini -->
     <div class="bg-white dark:bg-[#1e1e1e] rounded-xl p-5 border-2 border-primary-container relative overflow-hidden group shadow-sm transition-colors duration-200">
@@ -76,87 +76,7 @@
 </div>
 
 <!-- Dynamic Filterable Chart + Category Breakdown -->
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6" x-data="{
-    timeRange: 'daily', // 'daily', 'weekly', 'monthly'
-    dailyData: { labels: @json($dailyLabels), values: @json($dailyValues) },
-    weeklyData: { labels: @json($weeklyLabels), values: @json($weeklyValues) },
-    monthlyData: { labels: @json($monthlyLabels), values: @json($monthlyValues) },
-    chartInstance: null,
-    initChart() {
-        const ctx = document.getElementById('revenueChart').getContext('2d');
-        const isDark = document.documentElement.classList.contains('dark');
-        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-        gradient.addColorStop(0, 'rgba(232, 255, 0, 0.45)');
-        gradient.addColorStop(1, 'rgba(232, 255, 0, 0.0)');
-
-        const currentData = this.timeRange === 'daily' ? this.dailyData : (this.timeRange === 'weekly' ? this.weeklyData : this.monthlyData);
-
-        this.chartInstance = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: currentData.labels,
-                datasets: [{
-                    label: 'Pendapatan (Rp)',
-                    data: currentData.values,
-                    borderColor: '#bed100',
-                    backgroundColor: gradient,
-                    borderWidth: 3,
-                    pointBackgroundColor: isDark ? '#ffffff' : '#1a1c1c',
-                    pointBorderColor: '#e8ff00',
-                    pointBorderWidth: 2,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                    fill: true,
-                    tension: 0.35
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: '#1a1c1c',
-                        titleColor: '#ffffff',
-                        bodyColor: '#ffffff',
-                        padding: 10,
-                        cornerRadius: 8,
-                        displayColors: false,
-                        callbacks: {
-                            label: function(context) {
-                                return 'Rp ' + new Intl.NumberFormat('id-ID').format(context.parsed.y);
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        grid: { display: false },
-                        ticks: { color: '#888', font: { family: 'Inter', size: 11, weight: 600 } }
-                    },
-                    y: {
-                        grid: { color: isDark ? '#2a2a2a' : '#e2e2e2', borderDash: [4,4] },
-                        ticks: {
-                            color: '#888',
-                            font: { family: 'Inter', size: 11 },
-                            callback: v => v === 0 ? '0' : 'Rp ' + (v >= 1000000 ? (v/1000000) + 'M' : (v/1000) + 'K')
-                        },
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-    },
-    updateRange(range) {
-        this.timeRange = range;
-        const data = range === 'daily' ? this.dailyData : (range === 'weekly' ? this.weeklyData : this.monthlyData);
-        if (this.chartInstance) {
-            this.chartInstance.data.labels = data.labels;
-            this.chartInstance.data.datasets[0].data = data.values;
-            this.chartInstance.update();
-        }
-    }
-}" x-init="initChart()">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6" x-data="{ currentRange: 'daily' }">
     <!-- Chart Section -->
     <div class="lg:col-span-2 bg-white dark:bg-[#1e1e1e] rounded-xl border border-border-subtle dark:border-[#2a2a2a] p-5 sm:p-6 flex flex-col shadow-sm transition-colors duration-200 min-h-[380px]">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
@@ -167,18 +87,18 @@
 
             <!-- Time Range Selectors (Harian / Mingguan / Bulanan) -->
             <div class="flex bg-surface-container dark:bg-[#252525] p-1 rounded-lg border border-border-subtle dark:border-[#333] text-xs font-semibold">
-                <button type="button" @click="updateRange('daily')" 
-                        :class="timeRange === 'daily' ? 'bg-primary-container text-on-surface shadow-sm' : 'text-secondary dark:text-gray-400 hover:text-on-surface dark:hover:text-white'"
+                <button type="button" @click="currentRange = 'daily'; window.changeChartRange('daily')" 
+                        :class="currentRange === 'daily' ? 'bg-primary-container text-on-surface shadow-sm' : 'text-secondary dark:text-gray-400 hover:text-on-surface dark:hover:text-white'"
                         class="px-3 py-1.5 rounded-md transition-all">
                     Harian (7 Hari)
                 </button>
-                <button type="button" @click="updateRange('weekly')" 
-                        :class="timeRange === 'weekly' ? 'bg-primary-container text-on-surface shadow-sm' : 'text-secondary dark:text-gray-400 hover:text-on-surface dark:hover:text-white'"
+                <button type="button" @click="currentRange = 'weekly'; window.changeChartRange('weekly')" 
+                        :class="currentRange === 'weekly' ? 'bg-primary-container text-on-surface shadow-sm' : 'text-secondary dark:text-gray-400 hover:text-on-surface dark:hover:text-white'"
                         class="px-3 py-1.5 rounded-md transition-all">
                     Mingguan
                 </button>
-                <button type="button" @click="updateRange('monthly')" 
-                        :class="timeRange === 'monthly' ? 'bg-primary-container text-on-surface shadow-sm' : 'text-secondary dark:text-gray-400 hover:text-on-surface dark:hover:text-white'"
+                <button type="button" @click="currentRange = 'monthly'; window.changeChartRange('monthly')" 
+                        :class="currentRange === 'monthly' ? 'bg-primary-container text-on-surface shadow-sm' : 'text-secondary dark:text-gray-400 hover:text-on-surface dark:hover:text-white'"
                         class="px-3 py-1.5 rounded-md transition-all">
                     Bulanan
                 </button>
@@ -217,4 +137,88 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dailyData = { labels: @json($dailyLabels), values: @json($dailyValues) };
+    const weeklyData = { labels: @json($weeklyLabels), values: @json($weeklyValues) };
+    const monthlyData = { labels: @json($monthlyLabels), values: @json($monthlyValues) };
+
+    const ctx = document.getElementById('revenueChart').getContext('2d');
+    const isDark = document.documentElement.classList.contains('dark');
+    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+    gradient.addColorStop(0, 'rgba(232, 255, 0, 0.45)');
+    gradient.addColorStop(1, 'rgba(232, 255, 0, 0.0)');
+
+    const chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dailyData.labels,
+            datasets: [{
+                label: 'Pendapatan (Rp)',
+                data: dailyData.values,
+                borderColor: '#bed100',
+                backgroundColor: gradient,
+                borderWidth: 3,
+                pointBackgroundColor: isDark ? '#ffffff' : '#1a1c1c',
+                pointBorderColor: '#e8ff00',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                fill: true,
+                tension: 0.35
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#1a1c1c',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    padding: 10,
+                    cornerRadius: 8,
+                    displayColors: false,
+                    callbacks: {
+                        label: function(context) {
+                            return 'Rp ' + new Intl.NumberFormat('id-ID').format(context.parsed.y);
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#888', font: { family: 'Inter', size: 11, weight: 600 } }
+                },
+                y: {
+                    grid: { color: isDark ? '#2a2a2a' : '#e2e2e2', borderDash: [4,4] },
+                    ticks: {
+                        color: '#888',
+                        font: { family: 'Inter', size: 11 },
+                        callback: function(v) {
+                            if (v === 0) return '0';
+                            if (v >= 1000000) return 'Rp ' + (v/1000000) + 'M';
+                            return 'Rp ' + (v/1000) + 'K';
+                        }
+                    },
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    window.changeChartRange = function(range) {
+        let data = dailyData;
+        if (range === 'weekly') data = weeklyData;
+        if (range === 'monthly') data = monthlyData;
+
+        chartInstance.data.labels = data.labels;
+        chartInstance.data.datasets[0].data = data.values;
+        chartInstance.update();
+    };
+});
+</script>
 @endsection
