@@ -239,24 +239,25 @@
         .neon-corner-br { position: absolute; bottom: -1px; right: -1px; width: 14px; height: 14px; border-bottom: 2px solid rgba(232, 255, 0, 0.6); border-right: 2px solid rgba(232, 255, 0, 0.6); }
     </style>
 
-    <div class="flex justify-center w-full">
-        <div id="invoice-document" class="invoice-neon-grid text-on-surface border border-border-subtle shadow-[0_10px_30px_-5px_rgba(0,0,0,0.08)] w-full max-w-[760px] p-6 sm:p-8 flex flex-col justify-between relative rounded-xl box-border overflow-hidden">
-            <!-- Neon Corner Accents -->
-            <div class="neon-corner-tl"></div>
-            <div class="neon-corner-tr"></div>
-            <div class="neon-corner-bl"></div>
-            <div class="neon-corner-br"></div>
+    <div class="overflow-x-auto w-full flex justify-center pb-6">
+        <div class="w-full max-w-[760px] min-w-[620px] sm:min-w-0">
+            <div id="invoice-document" class="invoice-neon-grid text-on-surface border border-border-subtle shadow-[0_10px_30px_-5px_rgba(0,0,0,0.08)] w-full p-6 sm:p-8 flex flex-col justify-between relative rounded-xl box-border overflow-hidden bg-white">
+                <!-- Neon Corner Accents -->
+                <div class="neon-corner-tl"></div>
+                <div class="neon-corner-tr"></div>
+                <div class="neon-corner-bl"></div>
+                <div class="neon-corner-br"></div>
 
-            <!-- Decorative accent bar -->
-            <div class="absolute top-0 left-0 w-full h-2 bg-on-surface"></div>
-            
-            <!-- Enlarged Top Right Neon Tab with "ABT" text -->
-            <div class="absolute top-0 right-10 w-20 h-5 sm:h-5.5 bg-primary-container rounded-b-lg shadow-sm flex items-center justify-center">
-                <span class="font-black text-[11px] text-on-surface tracking-widest leading-none">ABT</span>
-            </div>
+                <!-- Decorative accent bar -->
+                <div class="absolute top-0 left-0 w-full h-2 bg-on-surface"></div>
+                
+                <!-- Enlarged Top Right Neon Tab with "ABT" text -->
+                <div class="absolute top-0 right-10 w-20 h-5 sm:h-5.5 bg-primary-container rounded-b-lg shadow-sm flex items-center justify-center">
+                    <span class="font-black text-[11px] text-on-surface tracking-widest leading-none">ABT</span>
+                </div>
 
-            <!-- Top Section (Header, Details, 1-Row Description & Pricing) -->
-            <div class="relative z-10">
+                <!-- Top Section (Header, Details, 1-Row Description & Pricing) -->
+                <div class="relative z-10">
                 <!-- Header with Logo & Invoice Info -->
                 <div class="flex justify-between items-start mb-5 pb-4 border-b border-border-subtle">
                     <div class="flex items-center gap-3.5">
@@ -518,5 +519,6 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 @endsection
