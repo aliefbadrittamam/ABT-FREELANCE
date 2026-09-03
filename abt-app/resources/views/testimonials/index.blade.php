@@ -34,27 +34,60 @@
         @endif
     </header>
 
-    <!-- Status Tabs (Aktif & Sampah) -->
-    <div class="flex items-center gap-2 mb-6 border-b border-border-subtle dark:border-[#2a2a2a] pb-3">
-        <a href="{{ route('testimonials.index') }}" 
-           class="px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-2 {{ $status !== 'trash' ? 'bg-on-surface text-white dark:bg-white dark:text-on-surface' : 'text-on-surface-variant hover:bg-surface-variant dark:text-gray-400 dark:hover:bg-[#252525]' }}">
-            <span class="material-symbols-outlined text-base sm:text-lg">photo_library</span>
-            Semua Testimoni
-            <span class="text-[11px] px-2 py-0.5 rounded-full {{ $status !== 'trash' ? 'bg-white/20 text-white dark:bg-black/20 dark:text-on-surface' : 'bg-surface-container dark:bg-[#333]' }}">
-                {{ $activeCount }}
-            </span>
-        </a>
-        <a href="{{ route('testimonials.index', ['status' => 'trash']) }}" 
-           class="px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-2 {{ $status === 'trash' ? 'bg-on-surface text-white dark:bg-white dark:text-on-surface' : 'text-on-surface-variant hover:bg-surface-variant dark:text-gray-400 dark:hover:bg-[#252525]' }}">
-            <span class="material-symbols-outlined text-base sm:text-lg">delete_outline</span>
-            Sampah (Trash)
-            @if($trashCount > 0)
-            <span class="text-[11px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-500 dark:bg-red-500/20 font-bold">
-                {{ $trashCount }}
-            </span>
+    <!-- Toolbar: Tabs + Search Bar -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b border-border-subtle dark:border-[#2a2a2a] pb-4">
+        <!-- Status Tabs (Aktif & Sampah) -->
+        <div class="flex items-center gap-2">
+            <a href="{{ route('testimonials.index', array_filter(['search' => $search])) }}" 
+               class="px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-2 {{ $status !== 'trash' ? 'bg-on-surface text-white dark:bg-white dark:text-on-surface' : 'text-on-surface-variant hover:bg-surface-variant dark:text-gray-400 dark:hover:bg-[#252525]' }}">
+                <span class="material-symbols-outlined text-base sm:text-lg">photo_library</span>
+                Semua Testimoni
+                <span class="text-[11px] px-2 py-0.5 rounded-full {{ $status !== 'trash' ? 'bg-white/20 text-white dark:bg-black/20 dark:text-on-surface' : 'bg-surface-container dark:bg-[#333]' }}">
+                    {{ $activeCount }}
+                </span>
+            </a>
+            <a href="{{ route('testimonials.index', array_filter(['status' => 'trash', 'search' => $search])) }}" 
+               class="px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-2 {{ $status === 'trash' ? 'bg-on-surface text-white dark:bg-white dark:text-on-surface' : 'text-on-surface-variant hover:bg-surface-variant dark:text-gray-400 dark:hover:bg-[#252525]' }}">
+                <span class="material-symbols-outlined text-base sm:text-lg">delete_outline</span>
+                Sampah (Trash)
+                @if($trashCount > 0)
+                <span class="text-[11px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-500 dark:bg-red-500/20 font-bold">
+                    {{ $trashCount }}
+                </span>
+                @endif
+            </a>
+        </div>
+
+        <!-- Search Form -->
+        <form method="GET" action="{{ route('testimonials.index') }}" class="relative w-full md:w-80">
+            @if($status === 'trash')
+            <input type="hidden" name="status" value="trash">
             @endif
+            <div class="relative flex items-center">
+                <span class="material-symbols-outlined absolute left-3 text-secondary dark:text-gray-400 text-lg pointer-events-none">search</span>
+                <input type="text" name="search" value="{{ $search }}" placeholder="Cari nomor (#80), jurusan, tugas..." 
+                       class="w-full pl-9 pr-9 py-2 bg-white dark:bg-[#1e1e1e] border border-border-subtle dark:border-[#333] rounded-xl text-xs sm:text-sm text-on-surface dark:text-white placeholder-secondary dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition">
+                @if($search)
+                <a href="{{ route('testimonials.index', $status === 'trash' ? ['status' => 'trash'] : []) }}" 
+                   class="absolute right-3 text-secondary hover:text-on-surface dark:text-gray-400 dark:hover:text-white transition" title="Hapus pencarian">
+                    <span class="material-symbols-outlined text-base">close</span>
+                </a>
+                @endif
+            </div>
+        </form>
+    </div>
+
+    @if($search)
+    <div class="mb-4 flex items-center justify-between text-xs text-secondary dark:text-gray-400 bg-surface-container/50 dark:bg-[#181818] px-3.5 py-2 rounded-lg border border-border-subtle dark:border-[#2a2a2a]">
+        <div>
+            Hasil pencarian untuk: <strong class="text-on-surface dark:text-white">"{{ $search }}"</strong> ({{ $testimonials->total() }} ditemukan)
+        </div>
+        <a href="{{ route('testimonials.index', $status === 'trash' ? ['status' => 'trash'] : []) }}" class="text-primary dark:text-primary-container font-semibold hover:underline flex items-center gap-0.5">
+            <span class="material-symbols-outlined text-sm">restart_alt</span>
+            Reset
         </a>
     </div>
+    @endif
 
     <!-- Testimonial Gallery -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -148,11 +181,25 @@
         @empty
         <div class="col-span-full py-16 text-center text-on-surface-variant dark:text-gray-400 bg-white dark:bg-[#1e1e1e] rounded-xl border border-border-subtle dark:border-[#2a2a2a]">
             <span class="material-symbols-outlined text-4xl sm:text-5xl opacity-30 mb-3">
-                {{ $status === 'trash' ? 'delete_sweep' : 'photo_library' }}
+                {{ $search ? 'search_off' : ($status === 'trash' ? 'delete_sweep' : 'photo_library') }}
             </span>
             <p class="text-xs sm:text-sm font-medium">
-                {{ $status === 'trash' ? 'Kotak sampah kosong. Tidak ada testimoni yang terhapus.' : 'Belum ada testimoni. Upload testimoni pertama!' }}
+                @if($search)
+                    Tidak ada testimoni yang cocok dengan pencarian <strong>"{{ $search }}"</strong>.
+                @elseif($status === 'trash')
+                    Kotak sampah kosong. Tidak ada testimoni yang terhapus.
+                @else
+                    Belum ada testimoni. Upload testimoni pertama!
+                @endif
             </p>
+            @if($search)
+            <div class="mt-3">
+                <a href="{{ route('testimonials.index', $status === 'trash' ? ['status' => 'trash'] : []) }}" class="inline-flex items-center gap-1 text-xs font-semibold bg-primary-container text-on-surface px-3.5 py-1.5 rounded-lg hover:brightness-95 transition">
+                    <span class="material-symbols-outlined text-sm">refresh</span>
+                    Tampilkan Semua
+                </a>
+            </div>
+            @endif
         </div>
         @endforelse
     </div>

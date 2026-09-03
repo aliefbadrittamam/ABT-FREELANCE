@@ -13,17 +13,34 @@ class TestimonialController extends Controller
     public function index(Request $request)
     {
         $status = $request->query('status', 'active');
+        $search = trim($request->query('search', ''));
 
-        if ($status === 'trash') {
-            $testimonials = Testimonial::onlyTrashed()->orderBy('testimonial_number', 'desc')->paginate(12);
-        } else {
-            $testimonials = Testimonial::orderBy('testimonial_number', 'desc')->paginate(12);
+        $query = $status === 'trash' ? Testimonial::onlyTrashed() : Testimonial::query();
+
+        if ($search !== '') {
+            $cleanSearch = ltrim($search, '#');
+            $query->where(function ($q) use ($search, $cleanSearch) {
+                if (is_numeric($cleanSearch)) {
+                    $q->orWhere('testimonial_number', (int)$cleanSearch);
+                }
+                $q->orWhere('major', 'like', "%{$search}%")
+                  ->orWhere('task_title', 'like', "%{$search}%")
+                  ->orWhere('deliverables', 'like', "%{$search}%")
+                  ->orWhere('client_name', 'like', "%{$search}%")
+                  ->orWhere('caption', 'like', "%{$search}%");
+            });
         }
+
+        // Default sorting: newest testimonial number & created date first
+        $testimonials = $query->orderBy('testimonial_number', 'desc')
+                              ->orderBy('created_at', 'desc')
+                              ->paginate(12)
+                              ->withQueryString();
 
         $activeCount = Testimonial::count();
         $trashCount = Testimonial::onlyTrashed()->count();
 
-        return view('testimonials.index', compact('testimonials', 'status', 'activeCount', 'trashCount'));
+        return view('testimonials.index', compact('testimonials', 'status', 'search', 'activeCount', 'trashCount'));
     }
 
     public function create()
