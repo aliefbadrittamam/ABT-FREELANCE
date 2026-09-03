@@ -41,22 +41,38 @@
         @csrf @method('PUT')
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-            <!-- Left: 4-Slot Images -->
+            <!-- Left: 1-4 Slot Images -->
             <div class="bg-white dark:bg-[#1e1e1e] rounded-xl border border-border-subtle dark:border-[#2a2a2a] p-5 sm:p-6 shadow-sm transition-colors duration-200">
-                <label class="block text-[11px] font-semibold text-on-surface dark:text-white uppercase tracking-wider mb-2.5 sm:mb-3">Ganti Gambar per Slot (Opsional)</label>
+                <label class="block text-[11px] font-semibold text-on-surface dark:text-white uppercase tracking-wider mb-2.5 sm:mb-3">
+                    Ganti / Tambah Gambar Slot <span class="text-secondary dark:text-gray-400 font-normal">(Opsional)</span>
+                </label>
                 <div class="grid grid-cols-2 gap-2.5 sm:gap-3 mb-4">
                     @foreach(['tugas' => '1. Tugas', 'chat' => '2. Chat Customer', 'hasil' => '3. Hasil', 'pelunasan' => '4. Pelunasan'] as $slot => $label)
-                    @php $pathField = "image_{$slot}_path"; @endphp
-                    <div x-data="{ preview: '{{ asset('storage/' . $testimonial->$pathField) }}', changed: false }">
+                    @php 
+                        $pathField = "image_{$slot}_path"; 
+                        $hasImage = $testimonial->$pathField && file_exists(storage_path('app/public/' . $testimonial->$pathField));
+                    @endphp
+                    <div x-data="{ preview: '{{ $hasImage ? asset('storage/' . $testimonial->$pathField) : '' }}', changed: false }">
                         <label class="block text-[11px] font-semibold text-on-surface-variant dark:text-gray-400 uppercase tracking-wider mb-1">{{ $label }}</label>
-                        <div class="relative aspect-square rounded-xl overflow-hidden border-2 cursor-pointer transition-colors group bg-surface dark:bg-[#181818]"
+                        <div class="relative aspect-square rounded-xl overflow-hidden border-2 cursor-pointer transition-colors group bg-surface dark:bg-[#181818] flex items-center justify-center"
                              :class="changed ? 'border-primary-container' : 'border-border-subtle dark:border-[#333] hover:border-primary-container/50'"
                              @click="$refs.edit_{{ $slot }}.click()">
-                            <img :src="preview" class="w-full h-full object-cover">
+                            
+                            <template x-if="preview">
+                                <img :src="preview" class="w-full h-full object-cover">
+                            </template>
+                            
+                            <template x-if="!preview">
+                                <div class="flex flex-col items-center gap-1 p-2 text-center">
+                                    <span class="material-symbols-outlined text-2xl text-on-surface-variant/30 dark:text-gray-600">add_photo_alternate</span>
+                                    <p class="text-[10px] text-secondary dark:text-gray-400">Kosong (Klik untuk isi)</p>
+                                </div>
+                            </template>
+
                             <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                 <span class="text-white text-[11px] font-semibold bg-black/60 px-2.5 py-1 rounded-full flex items-center gap-1">
                                     <span class="material-symbols-outlined text-sm">swap_horiz</span>
-                                    Ganti
+                                    Pilih
                                 </span>
                             </div>
                             <input type="file" name="image_{{ $slot }}" accept="image/*" class="hidden"
@@ -66,7 +82,7 @@
                     </div>
                     @endforeach
                 </div>
-                <p class="text-[11px] text-secondary dark:text-gray-400">Klik pada kotak mana saja untuk mengganti gambar pada slot tersebut.</p>
+                <p class="text-[11px] text-secondary dark:text-gray-400">Klik pada kotak mana saja untuk mengganti atau mengisi gambar baru pada slot tersebut.</p>
             </div>
 
             <!-- Right: Caption Details & Live Preview -->

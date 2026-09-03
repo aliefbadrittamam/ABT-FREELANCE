@@ -6,7 +6,7 @@
 @section('content')
 <header class="mb-6 sm:mb-8">
     <h1 class="text-2xl sm:text-[32px] font-bold text-on-surface dark:text-white tracking-tight leading-tight sm:leading-10">Upload Testimoni Baru</h1>
-    <p class="text-xs sm:text-sm text-on-surface-variant dark:text-gray-400 mt-0.5 sm:mt-1">Upload 4 gambar untuk kolase 2x2 dan sesuaikan template caption Telegram.</p>
+    <p class="text-xs sm:text-sm text-on-surface-variant dark:text-gray-400 mt-0.5 sm:mt-1">Upload 1 sampai 4 gambar bukti tugas dan sesuaikan format caption Telegram.</p>
 </header>
 
 <div class="max-w-3xl" x-data="{
@@ -34,11 +34,17 @@
         <form action="{{ route('testimonials.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
 
-            <!-- 4-Slot Upload Grid -->
+            <!-- 1 to 4 Slot Upload Grid -->
             <div class="mb-6 sm:mb-8">
-                <label class="block text-[11px] font-semibold text-on-surface dark:text-white uppercase tracking-wider mb-2 sm:mb-3">Upload 4 Bukti (Kolase Grid 2x2)</label>
-                <div class="grid grid-cols-2 gap-3 sm:gap-4">
-                    @foreach(['tugas' => '1. Tugas', 'chat' => '2. Chat Customer', 'hasil' => '3. Hasil', 'pelunasan' => '4. Pelunasan'] as $slot => $label)
+                <div class="flex items-center justify-between mb-2 sm:mb-3">
+                    <label class="block text-[11px] font-semibold text-on-surface dark:text-white uppercase tracking-wider">
+                        Upload Bukti Gambar <span class="text-secondary dark:text-gray-400 font-normal">(Bebas 1 s/d 4 Foto)</span>
+                    </label>
+                    <span class="text-[11px] text-primary dark:text-primary-container font-medium">Minimal 1 foto</span>
+                </div>
+                
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                    @foreach(['tugas' => '1. Tugas', 'chat' => '2. Chat', 'hasil' => '3. Hasil', 'pelunasan' => '4. Pelunasan'] as $slot => $label)
                     <div x-data="{ preview: null }">
                         <label class="block text-[11px] font-semibold text-on-surface-variant dark:text-gray-400 uppercase tracking-wider mb-1.5">{{ $label }}</label>
                         <div class="relative border-2 border-dashed border-border-subtle dark:border-[#333] rounded-xl text-center hover:border-primary-container cursor-pointer transition-colors aspect-square flex items-center justify-center overflow-hidden bg-surface dark:bg-[#181818]"
@@ -47,12 +53,12 @@
                                 <img :src="preview" class="w-full h-full object-cover rounded-lg">
                             </template>
                             <template x-if="!preview">
-                                <div class="flex flex-col items-center gap-1.5 sm:gap-2 p-2 sm:p-4">
-                                    <span class="material-symbols-outlined text-2xl sm:text-3xl text-on-surface-variant/30 dark:text-gray-600">add_photo_alternate</span>
-                                    <p class="text-[11px] sm:text-xs text-on-surface-variant dark:text-gray-400">Klik untuk upload</p>
+                                <div class="flex flex-col items-center gap-1.5 sm:gap-2 p-2 text-center">
+                                    <span class="material-symbols-outlined text-2xl text-on-surface-variant/30 dark:text-gray-600">add_photo_alternate</span>
+                                    <p class="text-[10px] text-on-surface-variant dark:text-gray-400">Pilih Foto</p>
                                 </div>
                             </template>
-                            <input type="file" name="image_{{ $slot }}" accept="image/*" required class="hidden"
+                            <input type="file" name="image_{{ $slot }}" accept="image/*" class="hidden"
                                    x-ref="input_{{ $slot }}"
                                    @change="preview = URL.createObjectURL($event.target.files[0])">
                         </div>
@@ -60,6 +66,9 @@
                     </div>
                     @endforeach
                 </div>
+                <p class="text-[11px] text-secondary dark:text-gray-400 mt-2.5">
+                    💡 <em>Tips:</em> Jika hanya 1 foto, gambar akan langsung ditampilkan utuh. Jika 2-4 foto, sistem akan otomatis menyusunnya menjadi kolase rapi.
+                </p>
             </div>
 
             <!-- Structured Telegram Caption Builder -->

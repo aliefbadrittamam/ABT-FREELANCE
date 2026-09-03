@@ -25,10 +25,28 @@ class Testimonial extends Model
         return $max ? $max + 1 : 1;
     }
 
+    /**
+     * Check if testimonial is still eligible for deletion (<= 7 days old)
+     */
+    public function isDeletable(): bool
+    {
+        if (!$this->created_at) return true;
+        return $this->created_at->diffInDays(now()) <= 7;
+    }
+
+    /**
+     * Get remaining days allowed for deletion
+     */
+    public function getDaysRemainingForDeletion(): int
+    {
+        if (!$this->created_at) return 0;
+        $diff = 7 - (int)$this->created_at->diffInDays(now());
+        return max(0, $diff);
+    }
+
     public function getFormattedTelegramCaption(): string
     {
         // Format: #{Nomor}. {Jurusan/Kategori} {Judul Tugas}. ({Deliverables})
-        // Example: #80. Sistem Informasi UAS 2 dan 3. (Makalah, Jurnal, Proposal kegiatan dan PPT)
         $numberPart = '#' . ($this->testimonial_number ?: '1');
         
         $bodyParts = [];
