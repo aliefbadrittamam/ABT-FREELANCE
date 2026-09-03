@@ -18,41 +18,53 @@
 <!-- Testimonial Gallery -->
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
     @forelse($testimonials as $t)
-    <div class="bg-white dark:bg-[#1e1e1e] rounded-xl border border-border-subtle dark:border-[#2a2a2a] overflow-hidden hover:shadow-md hover:border-on-surface-variant/30 transition-all duration-300 group relative shadow-sm">
-        @if($t->testimonial_number)
-        <div class="absolute top-2.5 left-2.5 z-10 bg-on-surface/90 dark:bg-black/80 backdrop-blur-sm text-primary-container font-bold text-[11px] px-2.5 py-0.5 rounded-full shadow-sm">
-            #{{ $t->testimonial_number }}
-        </div>
-        @endif
-        @if($t->composed_image_path)
-        <div class="aspect-square overflow-hidden bg-surface-container dark:bg-[#181818]">
-            <img src="{{ asset('storage/' . $t->composed_image_path) }}" alt="Kolase" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-        </div>
-        @endif
-        <div class="p-3.5 sm:p-4">
-            <div class="flex justify-between items-start mb-2">
-                <div class="flex-1 pr-2">
-                    <p class="text-xs sm:text-sm font-semibold text-on-surface dark:text-white line-clamp-1">
-                        {{ $t->major ? $t->major . ' ' . $t->task_title : ($t->client_name ?: 'Testimoni #' . $t->testimonial_number) }}
-                    </p>
-                    @if($t->deliverables)
-                    <p class="text-[11px] text-primary dark:text-primary-container font-medium mt-0.5 line-clamp-1">({{ $t->deliverables }})</p>
-                    @endif
-                    <p class="text-[10px] text-secondary dark:text-gray-400 mt-1">{{ $t->created_at->format('d M Y') }}</p>
+    <div class="bg-white dark:bg-[#1e1e1e] rounded-xl border border-border-subtle dark:border-[#2a2a2a] overflow-hidden hover:shadow-md hover:border-on-surface-variant/30 transition-all duration-300 group flex flex-col justify-between shadow-sm">
+        <div>
+            <div class="relative aspect-square overflow-hidden bg-surface-container dark:bg-[#181818] flex items-center justify-center">
+                @if($t->testimonial_number)
+                <div class="absolute top-2.5 left-2.5 z-10 bg-on-surface/90 dark:bg-black/80 backdrop-blur-sm text-primary-container font-bold text-[11px] px-2.5 py-0.5 rounded-full shadow-sm">
+                    #{{ $t->testimonial_number }}
                 </div>
-                @if($t->posted_to_telegram)
-                <span class="inline-flex items-center gap-1 text-[10px] font-semibold bg-status-lunas/10 text-status-lunas px-2 py-0.5 rounded-full shrink-0">
-                    <span class="material-symbols-outlined text-xs">check_circle</span>
-                    Telegram
-                </span>
+                @endif
+
+                @if($t->composed_image_path && file_exists(storage_path('app/public/' . $t->composed_image_path)))
+                <img src="{{ asset('storage/' . $t->composed_image_path) }}" alt="Kolase" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                 @else
-                <span class="inline-flex items-center gap-1 text-[10px] font-semibold bg-status-pending/10 text-status-pending px-2 py-0.5 rounded-full shrink-0">
-                    <span class="material-symbols-outlined text-xs">warning</span>
-                    Draft
-                </span>
+                <div class="flex flex-col items-center justify-center text-on-surface-variant/40 dark:text-gray-600 gap-2 p-4 text-center">
+                    <span class="material-symbols-outlined text-4xl">mark_chat_read</span>
+                    <p class="text-xs font-medium text-secondary dark:text-gray-400">Arsip Testimoni Telegram</p>
+                </div>
                 @endif
             </div>
-            <div class="mt-3 pt-3 border-t border-border-subtle dark:border-[#2a2a2a] flex justify-between items-center">
+
+            <div class="p-3.5 sm:p-4">
+                <div class="flex justify-between items-start mb-2 gap-2">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs sm:text-sm font-semibold text-on-surface dark:text-white truncate" title="{{ $t->major ? $t->major . ' ' . $t->task_title : ($t->client_name ?: 'Testimoni #' . $t->testimonial_number) }}">
+                            {{ $t->major ? $t->major . ' ' . $t->task_title : ($t->client_name ?: 'Testimoni #' . $t->testimonial_number) }}
+                        </p>
+                        @if($t->deliverables)
+                        <p class="text-[11px] text-primary dark:text-primary-container font-medium mt-0.5 truncate" title="({{ $t->deliverables }})">({{ $t->deliverables }})</p>
+                        @endif
+                        <p class="text-[10px] text-secondary dark:text-gray-400 mt-1">{{ $t->created_at->format('d M Y') }}</p>
+                    </div>
+                    @if($t->posted_to_telegram)
+                    <span class="inline-flex items-center gap-1 text-[10px] font-semibold bg-status-lunas/10 text-status-lunas px-2 py-0.5 rounded-full shrink-0">
+                        <span class="material-symbols-outlined text-xs">check_circle</span>
+                        Telegram
+                    </span>
+                    @else
+                    <span class="inline-flex items-center gap-1 text-[10px] font-semibold bg-status-pending/10 text-status-pending px-2 py-0.5 rounded-full shrink-0">
+                        <span class="material-symbols-outlined text-xs">warning</span>
+                        Draft
+                    </span>
+                    @endif
+                </div>
+            </div>
+        </div>
+
+        <div class="px-3.5 sm:px-4 pb-3.5 sm:pb-4 pt-0">
+            <div class="pt-3 border-t border-border-subtle dark:border-[#2a2a2a] flex justify-between items-center">
                 <span class="text-[10px] text-secondary dark:text-gray-400 font-mono">
                     #{{ $t->testimonial_number }}
                 </span>

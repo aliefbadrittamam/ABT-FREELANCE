@@ -12,7 +12,7 @@ class TestimonialController extends Controller
 {
     public function index()
     {
-        $testimonials = Testimonial::latest()->paginate(12);
+        $testimonials = Testimonial::orderBy('testimonial_number', 'desc')->paginate(12);
         return view('testimonials.index', compact('testimonials'));
     }
 
