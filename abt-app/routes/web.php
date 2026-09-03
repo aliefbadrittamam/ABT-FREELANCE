@@ -24,6 +24,7 @@ Route::get('/payment', [PaymentController::class, 'index'])->name('payment.index
 Route::post('/payment', [PaymentController::class, 'update'])->name('payment.update');
 
 Route::get('/tour-organizer', fn() => view('tour-organizer.index'))->name('tour-organizer.index');
+Route::get('/tour-organizer/efootball-mobile', fn() => view('tour-organizer.efootball'))->name('tour-organizer.efootball');
 
 // Legacy redirect
 Route::get('/qris', fn() => redirect()->route('payment.index'));

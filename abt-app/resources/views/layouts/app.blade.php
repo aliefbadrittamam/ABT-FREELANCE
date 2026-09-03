@@ -170,11 +170,32 @@
                     Pembayaran
                 </a>
             </li>
-            <li>
-                <a href="{{ route('tour-organizer.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('tour-organizer.*') ? 'bg-primary dark:bg-primary text-on-primary font-semibold shadow-sm' : 'text-secondary dark:text-gray-300 hover:bg-surface-variant dark:hover:bg-[#252525]' }}">
-                    <span class="material-symbols-outlined text-xl" {{ request()->routeIs('tour-organizer.*') ? "style=font-variation-settings:'FILL'1" : '' }}>luggage</span>
-                    Tour Organizer
-                </a>
+            <!-- Tour Organizer with Submenu -->
+            <li x-data="{ open: {{ request()->routeIs('tour-organizer.*') ? 'true' : 'false' }} }">
+                <button type="button" @click="open = !open" 
+                        class="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('tour-organizer.*') ? 'bg-primary dark:bg-primary text-on-primary font-semibold shadow-sm' : 'text-secondary dark:text-gray-300 hover:bg-surface-variant dark:hover:bg-[#252525]' }}">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-xl" {{ request()->routeIs('tour-organizer.*') ? "style=font-variation-settings:'FILL'1" : '' }}>luggage</span>
+                        Tour Organizer
+                    </div>
+                    <span class="material-symbols-outlined text-base transition-transform duration-200" :class="open ? 'rotate-180' : ''">expand_more</span>
+                </button>
+                <!-- Submenu items -->
+                <ul x-show="open" x-collapse x-cloak class="pl-11 pr-2 py-1.5 space-y-1">
+                    <li>
+                        <a href="{{ route('tour-organizer.index') }}" 
+                           class="block px-3 py-2 rounded-lg text-xs font-medium transition-colors {{ request()->routeIs('tour-organizer.index') ? 'text-primary dark:text-primary-container font-bold bg-primary-container/15' : 'text-secondary dark:text-gray-400 hover:text-on-surface dark:hover:text-white' }}">
+                            Overview
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('tour-organizer.efootball') }}" 
+                           class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors {{ request()->routeIs('tour-organizer.efootball') ? 'text-primary dark:text-primary-container font-bold bg-primary-container/15' : 'text-secondary dark:text-gray-400 hover:text-on-surface dark:hover:text-white' }}">
+                            <span class="material-symbols-outlined text-sm">sports_esports</span>
+                            eFootball Mobile
+                        </a>
+                    </li>
+                </ul>
             </li>
         </ul>
 
