@@ -487,10 +487,21 @@ class TelegramBotHandler
             $newStatus = 'unpaid';
         }
 
-        $invoice->update([
-            'status' => $newStatus,
-            'paid_at' => $newStatus === 'paid' ? now() : null,
-        ]);
+        $updateData = ['status' => $newStatus];
+        if ($newStatus === 'paid') {
+            $updateData['paid_at'] = now();
+            if ($invoice->payment_type === 'dp' && empty($invoice->dp_paid_at)) {
+                $updateData['dp_paid_at'] = now();
+            }
+        } elseif ($newStatus === 'dp_paid') {
+            $updateData['dp_paid_at'] = $invoice->dp_paid_at ?: now();
+            $updateData['paid_at'] = null;
+        } elseif ($newStatus === 'unpaid' || $newStatus === 'canceled') {
+            $updateData['paid_at'] = null;
+            $updateData['dp_paid_at'] = null;
+        }
+
+        $invoice->update($updateData);
 
         $statusHuman = match($newStatus) {
             'paid' => '✅ LUNAS',

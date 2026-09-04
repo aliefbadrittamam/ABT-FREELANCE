@@ -9,7 +9,7 @@ class Invoice extends Model
 {
     protected $fillable = [
         'invoice_number', 'title', 'client_name', 'category_id',
-        'description', 'deadline', 'payment_type', 'dp_amount',
+        'description', 'deadline', 'payment_type', 'dp_amount', 'dp_paid_at',
         'total_amount', 'status', 'access_token', 'paid_at',
         'task_file_path', 'task_file_name',
         'has_worker', 'my_role', 'payment_flow', 'partner_name', 'partner_phone',
@@ -22,6 +22,7 @@ class Invoice extends Model
         return [
             'deadline' => 'datetime',
             'paid_at' => 'datetime',
+            'dp_paid_at' => 'datetime',
             'payout_at' => 'datetime',
             'dp_amount' => 'decimal:2',
             'total_amount' => 'decimal:2',
@@ -136,8 +137,17 @@ class Invoice extends Model
         });
 
         static::updating(function (Invoice $invoice) {
-            if ($invoice->isDirty('status') && $invoice->status === 'paid') {
-                $invoice->paid_at = now();
+            if ($invoice->isDirty('status')) {
+                if ($invoice->status === 'dp_paid' && empty($invoice->dp_paid_at)) {
+                    $invoice->dp_paid_at = now();
+                } elseif ($invoice->status === 'paid') {
+                    if (empty($invoice->paid_at)) {
+                        $invoice->paid_at = now();
+                    }
+                    if ($invoice->payment_type === 'dp' && empty($invoice->dp_paid_at)) {
+                        $invoice->dp_paid_at = $invoice->paid_at;
+                    }
+                }
             }
             if ($invoice->isDirty(['has_worker', 'my_role', 'worker_percentage', 'total_amount'])) {
                 $invoice->calculateShares();

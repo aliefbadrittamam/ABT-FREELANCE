@@ -9,32 +9,74 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
+    /**
+     * Calculate exact real cash inflow for a specific date or date range.
+     * Cash in = (Full Payments received) + (DP payments received) + (Remaining Pelunasan received).
+     */
+    private function calculateCashInflow(?Carbon $date = null, ?Carbon $start = null, ?Carbon $end = null): float
+    {
+        // 1. Full payment invoices paid within period
+        $fullQuery = Invoice::where('status', 'paid')->where('payment_type', 'full');
+        if ($date) {
+            $fullQuery->whereDate('paid_at', $date);
+        } elseif ($start && $end) {
+            $fullQuery->whereBetween('paid_at', [$start, $end]);
+        }
+        $fullInflow = (float)$fullQuery->sum('total_amount');
+
+        // 2. DP payments received within period (from dp_paid or paid invoices)
+        $dpQuery = Invoice::whereIn('status', ['dp_paid', 'paid'])->where('payment_type', 'dp');
+        if ($date) {
+            $dpQuery->where(function($q) use ($date) {
+                $q->whereDate('dp_paid_at', $date)
+                  ->orWhere(function($sub) use ($date) {
+                      $sub->whereNull('dp_paid_at')->whereDate('paid_at', $date);
+                  });
+            });
+        } elseif ($start && $end) {
+            $dpQuery->where(function($q) use ($start, $end) {
+                $q->whereBetween('dp_paid_at', [$start, $end])
+                  ->orWhere(function($sub) use ($start, $end) {
+                      $sub->whereNull('dp_paid_at')->whereBetween('paid_at', [$start, $end]);
+                  });
+            });
+        }
+        $dpInflow = (float)$dpQuery->sum('dp_amount');
+
+        // 3. Pelunasan (remaining amount) received within period (status == 'paid')
+        // Only the remaining amount (total_amount - dp_amount), NOT the full amount!
+        $pelunasanQuery = Invoice::where('status', 'paid')->where('payment_type', 'dp');
+        if ($date) {
+            $pelunasanQuery->whereDate('paid_at', $date);
+        } elseif ($start && $end) {
+            $pelunasanQuery->whereBetween('paid_at', [$start, $end]);
+        }
+        
+        $pelunasanInflow = (float)$pelunasanQuery->get()->sum(function ($inv) {
+            return max(0, (float)$inv->total_amount - (float)$inv->dp_amount);
+        });
+
+        return $fullInflow + $dpInflow + $pelunasanInflow;
+    }
+
     public function index()
     {
-        // 1. Total Pendapatan Keseluruhan (Paid invoices + DP amounts from dp_paid)
-        $totalPaidFull = Invoice::where('status', 'paid')->sum('total_amount');
-        $totalDpCollected = Invoice::where('status', 'dp_paid')->sum('dp_amount');
-        $totalRevenue = (float)$totalPaidFull + (float)$totalDpCollected;
+        // 1. Total Pendapatan Keseluruhan (Cash in to date)
+        $totalPaidFull = Invoice::where('status', 'paid')->where('payment_type', 'full')->sum('total_amount');
+        $totalDpCollected = Invoice::whereIn('status', ['dp_paid', 'paid'])->where('payment_type', 'dp')->sum('dp_amount');
+        $totalPelunasanPaid = Invoice::where('status', 'paid')->where('payment_type', 'dp')->get()->sum(function ($inv) {
+            return max(0, (float)$inv->total_amount - (float)$inv->dp_amount);
+        });
+        $totalRevenue = (float)$totalPaidFull + (float)$totalDpCollected + (float)$totalPelunasanPaid;
 
-        // 2. Pendapatan Hari Ini
-        $todayPaidFull = Invoice::where('status', 'paid')
-            ->whereDate('paid_at', Carbon::today())
-            ->sum('total_amount');
-        $todayDpCollected = Invoice::where('status', 'dp_paid')
-            ->whereDate('created_at', Carbon::today())
-            ->sum('dp_amount');
-        $todayRevenue = (float)$todayPaidFull + (float)$todayDpCollected;
+        // 2. Pendapatan Hari Ini (Uang masuk riil hari ini)
+        $todayRevenue = $this->calculateCashInflow(date: Carbon::today());
 
         // 3. Pendapatan Bulan Ini (tgl 1 sampai akhir bulan berjalan)
         $startOfMonth = Carbon::now()->startOfMonth();
         $endOfMonth = Carbon::now()->endOfMonth();
-        $monthPaidFull = Invoice::where('status', 'paid')
-            ->whereBetween('paid_at', [$startOfMonth, $endOfMonth])
-            ->sum('total_amount');
-        $monthDpCollected = Invoice::where('status', 'dp_paid')
-            ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
-            ->sum('dp_amount');
-        $thisMonthRevenue = (float)$monthPaidFull + (float)$monthDpCollected;
+        $thisMonthRevenue = $this->calculateCashInflow(start: $startOfMonth, end: $endOfMonth);
+        
         $thisMonthInvoicesCount = Invoice::where('status', 'paid')
             ->whereBetween('paid_at', [$startOfMonth, $endOfMonth])
             ->count();
@@ -45,12 +87,12 @@ class DashboardController extends Controller
             ->where('payment_type', 'dp')
             ->sum('dp_amount');
 
-        // 4. Sisa Pelunasan yang Belum Terbayar (Piutang riil)
+        // 5. Sisa Pelunasan yang Belum Terbayar (Piutang riil)
         $sisaPelunasan = Invoice::where('status', 'dp_paid')->get()->sum(function ($inv) {
-            return (float)$inv->total_amount - (float)$inv->dp_amount;
+            return max(0, (float)$inv->total_amount - (float)$inv->dp_amount);
         });
 
-        // 5. Total Belum Bayar (Status unpaid total)
+        // 6. Total Belum Bayar (Status unpaid total)
         $totalUnpaid = Invoice::where('status', 'unpaid')->sum('total_amount');
 
         // Total Outstanding Piutang (Belum DP + Sisa Pelunasan)
@@ -63,53 +105,35 @@ class DashboardController extends Controller
         $unpaidInvoices = Invoice::where('status', 'unpaid')->count();
         $canceledInvoices = Invoice::where('status', 'canceled')->count();
 
-        // 6. Dataset Grafik Harian (7 Hari Terakhir)
+        // 7. Dataset Grafik Harian (7 Hari Terakhir)
         $dailyLabels = [];
         $dailyValues = [];
         for ($i = 6; $i >= 0; $i--) {
             $date = Carbon::today()->subDays($i);
             $dailyLabels[] = $date->translatedFormat('d M');
-            $paidSum = Invoice::where('status', 'paid')
-                ->whereDate('paid_at', $date)
-                ->sum('total_amount');
-            $dpSum = Invoice::where('status', 'dp_paid')
-                ->whereDate('created_at', $date)
-                ->sum('dp_amount');
-            $dailyValues[] = (float)$paidSum + (float)$dpSum;
+            $dailyValues[] = $this->calculateCashInflow(date: $date);
         }
 
-        // 7. Dataset Grafik Mingguan (6 Minggu Terakhir)
+        // 8. Dataset Grafik Mingguan (6 Minggu Terakhir)
         $weeklyLabels = [];
         $weeklyValues = [];
         for ($w = 5; $w >= 0; $w--) {
             $startWeek = Carbon::now()->subWeeks($w)->startOfWeek();
             $endWeek = Carbon::now()->subWeeks($w)->endOfWeek();
             $weeklyLabels[] = $startWeek->format('d/m') . '-' . $endWeek->format('d/m');
-            $paidSum = Invoice::where('status', 'paid')
-                ->whereBetween('paid_at', [$startWeek, $endWeek])
-                ->sum('total_amount');
-            $dpSum = Invoice::where('status', 'dp_paid')
-                ->whereBetween('created_at', [$startWeek, $endWeek])
-                ->sum('dp_amount');
-            $weeklyValues[] = (float)$paidSum + (float)$dpSum;
+            $weeklyValues[] = $this->calculateCashInflow(start: $startWeek, end: $endWeek);
         }
 
-        // 8. Dataset Grafik Bulanan (Tahun Berjalan)
+        // 9. Dataset Grafik Bulanan (Tahun Berjalan)
         $monthsName = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
         $monthlyLabels = [];
         $monthlyValues = [];
         $currentYear = Carbon::now()->year;
         for ($m = 1; $m <= 12; $m++) {
             $monthlyLabels[] = $monthsName[$m - 1];
-            $paidSum = Invoice::where('status', 'paid')
-                ->whereYear('paid_at', $currentYear)
-                ->whereMonth('paid_at', $m)
-                ->sum('total_amount');
-            $dpSum = Invoice::where('status', 'dp_paid')
-                ->whereYear('created_at', $currentYear)
-                ->whereMonth('created_at', $m)
-                ->sum('dp_amount');
-            $monthlyValues[] = (float)$paidSum + (float)$dpSum;
+            $startMonth = Carbon::createFromDate($currentYear, $m, 1)->startOfMonth();
+            $endMonth = Carbon::createFromDate($currentYear, $m, 1)->endOfMonth();
+            $monthlyValues[] = $this->calculateCashInflow(start: $startMonth, end: $endMonth);
         }
 
         // Breakdown per Kategori
