@@ -215,6 +215,45 @@ class TelegramService
         }
     }
 
+    public function sendDocumentToChat(string $chatId, string $documentPath, ?string $caption = null, array $extra = []): ?int
+    {
+        $this->lastError = null;
+
+        if (empty($this->botToken)) {
+            $this->lastError = 'Telegram bot token is missing.';
+            return null;
+        }
+
+        if (!file_exists($documentPath)) {
+            $this->lastError = 'File dokumen tidak ditemukan: ' . $documentPath;
+            return null;
+        }
+
+        try {
+            $payload = array_merge([
+                'chat_id' => $chatId,
+                'caption' => $caption ?? '',
+                'parse_mode' => 'HTML',
+            ], $extra);
+
+            $response = Http::timeout(45)->attach(
+                'document', file_get_contents($documentPath), basename($documentPath)
+            )->post("{$this->baseUrl}/sendDocument", $payload);
+
+            if ($response->successful()) {
+                return (int)$response->json('result.message_id');
+            }
+
+            $this->lastError = $response->json('description', 'Unknown sendDocument error');
+            Log::error('Telegram sendDocumentToChat failed', ['response' => $response->body()]);
+            return null;
+        } catch (\Exception $e) {
+            $this->lastError = $e->getMessage();
+            Log::error('Telegram sendDocumentToChat exception: ' . $e->getMessage());
+            return null;
+        }
+    }
+
     public function answerCallbackQuery(string $callbackQueryId, ?string $text = null, bool $showAlert = false): bool
     {
         if (empty($this->botToken)) {

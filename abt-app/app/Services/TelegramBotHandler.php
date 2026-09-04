@@ -6,6 +6,7 @@ use App\Models\Invoice;
 use App\Models\Category;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class TelegramBotHandler
 {
@@ -117,6 +118,38 @@ class TelegramBotHandler
             return;
         }
 
+        // On-demand Send PDF
+        if (str_starts_with($data, 'send_pdf_')) {
+            $invId = (int)substr($data, 9);
+            $invoice = Invoice::find($invId);
+            if ($invoice) {
+                $this->telegram->sendMessage($chatId, "⏳ <i>Sedang menyiapkan dokumen PDF resmi {$invoice->invoice_number}...</i>");
+                $pdfPath = $this->renderPdf($invoice);
+                if ($pdfPath && file_exists($pdfPath)) {
+                    $this->telegram->sendDocumentToChat($chatId, $pdfPath, "📄 Dokumen Resmi PDF: <b>{$invoice->invoice_number}</b>");
+                } else {
+                    $this->telegram->sendMessage($chatId, "❌ Gagal membuat file PDF. Silakan coba buka via link: {$invoice->getClientViewUrl()}");
+                }
+            }
+            return;
+        }
+
+        // On-demand Send PNG
+        if (str_starts_with($data, 'send_png_')) {
+            $invId = (int)substr($data, 9);
+            $invoice = Invoice::find($invId);
+            if ($invoice) {
+                $this->telegram->sendMessage($chatId, "⏳ <i>Sedang menyiapkan gambar PNG {$invoice->invoice_number}...</i>");
+                $pngPath = $this->renderPng($invoice);
+                if ($pngPath && file_exists($pngPath)) {
+                    $this->telegram->sendPhotoToChat($chatId, $pngPath, "🖼️ Gambar Invoice HD: <b>{$invoice->invoice_number}</b>");
+                } else {
+                    $this->telegram->sendMessage($chatId, "❌ Gagal membuat gambar PNG.");
+                }
+            }
+            return;
+        }
+
         // Category selection callback
         if (str_starts_with($data, 'cat_')) {
             $categoryId = (int)substr($data, 4);
@@ -205,9 +238,21 @@ class TelegramBotHandler
             return;
         }
 
-        // Final confirmation callback
-        if ($data === 'confirm_create') {
-            $this->executeInvoiceCreation($chatId, $session);
+        // Final creation callbacks with format choice
+        if ($data === 'confirm_png') {
+            $this->executeInvoiceCreation($chatId, $session, 'png');
+            Cache::forget("tg_wizard_{$chatId}");
+            return;
+        }
+
+        if ($data === 'confirm_pdf') {
+            $this->executeInvoiceCreation($chatId, $session, 'pdf');
+            Cache::forget("tg_wizard_{$chatId}");
+            return;
+        }
+
+        if ($data === 'confirm_both') {
+            $this->executeInvoiceCreation($chatId, $session, 'both');
             Cache::forget("tg_wizard_{$chatId}");
             return;
         }
@@ -219,7 +264,7 @@ class TelegramBotHandler
     protected function sendWelcomeMenu(string $chatId, string $userName): void
     {
         $text = "⚡ <b>Halo, {$userName}! Selamat datang di Asisten Invoice ABT-FREELANCE</b>\n\n"
-              . "Anda dapat membuat invoice profesional, memantau pembayaran, dan membagikan link portal klien langsung dari sini.\n\n"
+              . "Anda dapat membuat invoice profesional, memilih format pengiriman (PDF / Gambar PNG), dan membagikan link portal klien langsung dari sini.\n\n"
               . "👇 <b>Tekan tombol di bawah untuk memulai:</b>";
 
         $this->telegram->sendMessage($chatId, $text, [
@@ -347,7 +392,7 @@ class TelegramBotHandler
     }
 
     /**
-     * Show preview confirmation prompt before final rendering.
+     * Show preview confirmation prompt before final rendering with format choices.
      */
     protected function showConfirmationPrompt(string $chatId, array $session): void
     {
@@ -370,11 +415,15 @@ class TelegramBotHandler
                   ? "• <b>Metode:</b> Bertahap (DP)\n  - Wajib DP: <b>Rp " . number_format($dp, 0, ',', '.') . "</b>\n  - Sisa Pelunasan: Rp " . number_format($sisa, 0, ',', '.') . "\n"
                   : "• <b>Metode:</b> Bayar Lunas Langsung\n")
               . "────────────────────────\n"
-              . "Apakah data di atas sudah sesuai?";
+              . "Pilih format file yang ingin dikirim ke chat Telegram:";
 
         $buttons = [
             [
-                ['text' => '✅ Buat & Render Invoice', 'callback_data' => 'confirm_create'],
+                ['text' => '🖼️ Kirim Gambar (PNG)', 'callback_data' => 'confirm_png'],
+                ['text' => '📄 Kirim Dokumen (PDF)', 'callback_data' => 'confirm_pdf'],
+            ],
+            [
+                ['text' => '🚀 Kirim Keduanya (PNG + PDF)', 'callback_data' => 'confirm_both'],
             ],
             [
                 ['text' => '❌ Batalkan', 'callback_data' => 'wizard_cancel'],
@@ -387,11 +436,81 @@ class TelegramBotHandler
     }
 
     /**
-     * Execute invoice creation in database and send rendered HD image.
+     * Render high-resolution PNG invoice via Puppeteer.
      */
-    protected function executeInvoiceCreation(string $chatId, array $session): void
+    public function renderPng(Invoice $invoice): ?string
     {
-        $this->telegram->sendMessage($chatId, "⏳ <i>Sedang membuat invoice dan merender gambar resmi HD...</i>");
+        $exportDir = storage_path('app/public/invoices/exports');
+        if (!is_dir($exportDir)) {
+            mkdir($exportDir, 0755, true);
+        }
+
+        $pngFilename = $invoice->invoice_number . '.png';
+        $pngPath = $exportDir . '/' . $pngFilename;
+
+        if (file_exists($pngPath) && filesize($pngPath) > 0) {
+            return $pngPath;
+        }
+
+        $htmlContent = view('invoices.standalone', compact('invoice'))->render();
+        $tempHtmlPath = storage_path('app/public/invoices/exports/tg_temp_png_' . $invoice->id . '_' . time() . '.html');
+        file_put_contents($tempHtmlPath, $htmlContent);
+
+        $scriptPath = base_path('render_image.mjs');
+        $command = "node \"{$scriptPath}\" \"{$tempHtmlPath}\" \"{$pngPath}\" 2>&1";
+        exec($command, $output, $returnCode);
+        @unlink($tempHtmlPath);
+
+        return (file_exists($pngPath) && filesize($pngPath) > 0) ? $pngPath : null;
+    }
+
+    /**
+     * Render official 2-page A4 PDF invoice via Puppeteer with DomPDF fallback.
+     */
+    public function renderPdf(Invoice $invoice): ?string
+    {
+        $exportDir = storage_path('app/public/invoices/exports');
+        if (!is_dir($exportDir)) {
+            mkdir($exportDir, 0755, true);
+        }
+
+        $pdfFilename = $invoice->invoice_number . '.pdf';
+        $pdfPath = $exportDir . '/' . $pdfFilename;
+
+        if (file_exists($pdfPath) && filesize($pdfPath) > 0) {
+            return $pdfPath;
+        }
+
+        $pdfHtmlContent = view('invoices.export', compact('invoice'))->render();
+        $tempPdfHtmlPath = storage_path('app/public/invoices/exports/tg_temp_pdf_' . $invoice->id . '_' . time() . '.html');
+        file_put_contents($tempPdfHtmlPath, $pdfHtmlContent);
+
+        $scriptPath = base_path('render_pdf.mjs');
+        $command = "node \"{$scriptPath}\" \"{$tempPdfHtmlPath}\" \"{$pdfPath}\" 2>&1";
+        exec($command, $output, $returnCode);
+        @unlink($tempPdfHtmlPath);
+
+        if (file_exists($pdfPath) && filesize($pdfPath) > 0) {
+            return $pdfPath;
+        }
+
+        // Fallback to DomPDF if Puppeteer timed out
+        try {
+            $pdf = Pdf::loadView('invoices.export', compact('invoice'))->setPaper('a4', 'portrait');
+            $pdf->save($pdfPath);
+            return file_exists($pdfPath) ? $pdfPath : null;
+        } catch (\Exception $e) {
+            Log::error('DomPDF fallback failed: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Execute invoice creation in database and send chosen format file(s).
+     */
+    protected function executeInvoiceCreation(string $chatId, array $session, string $format = 'both'): void
+    {
+        $this->telegram->sendMessage($chatId, "⏳ <i>Sedang membuat invoice dan merender file resmi...</i>");
 
         try {
             $category = Category::find($session['category_id'] ?? 1) ?: Category::first();
@@ -412,24 +531,6 @@ class TelegramBotHandler
                 'total_amount' => $total,
                 'status' => 'unpaid',
             ]);
-
-            // Render HD PNG invoice via Puppeteer
-            $exportDir = storage_path('app/public/invoices/exports');
-            if (!is_dir($exportDir)) {
-                mkdir($exportDir, 0755, true);
-            }
-
-            $htmlContent = view('invoices.standalone', compact('invoice'))->render();
-            $tempHtmlPath = storage_path('app/public/invoices/exports/tg_temp_' . $invoice->id . '_' . time() . '.html');
-            file_put_contents($tempHtmlPath, $htmlContent);
-
-            $pngFilename = $invoice->invoice_number . '.png';
-            $pngPath = $exportDir . '/' . $pngFilename;
-            $scriptPath = base_path('render_image.mjs');
-
-            $command = "node \"{$scriptPath}\" \"{$tempHtmlPath}\" \"{$pngPath}\" 2>&1";
-            exec($command, $output, $returnCode);
-            @unlink($tempHtmlPath);
 
             $clientUrl = $invoice->getClientViewUrl();
             $formattedTotal = 'Rp ' . number_format($total, 0, ',', '.');
@@ -457,8 +558,13 @@ class TelegramBotHandler
                      . "📲 <b>Format Chat WhatsApp (Tinggal Salin):</b>\n"
                      . "<code>" . htmlspecialchars($waMessage) . "</code>";
 
+            // Interactive buttons below invoice
             $replyMarkup = [
                 'inline_keyboard' => [
+                    [
+                        ['text' => '📄 Minta File PDF', 'callback_data' => "send_pdf_{$invoice->id}"],
+                        ['text' => '🖼️ Minta File PNG', 'callback_data' => "send_png_{$invoice->id}"],
+                    ],
                     [
                         ['text' => '🌐 Buka Portal Klien', 'url' => $clientUrl],
                         ['text' => '💬 Buka di Web Admin', 'url' => config('app.url') . "/invoices/{$invoice->id}"],
@@ -466,11 +572,31 @@ class TelegramBotHandler
                 ]
             ];
 
-            if (file_exists($pngPath) && filesize($pngPath) > 0) {
-                $this->telegram->sendPhotoToChat($chatId, $pngPath, $caption, [
-                    'reply_markup' => json_encode($replyMarkup)
-                ]);
-            } else {
+            // 1. Send PNG if requested
+            $pngSent = false;
+            if ($format === 'png' || $format === 'both') {
+                $pngPath = $this->renderPng($invoice);
+                if ($pngPath && file_exists($pngPath)) {
+                    $this->telegram->sendPhotoToChat($chatId, $pngPath, $caption, [
+                        'reply_markup' => json_encode($replyMarkup)
+                    ]);
+                    $pngSent = true;
+                }
+            }
+
+            // 2. Send PDF if requested
+            if ($format === 'pdf' || $format === 'both') {
+                $pdfPath = $this->renderPdf($invoice);
+                if ($pdfPath && file_exists($pdfPath)) {
+                    $docCaption = $pngSent ? "📄 File Dokumen PDF: <b>{$invoice->invoice_number}</b>" : $caption;
+                    $this->telegram->sendDocumentToChat($chatId, $pdfPath, $docCaption, [
+                        'reply_markup' => json_encode($replyMarkup)
+                    ]);
+                }
+            }
+
+            // Fallback text if nothing was sent
+            if (!$pngSent && $format !== 'pdf') {
                 $this->telegram->sendMessage($chatId, $caption, [
                     'reply_markup' => json_encode($replyMarkup)
                 ]);
@@ -520,7 +646,16 @@ class TelegramBotHandler
              . "📊 Status: <b>{$statusText}</b>\n"
              . "🔗 Link: {$invoice->getClientViewUrl()}";
 
-        $this->telegram->sendMessage($chatId, $msg);
+        $buttons = [
+            [
+                ['text' => '📄 Minta PDF', 'callback_data' => "send_pdf_{$invoice->id}"],
+                ['text' => '🖼️ Minta PNG', 'callback_data' => "send_png_{$invoice->id}"],
+            ]
+        ];
+
+        $this->telegram->sendMessage($chatId, $msg, [
+            'reply_markup' => json_encode(['inline_keyboard' => $buttons])
+        ]);
     }
 
     /**
@@ -551,6 +686,6 @@ class TelegramBotHandler
             return;
         }
 
-        $this->executeInvoiceCreation($chatId, $session);
+        $this->executeInvoiceCreation($chatId, $session, 'both');
     }
 }
