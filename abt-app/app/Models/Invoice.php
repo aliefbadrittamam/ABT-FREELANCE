@@ -90,7 +90,7 @@ class Invoice extends Model
         }
     }
 
-    public static function generateInvoiceNumber(?int $categoryId = null): string
+    public static function generateInvoiceNumber(?int $categoryId = null, ?\DateTimeInterface $date = null): string
     {
         $prefix = 'JOKI';
         if ($categoryId) {
@@ -102,18 +102,23 @@ class Invoice extends Model
 
         $basePattern = 'INV-' . $prefix . '-';
 
-        // Find highest sequence number numerically for this category prefix
+        // Find highest sequence number numerically for this category prefix (at index 2)
         $maxSeq = static::where('invoice_number', 'LIKE', $basePattern . '%')
             ->get()
             ->map(function ($inv) {
                 $parts = explode('-', $inv->invoice_number);
-                return (int) end($parts);
+                return isset($parts[2]) ? (int) $parts[2] : 0;
             })
             ->max();
 
         $nextNumber = ($maxSeq ?: 0) + 1;
+        $paddedSeq = str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
 
-        return $basePattern . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+        $now = $date ? \Illuminate\Support\Carbon::parse($date) : now();
+        $dateStamp = $now->format('ymd'); // e.g. 260904
+        $timeStamp = $now->format('His'); // e.g. 153042
+
+        return "{$basePattern}{$paddedSeq}-{$dateStamp}-{$timeStamp}";
     }
 
     protected static function booted(): void

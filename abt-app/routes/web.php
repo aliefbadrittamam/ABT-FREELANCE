@@ -8,6 +8,9 @@ use App\Http\Controllers\TestimonialController;
 use App\Http\Controllers\PaymentController;
 use Illuminate\Support\Facades\Route;
 
+// Telegram Webhook for Production
+Route::post('/api/telegram/webhook', [\App\Http\Controllers\TelegramWebhookController::class, 'handle'])->name('telegram.webhook');
+
 // Public Customer/Client Invoice Portal (Standalone, No Auth/Sidebar required)
 Route::get('/i/{token}', [ClientInvoiceController::class, 'show'])->name('client.invoices.show');
 Route::get('/i/{token}/export/{format}', [ClientInvoiceController::class, 'export'])->name('client.invoices.export');

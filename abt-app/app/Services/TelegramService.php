@@ -142,4 +142,103 @@ class TelegramService
             return false;
         }
     }
+
+    public function sendMessage(string $chatId, string $text, array $extra = []): ?int
+    {
+        $this->lastError = null;
+
+        if (empty($this->botToken)) {
+            $this->lastError = 'Telegram bot token is missing.';
+            return null;
+        }
+
+        try {
+            $payload = array_merge([
+                'chat_id' => $chatId,
+                'text' => $text,
+                'parse_mode' => 'HTML',
+                'disable_web_page_preview' => false,
+            ], $extra);
+
+            $response = Http::timeout(20)->post("{$this->baseUrl}/sendMessage", $payload);
+
+            if ($response->successful()) {
+                return (int)$response->json('result.message_id');
+            }
+
+            $this->lastError = $response->json('description', 'Unknown sendMessage error');
+            Log::error('Telegram sendMessage failed', ['response' => $response->body()]);
+            return null;
+        } catch (\Exception $e) {
+            $this->lastError = $e->getMessage();
+            Log::error('Telegram sendMessage exception: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    public function sendPhotoToChat(string $chatId, string $imagePath, ?string $caption = null, array $extra = []): ?int
+    {
+        $this->lastError = null;
+
+        if (empty($this->botToken)) {
+            $this->lastError = 'Telegram bot token is missing.';
+            return null;
+        }
+
+        if (!file_exists($imagePath)) {
+            $this->lastError = 'File gambar tidak ditemukan: ' . $imagePath;
+            return null;
+        }
+
+        try {
+            $payload = array_merge([
+                'chat_id' => $chatId,
+                'caption' => $caption ?? '',
+                'parse_mode' => 'HTML',
+            ], $extra);
+
+            $response = Http::timeout(30)->attach(
+                'photo', file_get_contents($imagePath), basename($imagePath)
+            )->post("{$this->baseUrl}/sendPhoto", $payload);
+
+            if ($response->successful()) {
+                return (int)$response->json('result.message_id');
+            }
+
+            $this->lastError = $response->json('description', 'Unknown sendPhoto error');
+            Log::error('Telegram sendPhotoToChat failed', ['response' => $response->body()]);
+            return null;
+        } catch (\Exception $e) {
+            $this->lastError = $e->getMessage();
+            Log::error('Telegram sendPhotoToChat exception: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    public function getUpdates(int $offset = 0, int $timeout = 25): array
+    {
+        $this->lastError = null;
+
+        if (empty($this->botToken)) {
+            return [];
+        }
+
+        try {
+            $response = Http::timeout($timeout + 10)->get("{$this->baseUrl}/getUpdates", [
+                'offset' => $offset,
+                'timeout' => $timeout,
+                'allowed_updates' => json_encode(['message', 'callback_query']),
+            ]);
+
+            if ($response->successful()) {
+                return $response->json('result', []);
+            }
+
+            $this->lastError = $response->json('description', 'Unknown getUpdates error');
+            return [];
+        } catch (\Exception $e) {
+            $this->lastError = $e->getMessage();
+            return [];
+        }
+    }
 }
