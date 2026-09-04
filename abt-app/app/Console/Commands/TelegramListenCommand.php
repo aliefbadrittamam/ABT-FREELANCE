@@ -57,6 +57,18 @@ class TelegramListenCommand extends Command
                         $this->error("Error memproses pesan: " . $e->getMessage());
                     }
                 }
+
+                if (isset($update['callback_query'])) {
+                    $user = $update['callback_query']['from']['first_name'] ?? 'User';
+                    $data = $update['callback_query']['data'] ?? '';
+                    $this->line("<comment>[" . date('H:i:s') . "]</comment> Klik tombol oleh <info>{$user}</info>: [{$data}]");
+
+                    try {
+                        $handler->handleCallbackQuery($update['callback_query']);
+                    } catch (\Exception $e) {
+                        $this->error("Error memproses tombol: " . $e->getMessage());
+                    }
+                }
             }
 
             if ($runOnce) {

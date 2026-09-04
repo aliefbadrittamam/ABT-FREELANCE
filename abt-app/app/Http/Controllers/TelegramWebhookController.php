@@ -19,7 +19,15 @@ class TelegramWebhookController extends Controller
             try {
                 $handler->handleMessage($update['message']);
             } catch (\Exception $e) {
-                Log::error('Telegram webhook error: ' . $e->getMessage());
+                Log::error('Telegram webhook message error: ' . $e->getMessage());
+            }
+        }
+
+        if (isset($update['callback_query'])) {
+            try {
+                $handler->handleCallbackQuery($update['callback_query']);
+            } catch (\Exception $e) {
+                Log::error('Telegram webhook callback error: ' . $e->getMessage());
             }
         }
 

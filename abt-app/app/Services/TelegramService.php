@@ -215,6 +215,26 @@ class TelegramService
         }
     }
 
+    public function answerCallbackQuery(string $callbackQueryId, ?string $text = null, bool $showAlert = false): bool
+    {
+        if (empty($this->botToken)) {
+            return false;
+        }
+
+        try {
+            $payload = ['callback_query_id' => $callbackQueryId];
+            if ($text) {
+                $payload['text'] = $text;
+                $payload['show_alert'] = $showAlert;
+            }
+
+            $response = Http::timeout(10)->post("{$this->baseUrl}/answerCallbackQuery", $payload);
+            return $response->successful();
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
     public function getUpdates(int $offset = 0, int $timeout = 25): array
     {
         $this->lastError = null;

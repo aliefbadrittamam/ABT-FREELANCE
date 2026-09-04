@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Invoice;
 use App\Models\Category;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class TelegramBotHandler
@@ -13,6 +14,21 @@ class TelegramBotHandler
     public function __construct(TelegramService $telegram)
     {
         $this->telegram = $telegram;
+    }
+
+    /**
+     * Get primary reply keyboard markup.
+     */
+    protected function getMainKeyboard(): array
+    {
+        return [
+            'keyboard' => [
+                [['text' => '📄 Buat Invoice Baru']],
+                [['text' => '📊 Cek Status Invoice'], ['text' => '💡 Panduan & Bantuan']],
+            ],
+            'resize_keyboard' => true,
+            'is_persistent' => true,
+        ];
     }
 
     /**
@@ -28,14 +44,41 @@ class TelegramBotHandler
             return;
         }
 
-        // Handle commands
-        if (str_starts_with($text, '/start') || str_starts_with($text, '/help') || str_starts_with($text, '/bantuan')) {
-            $this->sendHelpMessage($chatId, $userName);
+        // 1. Check if user clicks Cancel
+        if ($text === '❌ Batalkan' || $text === '/batal' || $text === '/cancel') {
+            Cache::forget("tg_wizard_{$chatId}");
+            $this->telegram->sendMessage($chatId, "❌ Proses pembuatan invoice telah dibatalkan.", [
+                'reply_markup' => json_encode($this->getMainKeyboard()),
+            ]);
             return;
         }
 
+        // 2. Check active conversation wizard step
+        $session = Cache::get("tg_wizard_{$chatId}");
+        if ($session && isset($session['step'])) {
+            $this->handleWizardStep($chatId, $text, $session);
+            return;
+        }
+
+        // 3. Menu Button Triggers & Commands
+        if ($text === '📄 Buat Invoice Baru' || $text === '/invoice' || $text === '/buat') {
+            $this->startInvoiceWizard($chatId);
+            return;
+        }
+
+        if ($text === '📊 Cek Status Invoice') {
+            $this->telegram->sendMessage($chatId, "Ketik: <code>/status INV-...</code> untuk melihat status pembayaran invoice tertentu.");
+            return;
+        }
+
+        if ($text === '💡 Panduan & Bantuan' || str_starts_with($text, '/start') || str_starts_with($text, '/help')) {
+            $this->sendWelcomeMenu($chatId, $userName);
+            return;
+        }
+
+        // Fallback for one-line quick command /inv
         if (str_starts_with($text, '/inv')) {
-            $this->handleInvoiceGeneration($chatId, $text);
+            $this->handleOneLineInvoice($chatId, $text);
             return;
         }
 
@@ -44,106 +87,329 @@ class TelegramBotHandler
             return;
         }
 
-        // Default response if not recognized
-        $this->telegram->sendMessage($chatId, "Perintah tidak dikenali. Ketik /help untuk melihat panduan pembuatan invoice cepat via bot.");
+        // Unrecognized: prompt with main keyboard
+        $this->telegram->sendMessage($chatId, "Tekan tombol <b>📄 Buat Invoice Baru</b> di menu bawah untuk membuat invoice langkah demi langkah.", [
+            'reply_markup' => json_encode($this->getMainKeyboard()),
+        ]);
     }
 
     /**
-     * Send help and instruction message.
+     * Handle inline button click (callback query).
      */
-    protected function sendHelpMessage(string $chatId, string $userName): void
+    public function handleCallbackQuery(array $callbackQuery): void
     {
-        $msg = "⚡ <b>Halo, {$userName}! Selamat datang di Bot Invoice ABT-FREELANCE</b>\n\n"
-             . "Anda dapat membuat invoice resmi secara instan langsung dari Telegram ini tanpa perlu membuka browser laptop.\n\n"
-             . "📌 <b>FORMAT PEMBUATAN INVOICE CEPAT:</b>\n"
-             . "<code>/inv Judul Proyek | Nama Klien | Total Biaya | DP (Opsional) | Kategori (Opsional)</code>\n\n"
-             . "💡 <b>Contoh 1 (Bayar Lunas):</b>\n"
-             . "<code>/inv Makalah Sistem Informasi | Sarah Putri | 150000</code>\n\n"
-             . "💡 <b>Contoh 2 (Dengan DP 50%):</b>\n"
-             . "<code>/inv Jasa Pembuatan Website | Dimas Pratama | 1000000 | 500000</code>\n\n"
-             . "💡 <b>Contoh 3 (Lengkap):</b>\n"
-             . "<code>/inv Skripsi Bab 4-5 | Rizky | 350000 | 150000 | Joki</code>\n\n"
-             . "✨ <i>Bot akan otomatis membuatkan invoice, merender gambar invoice HD, dan mengirimkannya ke chat Anda lengkap dengan link klien!</i>";
+        $queryId = (string)($callbackQuery['id'] ?? '');
+        $data = $callbackQuery['data'] ?? '';
+        $chatId = (string)($callbackQuery['message']['chat']['id'] ?? '');
 
-        $this->telegram->sendMessage($chatId, $msg);
-    }
+        if (empty($queryId) || empty($chatId)) {
+            return;
+        }
 
-    /**
-     * Handle the /inv command to parse, save, render, and return invoice.
-     */
-    protected function handleInvoiceGeneration(string $chatId, string $rawText): void
-    {
-        // Strip "/inv" prefix
-        $content = trim(substr($rawText, 4));
+        $this->telegram->answerCallbackQuery($queryId);
 
-        if (empty($content)) {
+        // Cancel callback
+        if ($data === 'wizard_cancel') {
+            Cache::forget("tg_wizard_{$chatId}");
+            $this->telegram->sendMessage($chatId, "❌ Pembuatan invoice dibatalkan.", [
+                'reply_markup' => json_encode($this->getMainKeyboard()),
+            ]);
+            return;
+        }
+
+        // Category selection callback
+        if (str_starts_with($data, 'cat_')) {
+            $categoryId = (int)substr($data, 4);
+            $category = Category::find($categoryId);
+            if ($category) {
+                Cache::put("tg_wizard_{$chatId}", [
+                    'step' => 'awaiting_client_name',
+                    'category_id' => $category->id,
+                    'category_name' => $category->name,
+                ], now()->addMinutes(30));
+
+                $this->telegram->sendMessage(
+                    $chatId,
+                    "✅ Kategori dipilih: <b>{$category->name}</b>\n\n"
+                    . "👤 <b>Langkah 1/4:</b>\nSilakan ketik <b>Nama Klien</b>:\n<i>(Contoh: Budi Santoso / Alyssa)</i>"
+                );
+            }
+            return;
+        }
+
+        // Payment type callbacks
+        $session = Cache::get("tg_wizard_{$chatId}");
+        if (!$session) {
+            $this->telegram->sendMessage($chatId, "Sesi telah berakhir. Silakan tekan tombol <b>📄 Buat Invoice Baru</b> kembali.", [
+                'reply_markup' => json_encode($this->getMainKeyboard()),
+            ]);
+            return;
+        }
+
+        if ($data === 'pay_full') {
+            $session['payment_type'] = 'full';
+            $session['dp_amount'] = 0;
+            $session['step'] = 'confirm';
+            Cache::put("tg_wizard_{$chatId}", $session, now()->addMinutes(30));
+            $this->showConfirmationPrompt($chatId, $session);
+            return;
+        }
+
+        if ($data === 'pay_dp') {
+            $total = (float)($session['total_amount'] ?? 0);
+            $dp50 = round($total * 0.5);
+            $dp40 = round($total * 0.4);
+            $dp30 = round($total * 0.3);
+
+            $session['payment_type'] = 'dp';
+            $session['step'] = 'awaiting_dp_amount';
+            Cache::put("tg_wizard_{$chatId}", $session, now()->addMinutes(30));
+
+            $buttons = [
+                [
+                    ['text' => '50% (Rp ' . number_format($dp50, 0, ',', '.') . ')', 'callback_data' => "dp_val_{$dp50}"],
+                    ['text' => '40% (Rp ' . number_format($dp40, 0, ',', '.') . ')', 'callback_data' => "dp_val_{$dp40}"],
+                ],
+                [
+                    ['text' => '30% (Rp ' . number_format($dp30, 0, ',', '.') . ')', 'callback_data' => "dp_val_{$dp30}"],
+                    ['text' => '✏️ Ketik Nominal DP Lain', 'callback_data' => 'dp_custom'],
+                ],
+                [
+                    ['text' => '❌ Batalkan', 'callback_data' => 'wizard_cancel'],
+                ]
+            ];
+
             $this->telegram->sendMessage(
                 $chatId,
-                "⚠️ <b>Format perintah kurang lengkap!</b>\n\n"
-                . "Kirim dengan format pemisah garis lurus (<code>|</code>):\n"
-                . "<code>/inv Judul Proyek | Nama Klien | Total Biaya | DP (Opsional)</code>\n\n"
-                . "<b>Contoh siap pakai:</b>\n"
-                . "<code>/inv Revisi Skripsi Bab 4 | Anita Rahma | 250000 | 100000</code>"
+                "💳 <b>Pilih Nominal Uang Muka (DP):</b>\nTotal Biaya: <b>Rp " . number_format($total, 0, ',', '.') . "</b>\n\nSilakan pilih salah satu preset di bawah atau ketik nominal sendiri:",
+                ['reply_markup' => json_encode(['inline_keyboard' => $buttons])]
             );
             return;
         }
 
-        $parts = array_map('trim', explode('|', $content));
+        if (str_starts_with($data, 'dp_val_')) {
+            $dpAmount = (float)substr($data, 7);
+            $session['payment_type'] = 'dp';
+            $session['dp_amount'] = $dpAmount;
+            $session['step'] = 'confirm';
+            Cache::put("tg_wizard_{$chatId}", $session, now()->addMinutes(30));
+            $this->showConfirmationPrompt($chatId, $session);
+            return;
+        }
 
-        $title = $parts[0] ?? '';
-        $clientName = $parts[1] ?? '';
-        $totalRaw = $parts[2] ?? '';
-        $dpRaw = $parts[3] ?? null;
-        $categoryRaw = $parts[4] ?? null;
+        if ($data === 'dp_custom') {
+            $session['payment_type'] = 'dp';
+            $session['step'] = 'awaiting_custom_dp';
+            Cache::put("tg_wizard_{$chatId}", $session, now()->addMinutes(30));
+            $this->telegram->sendMessage($chatId, "Ketik nominal DP yang Anda inginkan (angkanya saja, contoh: <code>100000</code>):");
+            return;
+        }
 
-        if (empty($title) || empty($clientName) || empty($totalRaw)) {
+        // Final confirmation callback
+        if ($data === 'confirm_create') {
+            $this->executeInvoiceCreation($chatId, $session);
+            Cache::forget("tg_wizard_{$chatId}");
+            return;
+        }
+    }
+
+    /**
+     * Send welcome message with persistent keyboard buttons.
+     */
+    protected function sendWelcomeMenu(string $chatId, string $userName): void
+    {
+        $text = "⚡ <b>Halo, {$userName}! Selamat datang di Asisten Invoice ABT-FREELANCE</b>\n\n"
+              . "Anda dapat membuat invoice profesional, memantau pembayaran, dan membagikan link portal klien langsung dari sini.\n\n"
+              . "👇 <b>Tekan tombol di bawah untuk memulai:</b>";
+
+        $this->telegram->sendMessage($chatId, $text, [
+            'reply_markup' => json_encode($this->getMainKeyboard()),
+        ]);
+    }
+
+    /**
+     * Start the step-by-step invoice creation wizard.
+     */
+    protected function startInvoiceWizard(string $chatId): void
+    {
+        $categories = Category::all();
+
+        $buttons = [];
+        $row = [];
+        foreach ($categories as $cat) {
+            $icon = match(strtoupper($cat->prefix)) {
+                'JOKI' => '📚',
+                'WEB' => '💻',
+                'DESAIN' => '🎨',
+                default => '💼'
+            };
+            $row[] = ['text' => "{$icon} {$cat->name}", 'callback_data' => "cat_{$cat->id}"];
+            if (count($row) === 2) {
+                $buttons[] = $row;
+                $row = [];
+            }
+        }
+        if (!empty($row)) {
+            $buttons[] = $row;
+        }
+        $buttons[] = [['text' => '❌ Batalkan', 'callback_data' => 'wizard_cancel']];
+
+        Cache::put("tg_wizard_{$chatId}", ['step' => 'awaiting_category'], now()->addMinutes(30));
+
+        $this->telegram->sendMessage(
+            $chatId,
+            "📄 <b>BUAT INVOICE BARU</b>\n\nSilakan pilih <b>Kategori Jasa</b>:",
+            ['reply_markup' => json_encode(['inline_keyboard' => $buttons])]
+        );
+    }
+
+    /**
+     * Handle textual input during active conversation wizard steps.
+     */
+    protected function handleWizardStep(string $chatId, string $input, array $session): void
+    {
+        $step = $session['step'];
+
+        // Step 1: Client Name
+        if ($step === 'awaiting_client_name') {
+            $session['client_name'] = $input;
+            $session['step'] = 'awaiting_title';
+            Cache::put("tg_wizard_{$chatId}", $session, now()->addMinutes(30));
+
             $this->telegram->sendMessage(
                 $chatId,
-                "❌ <b>Data wajib belum lengkap!</b>\n"
-                . "Pastikan minimal mengisi: <b>Judul | Nama Klien | Total Biaya</b>\n\n"
-                . "Contoh: <code>/inv Joki Tugas Algoritma | Budi | 150000</code>"
+                "✅ Klien: <b>{$input}</b>\n\n"
+                . "📋 <b>Langkah 2/4:</b>\nSilakan ketik <b>Judul Tugas / Proyek</b>:\n<i>(Contoh: Skripsi Bab 4 dan 5 / Pembuatan Website Portofolio)</i>"
             );
             return;
         }
 
-        // Clean numbers
-        $totalAmount = (float)preg_replace('/[^0-9]/', '', $totalRaw);
-        $dpAmount = ($dpRaw !== null && $dpRaw !== '') ? (float)preg_replace('/[^0-9]/', '', $dpRaw) : 0;
-        $paymentType = $dpAmount > 0 ? 'dp' : 'full';
+        // Step 2: Task Title
+        if ($step === 'awaiting_title') {
+            $session['title'] = $input;
+            $session['step'] = 'awaiting_total_amount';
+            Cache::put("tg_wizard_{$chatId}", $session, now()->addMinutes(30));
 
-        if ($totalAmount <= 0) {
-            $this->telegram->sendMessage($chatId, "❌ Total biaya proyek tidak valid.");
+            $this->telegram->sendMessage(
+                $chatId,
+                "✅ Proyek: <b>{$input}</b>\n\n"
+                . "💰 <b>Langkah 3/4:</b>\nBerapa <b>Total Biaya Proyek</b>?\n<i>(Ketik angka saja, contoh: <code>250000</code> atau <code>1500000</code>)</i>"
+            );
             return;
         }
 
-        // Determine category
-        $category = null;
-        if (!empty($categoryRaw)) {
-            $category = Category::where('name', 'like', "%{$categoryRaw}%")
-                ->orWhere('invoice_prefix', 'like', "%{$categoryRaw}%")
-                ->first();
-        }
-        if (!$category) {
-            // Default to Joki Tugas or first category
-            $category = Category::first();
+        // Step 3: Total Amount
+        if ($step === 'awaiting_total_amount') {
+            $cleanAmount = (float)preg_replace('/[^0-9]/', '', $input);
+            if ($cleanAmount <= 0) {
+                $this->telegram->sendMessage($chatId, "⚠️ Nominal tidak valid. Masukkan nominal angka saja (contoh: <code>250000</code>):");
+                return;
+            }
+
+            $session['total_amount'] = $cleanAmount;
+            Cache::put("tg_wizard_{$chatId}", $session, now()->addMinutes(30));
+
+            $buttons = [
+                [
+                    ['text' => '💵 Bayar Lunas Langsung', 'callback_data' => 'pay_full'],
+                    ['text' => '💳 Dengan DP (Bertahap)', 'callback_data' => 'pay_dp'],
+                ],
+                [
+                    ['text' => '❌ Batalkan', 'callback_data' => 'wizard_cancel'],
+                ]
+            ];
+
+            $formatted = 'Rp ' . number_format($cleanAmount, 0, ',', '.');
+            $this->telegram->sendMessage(
+                $chatId,
+                "✅ Total Biaya: <b>{$formatted}</b>\n\n"
+                . "💳 <b>Langkah 4/4:</b>\nPilih <b>Metode Pembayaran</b>:",
+                ['reply_markup' => json_encode(['inline_keyboard' => $buttons])]
+            );
+            return;
         }
 
-        // Inform user that processing has started
-        $this->telegram->sendMessage($chatId, "⏳ <i>Sedang memproses & merender Invoice resmi ABT-FREELANCE...</i>");
+        // Step 4b: Custom DP
+        if ($step === 'awaiting_custom_dp' || $step === 'awaiting_dp_amount') {
+            $cleanDp = (float)preg_replace('/[^0-9]/', '', $input);
+            if ($cleanDp <= 0 || $cleanDp >= $session['total_amount']) {
+                $this->telegram->sendMessage($chatId, "⚠️ Nominal DP harus lebih kecil dari total biaya (Rp " . number_format($session['total_amount'], 0, ',', '.') . "). Ketik ulang:");
+                return;
+            }
+
+            $session['payment_type'] = 'dp';
+            $session['dp_amount'] = $cleanDp;
+            $session['step'] = 'confirm';
+            Cache::put("tg_wizard_{$chatId}", $session, now()->addMinutes(30));
+            $this->showConfirmationPrompt($chatId, $session);
+            return;
+        }
+    }
+
+    /**
+     * Show preview confirmation prompt before final rendering.
+     */
+    protected function showConfirmationPrompt(string $chatId, array $session): void
+    {
+        $category = Category::find($session['category_id'] ?? 1);
+        $total = (float)($session['total_amount'] ?? 0);
+        $isDp = ($session['payment_type'] ?? '') === 'dp';
+        $dp = (float)($session['dp_amount'] ?? 0);
+        $sisa = max(0, $total - $dp);
+
+        $previewNumber = Invoice::generateInvoiceNumber($category?->id);
+
+        $text = "📋 <b>RINGKASAN INVOICE BARU</b>\n"
+              . "────────────────────────\n"
+              . "• <b>No. Invoice:</b> <code>{$previewNumber}</code>\n"
+              . "• <b>Kategori:</b> {$category->name}\n"
+              . "• <b>Nama Klien:</b> {$session['client_name']}\n"
+              . "• <b>Judul Tugas:</b> {$session['title']}\n"
+              . "• <b>Total Biaya:</b> Rp " . number_format($total, 0, ',', '.') . "\n"
+              . ($isDp 
+                  ? "• <b>Metode:</b> Bertahap (DP)\n  - Wajib DP: <b>Rp " . number_format($dp, 0, ',', '.') . "</b>\n  - Sisa Pelunasan: Rp " . number_format($sisa, 0, ',', '.') . "\n"
+                  : "• <b>Metode:</b> Bayar Lunas Langsung\n")
+              . "────────────────────────\n"
+              . "Apakah data di atas sudah sesuai?";
+
+        $buttons = [
+            [
+                ['text' => '✅ Buat & Render Invoice', 'callback_data' => 'confirm_create'],
+            ],
+            [
+                ['text' => '❌ Batalkan', 'callback_data' => 'wizard_cancel'],
+            ]
+        ];
+
+        $this->telegram->sendMessage($chatId, $text, [
+            'reply_markup' => json_encode(['inline_keyboard' => $buttons])
+        ]);
+    }
+
+    /**
+     * Execute invoice creation in database and send rendered HD image.
+     */
+    protected function executeInvoiceCreation(string $chatId, array $session): void
+    {
+        $this->telegram->sendMessage($chatId, "⏳ <i>Sedang membuat invoice dan merender gambar resmi HD...</i>");
 
         try {
+            $category = Category::find($session['category_id'] ?? 1) ?: Category::first();
             $invoiceNumber = Invoice::generateInvoiceNumber($category->id);
+            $isDp = ($session['payment_type'] ?? 'full') === 'dp';
+            $dp = (float)($session['dp_amount'] ?? 0);
+            $total = (float)$session['total_amount'];
 
             $invoice = Invoice::create([
                 'invoice_number' => $invoiceNumber,
-                'title' => $title,
-                'client_name' => $clientName,
+                'title' => $session['title'],
+                'client_name' => $session['client_name'],
                 'category_id' => $category->id,
-                'description' => "Pengerjaan {$title} untuk {$clientName}. Sesuai instruksi dan kesepakatan.",
+                'description' => "Pengerjaan {$session['title']} untuk {$session['client_name']}. Sesuai kesepakatan.",
                 'deadline' => now()->addDays(3),
-                'payment_type' => $paymentType,
-                'dp_amount' => $paymentType === 'dp' ? $dpAmount : null,
-                'total_amount' => $totalAmount,
+                'payment_type' => $isDp ? 'dp' : 'full',
+                'dp_amount' => $isDp ? $dp : null,
+                'total_amount' => $total,
                 'status' => 'unpaid',
             ]);
 
@@ -166,52 +432,60 @@ class TelegramBotHandler
             @unlink($tempHtmlPath);
 
             $clientUrl = $invoice->getClientViewUrl();
-            $formattedTotal = 'Rp ' . number_format($totalAmount, 0, ',', '.');
-            $formattedDp = $dpAmount > 0 ? 'Rp ' . number_format($dpAmount, 0, ',', '.') : '-';
-            $sisa = $paymentType === 'dp' ? 'Rp ' . number_format(max(0, $totalAmount - $dpAmount), 0, ',', '.') : 'Rp 0';
+            $formattedTotal = 'Rp ' . number_format($total, 0, ',', '.');
+            $formattedDp = $dp > 0 ? 'Rp ' . number_format($dp, 0, ',', '.') : '-';
+            $sisa = $isDp ? 'Rp ' . number_format(max(0, $total - $dp), 0, ',', '.') : 'Rp 0';
 
             // WhatsApp Share Text
             $brand = $category->brand_name ?: 'ABT-FREELANCE';
-            $tagihanSekarang = $paymentType === 'dp' ? $formattedDp : $formattedTotal;
-            $waMessage = "Halo {$clientName}, berikut Invoice resmi dari *{$brand}*:\n\n"
+            $waMessage = "Halo {$session['client_name']}, berikut Invoice resmi dari *{$brand}*:\n\n"
                        . "📄 *Nomor:* {$invoice->invoice_number}\n"
-                       . "📋 *Proyek:* {$title}\n"
+                       . "📋 *Proyek:* {$session['title']}\n"
                        . "💰 *Total Biaya:* {$formattedTotal}\n"
-                       . ($paymentType === 'dp' ? "💵 *Tagihan DP:* {$formattedDp}\n" : "")
+                       . ($isDp ? "💵 *Tagihan DP:* {$formattedDp}\n" : "")
                        . "🔗 *Lihat Invoice & QRIS:* {$clientUrl}\n\n"
-                       . "Mohon konfirmasi setelah pembayaran ya. Terima kasih 🙏";
+                       . "Mohon konfirmasi setelah transfer pembayaran ya. Terima kasih 🙏";
 
-            $caption = "✅ <b>INVOICE BERHASIL DIBUAT!</b>\n\n"
+            $caption = "✅ <b>INVOICE RESMI BERHASIL DIBUAT!</b>\n\n"
                      . "📄 <b>Nomor:</b> <code>{$invoice->invoice_number}</code>\n"
-                     . "👤 <b>Klien:</b> {$clientName}\n"
-                     . "📋 <b>Proyek:</b> {$title}\n"
+                     . "👤 <b>Klien:</b> {$session['client_name']}\n"
+                     . "📋 <b>Proyek:</b> {$session['title']}\n"
                      . "🏷️ <b>Kategori:</b> {$category->name}\n"
                      . "💰 <b>Total Biaya:</b> {$formattedTotal}\n"
-                     . ($paymentType === 'dp' ? "💳 <b>Wajib DP:</b> {$formattedDp} (Sisa: {$sisa})\n" : "💳 <b>Metode:</b> Bayar Lunas\n")
+                     . ($isDp ? "💳 <b>Wajib DP:</b> {$formattedDp} (Sisa: {$sisa})\n" : "💳 <b>Metode:</b> Bayar Lunas Langsung\n")
                      . "🌐 <b>Link Portal Klien:</b>\n{$clientUrl}\n\n"
-                     . "📲 <b>Format Chat WhatsApp Klien (Tinggal Salin):</b>\n"
+                     . "📲 <b>Format Chat WhatsApp (Tinggal Salin):</b>\n"
                      . "<code>" . htmlspecialchars($waMessage) . "</code>";
 
-            // If image rendered successfully, send photo with caption
+            $replyMarkup = [
+                'inline_keyboard' => [
+                    [
+                        ['text' => '🌐 Buka Portal Klien', 'url' => $clientUrl],
+                        ['text' => '💬 Buka di Web Admin', 'url' => config('app.url') . "/invoices/{$invoice->id}"],
+                    ]
+                ]
+            ];
+
             if (file_exists($pngPath) && filesize($pngPath) > 0) {
                 $this->telegram->sendPhotoToChat($chatId, $pngPath, $caption, [
-                    'reply_markup' => json_encode([
-                        'inline_keyboard' => [
-                            [
-                                ['text' => '🌐 Buka Portal Klien', 'url' => $clientUrl],
-                                ['text' => '💬 Buka di Web Admin', 'url' => config('app.url') . "/invoices/{$invoice->id}"],
-                            ]
-                        ]
-                    ])
+                    'reply_markup' => json_encode($replyMarkup)
                 ]);
             } else {
-                // Fallback text if rendering is slow
-                $this->telegram->sendMessage($chatId, $caption);
+                $this->telegram->sendMessage($chatId, $caption, [
+                    'reply_markup' => json_encode($replyMarkup)
+                ]);
             }
 
+            // Remind with main menu keyboard
+            $this->telegram->sendMessage($chatId, "✨ Selesai! Anda dapat membuat invoice lagi kapan saja menggunakan tombol di bawah.", [
+                'reply_markup' => json_encode($this->getMainKeyboard())
+            ]);
+
         } catch (\Exception $e) {
-            Log::error('Telegram handleInvoiceGeneration failed', ['error' => $e->getMessage()]);
-            $this->telegram->sendMessage($chatId, "❌ <b>Gagal membuat invoice:</b> " . $e->getMessage());
+            Log::error('Telegram executeInvoiceCreation failed', ['error' => $e->getMessage()]);
+            $this->telegram->sendMessage($chatId, "❌ <b>Gagal membuat invoice:</b> " . $e->getMessage(), [
+                'reply_markup' => json_encode($this->getMainKeyboard())
+            ]);
         }
     }
 
@@ -222,7 +496,7 @@ class TelegramBotHandler
     {
         $query = trim(substr($rawText, 7));
         if (empty($query)) {
-            $this->telegram->sendMessage($chatId, "Gunakan: <code>/status INV-JOKI-...</code> atau ketik ID/nomornya.");
+            $this->telegram->sendMessage($chatId, "Gunakan: <code>/status INV-...</code> atau ketik ID/nomornya.");
             return;
         }
 
@@ -247,5 +521,36 @@ class TelegramBotHandler
              . "🔗 Link: {$invoice->getClientViewUrl()}";
 
         $this->telegram->sendMessage($chatId, $msg);
+    }
+
+    /**
+     * Fallback quick single-line command (/inv title | client | total | dp).
+     */
+    protected function handleOneLineInvoice(string $chatId, string $rawText): void
+    {
+        $content = trim(substr($rawText, 4));
+        if (empty($content)) {
+            $this->startInvoiceWizard($chatId);
+            return;
+        }
+
+        $parts = array_map('trim', explode('|', $content));
+        $session = [
+            'title' => $parts[0] ?? 'Tugas Baru',
+            'client_name' => $parts[1] ?? 'Klien',
+            'total_amount' => (float)preg_replace('/[^0-9]/', '', $parts[2] ?? '0'),
+            'dp_amount' => isset($parts[3]) ? (float)preg_replace('/[^0-9]/', '', $parts[3]) : 0,
+            'payment_type' => (isset($parts[3]) && (float)preg_replace('/[^0-9]/', '', $parts[3]) > 0) ? 'dp' : 'full',
+            'category_id' => 1,
+        ];
+
+        if ($session['total_amount'] <= 0) {
+            $this->telegram->sendMessage($chatId, "❌ Total biaya tidak valid. Silakan gunakan tombol <b>📄 Buat Invoice Baru</b>.", [
+                'reply_markup' => json_encode($this->getMainKeyboard())
+            ]);
+            return;
+        }
+
+        $this->executeInvoiceCreation($chatId, $session);
     }
 }
