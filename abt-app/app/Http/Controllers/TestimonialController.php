@@ -44,15 +44,22 @@ class TestimonialController extends Controller
         return view('testimonials.index', compact('testimonials', 'status', 'search', 'activeCount', 'trashCount'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $nextNumber = Testimonial::getNextTestimonialNumber();
-        return view('testimonials.create', compact('nextNumber'));
+        $fromInvoice = null;
+
+        if ($request->filled('from_invoice')) {
+            $fromInvoice = \App\Models\Invoice::with('category')->find($request->from_invoice);
+        }
+
+        return view('testimonials.create', compact('nextNumber', 'fromInvoice'));
     }
 
     public function store(Request $request, TestimonialComposer $composer, TelegramService $telegram)
     {
         $request->validate([
+            'invoice_id' => 'nullable|exists:invoices,id',
             'testimonial_number' => 'nullable|integer|min:1',
             'major' => 'nullable|string|max:255',
             'task_title' => 'nullable|string|max:255',
@@ -106,6 +113,7 @@ class TestimonialController extends Controller
                 : Testimonial::getNextTestimonialNumber();
 
             $testimonial = Testimonial::create([
+                'invoice_id' => $request->invoice_id,
                 'testimonial_number' => $testiNumber,
                 'major' => $request->major,
                 'task_title' => $request->task_title,

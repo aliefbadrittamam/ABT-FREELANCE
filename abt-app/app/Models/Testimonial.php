@@ -10,6 +10,7 @@ class Testimonial extends Model
     use SoftDeletes;
 
     protected $fillable = [
+        'invoice_id',
         'testimonial_number',
         'major',
         'task_title',
@@ -18,6 +19,11 @@ class Testimonial extends Model
         'image_pelunasan_path', 'composed_image_path', 'caption',
         'client_name', 'posted_to_telegram', 'telegram_message_id',
     ];
+
+    public function invoice()
+    {
+        return $this->belongsTo(Invoice::class);
+    }
 
     public static function getNextTestimonialNumber(): int
     {

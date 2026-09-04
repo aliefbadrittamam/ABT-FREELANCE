@@ -119,6 +119,20 @@
                 </button>
             </form>
             
+            @if($invoice->testimonial)
+            <a href="{{ route('testimonials.edit', $invoice->testimonial) }}" 
+               class="px-3.5 py-2 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 font-bold text-xs sm:text-sm rounded-lg hover:bg-emerald-100 transition-colors flex items-center gap-1.5 shadow-xs" title="Lihat/Edit Testimoni">
+                <span class="material-symbols-outlined text-base">verified</span>
+                Testimoni #{{ $invoice->testimonial->testimonial_number }}
+            </a>
+            @else
+            <a href="{{ route('testimonials.create', ['from_invoice' => $invoice->id]) }}" 
+               class="px-3.5 py-2 bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-300 font-bold text-xs sm:text-sm rounded-lg hover:bg-amber-100 transition-colors flex items-center gap-1.5 shadow-xs">
+                <span class="material-symbols-outlined text-base text-amber-600 dark:text-amber-400">star</span>
+                Jadikan Testimoni
+            </a>
+            @endif
+
             <a href="{{ route('invoices.export', [$invoice, 'png']) }}" 
                class="px-3.5 py-2 border-2 border-primary-container bg-transparent text-on-surface dark:text-gray-200 font-semibold text-xs sm:text-sm rounded-lg hover:bg-primary-container/10 transition-colors flex items-center gap-1.5">
                 <span class="material-symbols-outlined text-base">image</span>

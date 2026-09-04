@@ -9,11 +9,28 @@
     <p class="text-xs sm:text-sm text-on-surface-variant dark:text-gray-400 mt-0.5 sm:mt-1">Upload 1 sampai 4 gambar bukti tugas dan sesuaikan format caption Telegram.</p>
 </header>
 
+@if(isset($fromInvoice) && $fromInvoice)
+<!-- Auto-fill from Invoice Banner -->
+<div class="max-w-3xl mb-6 p-4 rounded-xl bg-primary-container/20 border border-primary-container/40 dark:border-primary-container/30 flex items-start gap-3 shadow-xs">
+    <div class="w-8 h-8 rounded-lg bg-primary-container text-on-surface flex items-center justify-center shrink-0 font-bold">
+        <span class="material-symbols-outlined text-lg">receipt_long</span>
+    </div>
+    <div class="flex-1 text-xs">
+        <strong class="text-sm font-bold text-on-surface dark:text-white block mb-0.5">
+            Auto-Fill dari Invoice: {{ $fromInvoice->invoice_number }} ({{ $fromInvoice->client_name }})
+        </strong>
+        <p class="text-secondary dark:text-gray-300 leading-relaxed">
+            Data judul proyek, kategori/jurusan, deskripsi, dan nama klien telah diisi secara otomatis. Anda hanya perlu mengunggah 1 s/d 4 foto bukti untuk diposting ke Telegram.
+        </p>
+    </div>
+</div>
+@endif
+
 <div class="max-w-3xl" x-data="{
     number: '{{ old('testimonial_number', $nextNumber) }}',
-    major: '{{ old('major', '') }}',
-    taskTitle: '{{ old('task_title', '') }}',
-    deliverables: '{{ old('deliverables', '') }}',
+    major: '{{ old('major', isset($fromInvoice) && $fromInvoice ? ($fromInvoice->category->name ?? '') : '') }}',
+    taskTitle: '{{ old('task_title', isset($fromInvoice) && $fromInvoice ? $fromInvoice->title : '') }}',
+    deliverables: '{{ old('deliverables', isset($fromInvoice) && $fromInvoice ? $fromInvoice->description : '') }}',
     notes: '{{ old('caption', '') }}',
     get telegramPreview() {
         let n = this.number || '1';
@@ -33,6 +50,10 @@
     <div class="bg-white dark:bg-[#1e1e1e] rounded-xl border border-border-subtle dark:border-[#2a2a2a] p-5 sm:p-8 shadow-sm transition-colors duration-200">
         <form action="{{ route('testimonials.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
+
+            @if(isset($fromInvoice) && $fromInvoice)
+            <input type="hidden" name="invoice_id" value="{{ $fromInvoice->id }}">
+            @endif
 
             <!-- 1 to 4 Slot Upload Grid -->
             <div class="mb-6 sm:mb-8">
@@ -114,7 +135,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
                         <label class="block text-[11px] font-semibold text-on-surface-variant dark:text-gray-400 uppercase tracking-wider mb-1">Nama Klien (Opsional/Internal)</label>
-                        <input type="text" name="client_name" value="{{ old('client_name') }}" placeholder="Misal: Kak Sarah"
+                        <input type="text" name="client_name" value="{{ old('client_name', isset($fromInvoice) && $fromInvoice ? $fromInvoice->client_name : '') }}" placeholder="Misal: Kak Sarah"
                             class="w-full px-3 py-2 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs sm:text-sm text-on-surface dark:text-white focus:ring-2 focus:ring-primary outline-none">
                     </div>
                     <div>

@@ -38,6 +38,11 @@ class Invoice extends Model
         return $this->belongsTo(Category::class);
     }
 
+    public function testimonial()
+    {
+        return $this->hasOne(Testimonial::class);
+    }
+
     public function getRemainingAmountAttribute(): float
     {
         if ($this->status === 'paid' || $this->status === 'canceled') return 0;
