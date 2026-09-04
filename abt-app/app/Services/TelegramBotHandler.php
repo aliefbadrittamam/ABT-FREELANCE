@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Invoice;
 use App\Models\Category;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -164,13 +165,12 @@ class TelegramBotHandler
                 $this->telegram->sendMessage(
                     $chatId,
                     "✅ Kategori dipilih: <b>{$category->name}</b>\n\n"
-                    . "👤 <b>Langkah 1/4:</b>\nSilakan ketik <b>Nama Klien</b>:\n<i>(Contoh: Budi Santoso / Alyssa)</i>"
+                    . "👤 <b>Langkah 1/5:</b>\nSilakan ketik <b>Nama Klien</b>:\n<i>(Contoh: Budi Santoso / Alyssa)</i>"
                 );
             }
             return;
         }
 
-        // Payment type callbacks
         $session = Cache::get("tg_wizard_{$chatId}");
         if (!$session) {
             $this->telegram->sendMessage($chatId, "Sesi telah berakhir. Silakan tekan tombol <b>📄 Buat Invoice Baru</b> kembali.", [
@@ -179,6 +179,38 @@ class TelegramBotHandler
             return;
         }
 
+        // Deadline callbacks
+        if (str_starts_with($data, 'dl_')) {
+            $deadlineOption = substr($data, 3);
+            $deadlineDate = match($deadlineOption) {
+                'today' => Carbon::now()->endOfDay(),
+                'tomorrow' => Carbon::tomorrow()->endOfDay(),
+                '3days' => Carbon::now()->addDays(3)->endOfDay(),
+                '7days' => Carbon::now()->addDays(7)->endOfDay(),
+                default => Carbon::now()->addDays(3)->endOfDay()
+            };
+
+            $session['deadline'] = $deadlineDate->toDateTimeString();
+            $session['step'] = 'awaiting_total_amount';
+            Cache::put("tg_wizard_{$chatId}", $session, now()->addMinutes(30));
+
+            $formattedDl = $deadlineDate->translatedFormat('d F Y, H:i') . ' WIB';
+            $this->telegram->sendMessage(
+                $chatId,
+                "✅ Deadline diset: <b>{$formattedDl}</b>\n\n"
+                . "💰 <b>Langkah 4/5:</b>\nBerapa <b>Total Biaya Proyek</b>?\n<i>(Ketik angka saja, contoh: <code>250000</code> atau <code>1500000</code>)</i>"
+            );
+            return;
+        }
+
+        if ($data === 'dl_custom') {
+            $session['step'] = 'awaiting_custom_deadline';
+            Cache::put("tg_wizard_{$chatId}", $session, now()->addMinutes(30));
+            $this->telegram->sendMessage($chatId, "Ketik batas deadline yang Anda inginkan:\n<i>(Contoh: <code>10 Sep 2026</code> atau <code>10-09-2026 21:00</code>)</i>");
+            return;
+        }
+
+        // Payment type callbacks
         if ($data === 'pay_full') {
             $session['payment_type'] = 'full';
             $session['dp_amount'] = 0;
@@ -324,26 +356,65 @@ class TelegramBotHandler
             $this->telegram->sendMessage(
                 $chatId,
                 "✅ Klien: <b>{$input}</b>\n\n"
-                . "📋 <b>Langkah 2/4:</b>\nSilakan ketik <b>Judul Tugas / Proyek</b>:\n<i>(Contoh: Skripsi Bab 4 dan 5 / Pembuatan Website Portofolio)</i>"
+                . "📋 <b>Langkah 2/5:</b>\nSilakan ketik <b>Judul Tugas / Proyek</b>:\n<i>(Contoh: Skripsi Bab 4 dan 5 / Pembuatan Website Portofolio)</i>"
             );
             return;
         }
 
-        // Step 2: Task Title
+        // Step 2: Task Title -> Proceed to Deadline Step
         if ($step === 'awaiting_title') {
             $session['title'] = $input;
-            $session['step'] = 'awaiting_total_amount';
+            $session['step'] = 'awaiting_deadline';
             Cache::put("tg_wizard_{$chatId}", $session, now()->addMinutes(30));
+
+            $buttons = [
+                [
+                    ['text' => '⚡ Hari Ini (23:59 WIB)', 'callback_data' => 'dl_today'],
+                    ['text' => '⏳ Besok (23:59 WIB)', 'callback_data' => 'dl_tomorrow'],
+                ],
+                [
+                    ['text' => '🗓️ 3 Hari Lagi', 'callback_data' => 'dl_3days'],
+                    ['text' => '🗓️ 7 Hari (1 Minggu)', 'callback_data' => 'dl_7days'],
+                ],
+                [
+                    ['text' => '✏️ Ketik Tanggal Manual', 'callback_data' => 'dl_custom'],
+                ],
+                [
+                    ['text' => '❌ Batalkan', 'callback_data' => 'wizard_cancel'],
+                ]
+            ];
 
             $this->telegram->sendMessage(
                 $chatId,
                 "✅ Proyek: <b>{$input}</b>\n\n"
-                . "💰 <b>Langkah 3/4:</b>\nBerapa <b>Total Biaya Proyek</b>?\n<i>(Ketik angka saja, contoh: <code>250000</code> atau <code>1500000</code>)</i>"
+                . "📅 <b>Langkah 3/5: Deadline / Jatuh Tempo</b>\nKapan tugas ini harus selesai?\n\nPilih preset di bawah atau ketik manual:",
+                ['reply_markup' => json_encode(['inline_keyboard' => $buttons])]
             );
             return;
         }
 
-        // Step 3: Total Amount
+        // Step 3b: Custom Deadline Text
+        if ($step === 'awaiting_custom_deadline') {
+            try {
+                $parsedDate = Carbon::parse($input);
+            } catch (\Exception $e) {
+                $parsedDate = Carbon::now()->addDays(3)->endOfDay();
+            }
+
+            $session['deadline'] = $parsedDate->toDateTimeString();
+            $session['step'] = 'awaiting_total_amount';
+            Cache::put("tg_wizard_{$chatId}", $session, now()->addMinutes(30));
+
+            $formattedDl = $parsedDate->translatedFormat('d F Y, H:i') . ' WIB';
+            $this->telegram->sendMessage(
+                $chatId,
+                "✅ Deadline diset: <b>{$formattedDl}</b>\n\n"
+                . "💰 <b>Langkah 4/5:</b>\nBerapa <b>Total Biaya Proyek</b>?\n<i>(Ketik angka saja, contoh: <code>250000</code> atau <code>1500000</code>)</i>"
+            );
+            return;
+        }
+
+        // Step 4: Total Amount
         if ($step === 'awaiting_total_amount') {
             $cleanAmount = (float)preg_replace('/[^0-9]/', '', $input);
             if ($cleanAmount <= 0) {
@@ -368,13 +439,13 @@ class TelegramBotHandler
             $this->telegram->sendMessage(
                 $chatId,
                 "✅ Total Biaya: <b>{$formatted}</b>\n\n"
-                . "💳 <b>Langkah 4/4:</b>\nPilih <b>Metode Pembayaran</b>:",
+                . "💳 <b>Langkah 5/5:</b>\nPilih <b>Metode Pembayaran</b>:",
                 ['reply_markup' => json_encode(['inline_keyboard' => $buttons])]
             );
             return;
         }
 
-        // Step 4b: Custom DP
+        // Step 5b: Custom DP
         if ($step === 'awaiting_custom_dp' || $step === 'awaiting_dp_amount') {
             $cleanDp = (float)preg_replace('/[^0-9]/', '', $input);
             if ($cleanDp <= 0 || $cleanDp >= $session['total_amount']) {
@@ -402,6 +473,10 @@ class TelegramBotHandler
         $dp = (float)($session['dp_amount'] ?? 0);
         $sisa = max(0, $total - $dp);
 
+        $deadlineStr = isset($session['deadline']) 
+            ? Carbon::parse($session['deadline'])->translatedFormat('d F Y, H:i') . ' WIB'
+            : Carbon::now()->addDays(3)->translatedFormat('d F Y') . ', 23:59 WIB';
+
         $previewNumber = Invoice::generateInvoiceNumber($category?->id);
 
         $text = "📋 <b>RINGKASAN INVOICE BARU</b>\n"
@@ -410,12 +485,13 @@ class TelegramBotHandler
               . "• <b>Kategori:</b> {$category->name}\n"
               . "• <b>Nama Klien:</b> {$session['client_name']}\n"
               . "• <b>Judul Tugas:</b> {$session['title']}\n"
+              . "• <b>Deadline:</b> {$deadlineStr}\n"
               . "• <b>Total Biaya:</b> Rp " . number_format($total, 0, ',', '.') . "\n"
               . ($isDp 
                   ? "• <b>Metode:</b> Bertahap (DP)\n  - Wajib DP: <b>Rp " . number_format($dp, 0, ',', '.') . "</b>\n  - Sisa Pelunasan: Rp " . number_format($sisa, 0, ',', '.') . "\n"
                   : "• <b>Metode:</b> Bayar Lunas Langsung\n")
               . "────────────────────────\n"
-              . "Pilih format file yang ingin dikirim ke chat Telegram:";
+              . "Pilih format file yang ingin dikirimkan ke chat Telegram ini:";
 
         $buttons = [
             [
@@ -519,13 +595,17 @@ class TelegramBotHandler
             $dp = (float)($session['dp_amount'] ?? 0);
             $total = (float)$session['total_amount'];
 
+            $deadline = isset($session['deadline']) 
+                ? Carbon::parse($session['deadline']) 
+                : Carbon::now()->addDays(3)->endOfDay();
+
             $invoice = Invoice::create([
                 'invoice_number' => $invoiceNumber,
                 'title' => $session['title'],
                 'client_name' => $session['client_name'],
                 'category_id' => $category->id,
                 'description' => "Pengerjaan {$session['title']} untuk {$session['client_name']}. Sesuai kesepakatan.",
-                'deadline' => now()->addDays(3),
+                'deadline' => $deadline,
                 'payment_type' => $isDp ? 'dp' : 'full',
                 'dp_amount' => $isDp ? $dp : null,
                 'total_amount' => $total,
@@ -536,12 +616,14 @@ class TelegramBotHandler
             $formattedTotal = 'Rp ' . number_format($total, 0, ',', '.');
             $formattedDp = $dp > 0 ? 'Rp ' . number_format($dp, 0, ',', '.') : '-';
             $sisa = $isDp ? 'Rp ' . number_format(max(0, $total - $dp), 0, ',', '.') : 'Rp 0';
+            $formattedDl = $deadline->translatedFormat('d F Y, H:i') . ' WIB';
 
             // WhatsApp Share Text
             $brand = $category->brand_name ?: 'ABT-FREELANCE';
             $waMessage = "Halo {$session['client_name']}, berikut Invoice resmi dari *{$brand}*:\n\n"
                        . "📄 *Nomor:* {$invoice->invoice_number}\n"
                        . "📋 *Proyek:* {$session['title']}\n"
+                       . "📅 *Deadline:* {$formattedDl}\n"
                        . "💰 *Total Biaya:* {$formattedTotal}\n"
                        . ($isDp ? "💵 *Tagihan DP:* {$formattedDp}\n" : "")
                        . "🔗 *Lihat Invoice & QRIS:* {$clientUrl}\n\n"
@@ -551,6 +633,7 @@ class TelegramBotHandler
                      . "📄 <b>Nomor:</b> <code>{$invoice->invoice_number}</code>\n"
                      . "👤 <b>Klien:</b> {$session['client_name']}\n"
                      . "📋 <b>Proyek:</b> {$session['title']}\n"
+                     . "📅 <b>Deadline:</b> {$formattedDl}\n"
                      . "🏷️ <b>Kategori:</b> {$category->name}\n"
                      . "💰 <b>Total Biaya:</b> {$formattedTotal}\n"
                      . ($isDp ? "💳 <b>Wajib DP:</b> {$formattedDp} (Sisa: {$sisa})\n" : "💳 <b>Metode:</b> Bayar Lunas Langsung\n")
@@ -558,19 +641,24 @@ class TelegramBotHandler
                      . "📲 <b>Format Chat WhatsApp (Tinggal Salin):</b>\n"
                      . "<code>" . htmlspecialchars($waMessage) . "</code>";
 
-            // Interactive buttons below invoice
-            $replyMarkup = [
-                'inline_keyboard' => [
-                    [
-                        ['text' => '📄 Minta File PDF', 'callback_data' => "send_pdf_{$invoice->id}"],
-                        ['text' => '🖼️ Minta File PNG', 'callback_data' => "send_png_{$invoice->id}"],
-                    ],
-                    [
-                        ['text' => '🌐 Buka Portal Klien', 'url' => $clientUrl],
-                        ['text' => '💬 Buka di Web Admin', 'url' => config('app.url') . "/invoices/{$invoice->id}"],
-                    ]
+            // Interactive callback buttons (100% safe from Telegram localhost url validation error)
+            $keyboardButtons = [
+                [
+                    ['text' => '📄 Minta File PDF', 'callback_data' => "send_pdf_{$invoice->id}"],
+                    ['text' => '🖼️ Minta File PNG', 'callback_data' => "send_png_{$invoice->id}"],
                 ]
             ];
+
+            // Only add external URL buttons if it's a valid public domain
+            $isLocal = str_contains($clientUrl, 'localhost') || str_contains($clientUrl, '127.0.0.1');
+            if (!$isLocal) {
+                $keyboardButtons[] = [
+                    ['text' => '🌐 Buka Portal Klien', 'url' => $clientUrl],
+                    ['text' => '💬 Buka di Web Admin', 'url' => config('app.url') . "/invoices/{$invoice->id}"],
+                ];
+            }
+
+            $replyMarkup = ['inline_keyboard' => $keyboardButtons];
 
             // 1. Send PNG if requested
             $pngSent = false;
@@ -588,14 +676,14 @@ class TelegramBotHandler
             if ($format === 'pdf' || $format === 'both') {
                 $pdfPath = $this->renderPdf($invoice);
                 if ($pdfPath && file_exists($pdfPath)) {
-                    $docCaption = $pngSent ? "📄 File Dokumen PDF: <b>{$invoice->invoice_number}</b>" : $caption;
+                    $docCaption = $pngSent ? "📄 Dokumen Resmi PDF: <b>{$invoice->invoice_number}</b>" : $caption;
                     $this->telegram->sendDocumentToChat($chatId, $pdfPath, $docCaption, [
                         'reply_markup' => json_encode($replyMarkup)
                     ]);
                 }
             }
 
-            // Fallback text if nothing was sent
+            // Fallback text if rendering failed
             if (!$pngSent && $format !== 'pdf') {
                 $this->telegram->sendMessage($chatId, $caption, [
                     'reply_markup' => json_encode($replyMarkup)
@@ -676,6 +764,7 @@ class TelegramBotHandler
             'total_amount' => (float)preg_replace('/[^0-9]/', '', $parts[2] ?? '0'),
             'dp_amount' => isset($parts[3]) ? (float)preg_replace('/[^0-9]/', '', $parts[3]) : 0,
             'payment_type' => (isset($parts[3]) && (float)preg_replace('/[^0-9]/', '', $parts[3]) > 0) ? 'dp' : 'full',
+            'deadline' => Carbon::now()->addDays(3)->endOfDay()->toDateTimeString(),
             'category_id' => 1,
         ];
 
