@@ -49,7 +49,7 @@ class TelegramBotHandler
         // 1. Check if user clicks Cancel
         if ($text === '❌ Batalkan' || $text === '/batal' || $text === '/cancel') {
             Cache::forget("tg_wizard_{$chatId}");
-            $this->telegram->sendMessage($chatId, "❌ Proses pembuatan invoice telah dibatalkan.", [
+            $this->telegram->sendMessage($chatId, "❌ Proses telah dibatalkan.", [
                 'reply_markup' => json_encode($this->getMainKeyboard()),
             ]);
             return;
@@ -62,14 +62,21 @@ class TelegramBotHandler
             return;
         }
 
-        // 3. Menu Button Triggers & Commands
+        // 3. Check if user directly typed invoice sequence number (e.g. "86", "#86", "inv 86", "inv-86")
+        if (preg_match('/^(?:inv[\s\-]*)?#?(\d+)$/i', $text, $match)) {
+            $seqNumber = (int)$match[1];
+            $this->findAndShowInvoiceByNumber($chatId, $seqNumber);
+            return;
+        }
+
+        // 4. Menu Button Triggers & Commands
         if ($text === '📄 Buat Invoice Baru' || $text === '/invoice' || $text === '/buat') {
             $this->startInvoiceWizard($chatId);
             return;
         }
 
         if ($text === '📊 Cek Status Invoice') {
-            $this->telegram->sendMessage($chatId, "Ketik: <code>/status INV-...</code> untuk melihat status pembayaran invoice tertentu.");
+            $this->showStatusMenu($chatId);
             return;
         }
 
@@ -90,7 +97,7 @@ class TelegramBotHandler
         }
 
         // Unrecognized: prompt with main keyboard
-        $this->telegram->sendMessage($chatId, "Tekan tombol <b>📄 Buat Invoice Baru</b> di menu bawah untuk membuat invoice langkah demi langkah.", [
+        $this->telegram->sendMessage($chatId, "Ketik nomor invoice (contoh: <code>86</code> atau <code>81</code>) untuk cek/update status, atau tekan tombol menu di bawah:", [
             'reply_markup' => json_encode($this->getMainKeyboard()),
         ]);
     }
@@ -113,9 +120,25 @@ class TelegramBotHandler
         // Cancel callback
         if ($data === 'wizard_cancel') {
             Cache::forget("tg_wizard_{$chatId}");
-            $this->telegram->sendMessage($chatId, "❌ Pembuatan invoice dibatalkan.", [
+            $this->telegram->sendMessage($chatId, "❌ Tindakan dibatalkan.", [
                 'reply_markup' => json_encode($this->getMainKeyboard()),
             ]);
+            return;
+        }
+
+        // Status Management: View Specific Invoice Details
+        if (str_starts_with($data, 'view_inv_')) {
+            $invId = (int)substr($data, 9);
+            $invoice = Invoice::find($invId);
+            if ($invoice) {
+                $this->showInvoiceDetailCard($chatId, $invoice);
+            }
+            return;
+        }
+
+        // Status Management: Update Invoice Status (paid, dp_paid, unpaid, canceled)
+        if (str_starts_with($data, 'set_status_')) {
+            $this->handleStatusUpdateCallback($chatId, $data);
             return;
         }
 
@@ -291,12 +314,225 @@ class TelegramBotHandler
     }
 
     /**
+     * Find invoice by sequence number (e.g. typing 86 finds INV-JOKI-086-...).
+     */
+    protected function findAndShowInvoiceByNumber(string $chatId, int $seqNumber): void
+    {
+        $padded = str_pad($seqNumber, 3, '0', STR_PAD_LEFT);
+        
+        // Search by sequence pattern or raw id/number
+        $invoice = Invoice::where('invoice_number', 'LIKE', "%-{$padded}-%")
+            ->orWhere('invoice_number', 'LIKE', "%-{$seqNumber}-%")
+            ->orWhere('invoice_number', 'LIKE', "%-{$padded}")
+            ->orWhere('id', $seqNumber)
+            ->latest('id')
+            ->first();
+
+        if (!$invoice) {
+            $this->telegram->sendMessage(
+                $chatId,
+                "❌ Invoice dengan nomor urut <b>#{$seqNumber}</b> tidak ditemukan.\n\n"
+                . "💡 <i>Ketik angka nomor urut lainnya (contoh: 81) atau tekan menu Cek Status.</i>",
+                ['reply_markup' => json_encode($this->getMainKeyboard())]
+            );
+            return;
+        }
+
+        $this->showInvoiceDetailCard($chatId, $invoice);
+    }
+
+    /**
+     * Show interactive status menu with recent active invoices.
+     */
+    protected function showStatusMenu(string $chatId): void
+    {
+        // Fetch up to 6 most recent active/pending invoices
+        $activeInvoices = Invoice::where('status', '!=', 'canceled')
+            ->orderBy('id', 'desc')
+            ->take(6)
+            ->get();
+
+        $buttons = [];
+        foreach ($activeInvoices as $inv) {
+            $icon = match($inv->status) {
+                'paid' => '✅',
+                'dp_paid' => '💳',
+                default => '⏳'
+            };
+
+            // Extract short number
+            $parts = explode('-', $inv->invoice_number);
+            $shortNum = isset($parts[2]) ? "#" . ltrim($parts[2], '0') : "#{$inv->id}";
+            $label = "{$icon} {$shortNum} - " . substr($inv->client_name, 0, 12) . " (" . ($inv->status === 'paid' ? 'Lunas' : ($inv->status === 'dp_paid' ? 'DP' : 'Belum Bayar')) . ")";
+
+            $buttons[] = [
+                ['text' => $label, 'callback_data' => "view_inv_{$inv->id}"]
+            ];
+        }
+
+        $buttons[] = [
+            ['text' => '❌ Tutup Menu', 'callback_data' => 'wizard_cancel']
+        ];
+
+        $text = "📊 <b>KELOLA STATUS PEMBAYARAN INVOICE</b>\n\n"
+              . "Pilih invoice dari daftar di bawah untuk melihat/mengubah status pembayarannya:\n\n"
+              . "💡 <i>Atau Anda bisa langsung mengetik angka nomor invoice (contoh: <code>86</code> atau <code>81</code>).</i>";
+
+        $this->telegram->sendMessage($chatId, $text, [
+            'reply_markup' => json_encode(['inline_keyboard' => $buttons])
+        ]);
+    }
+
+    /**
+     * Show detailed card for an invoice with status action buttons.
+     */
+    protected function showInvoiceDetailCard(string $chatId, Invoice $invoice): void
+    {
+        $statusText = match ($invoice->status) {
+            'paid' => '✅ LUNAS',
+            'dp_paid' => '💳 DP TERBAYAR',
+            'canceled' => '❌ DIBATALKAN',
+            default => '⏳ BELUM BAYAR'
+        };
+
+        $totalFormatted = 'Rp ' . number_format($invoice->total_amount, 0, ',', '.');
+        $dpFormatted = $invoice->dp_amount ? 'Rp ' . number_format($invoice->dp_amount, 0, ',', '.') : '-';
+        $sisaFormatted = $invoice->remaining_amount ? 'Rp ' . number_format($invoice->remaining_amount, 0, ',', '.') : 'Rp 0';
+        $deadlineText = $invoice->deadline ? $invoice->deadline->translatedFormat('d M Y, H:i') . ' WIB' : '-';
+
+        $text = "📄 <b>DETAIL INVOICE:</b> <code>{$invoice->invoice_number}</code>\n"
+              . "────────────────────────\n"
+              . "• <b>Klien:</b> {$invoice->client_name}\n"
+              . "• <b>Proyek:</b> {$invoice->title}\n"
+              . "• <b>Deadline:</b> {$deadlineText}\n"
+              . "• <b>Total Biaya:</b> {$totalFormatted}\n"
+              . ($invoice->payment_type === 'dp'
+                  ? "• <b>Uang Muka (DP):</b> {$dpFormatted}\n• <b>Sisa Pelunasan:</b> {$sisaFormatted}\n"
+                  : "• <b>Metode:</b> Bayar Lunas Langsung\n")
+              . "• <b>Status Saat Ini:</b> <b>{$statusText}</b>\n"
+              . "────────────────────────\n"
+              . "🌐 <b>Link Portal Klien:</b>\n{$invoice->getClientViewUrl()}\n\n"
+              . "👇 <b>Pilih tombol di bawah untuk mengubah status pembayaran atau meminta file:</b>";
+
+        // Dynamic Action Buttons according to current status
+        $buttons = [];
+
+        if ($invoice->status === 'unpaid') {
+            $buttons[] = [
+                ['text' => '💳 Tandai DP Terbayar', 'callback_data' => "set_status_dp_paid_{$invoice->id}"],
+                ['text' => '✅ Tandai Lunas', 'callback_data' => "set_status_paid_{$invoice->id}"],
+            ];
+            $buttons[] = [
+                ['text' => '❌ Batalkan Tagihan', 'callback_data' => "set_status_canceled_{$invoice->id}"],
+            ];
+        } elseif ($invoice->status === 'dp_paid') {
+            $buttons[] = [
+                ['text' => '✅ Tandai Pelunasan Selesai (LUNAS)', 'callback_data' => "set_status_paid_{$invoice->id}"],
+            ];
+            $buttons[] = [
+                ['text' => '⏳ Ubah ke Belum Bayar', 'callback_data' => "set_status_unpaid_{$invoice->id}"],
+                ['text' => '❌ Batalkan Tagihan', 'callback_data' => "set_status_canceled_{$invoice->id}"],
+            ];
+        } elseif ($invoice->status === 'paid') {
+            $buttons[] = [
+                ['text' => '⏳ Ubah ke Belum Bayar', 'callback_data' => "set_status_unpaid_{$invoice->id}"],
+                ['text' => '💳 Ubah ke DP Terbayar', 'callback_data' => "set_status_dp_paid_{$invoice->id}"],
+            ];
+        } else {
+            // canceled
+            $buttons[] = [
+                ['text' => '♻️ Aktifkan Kembali (Belum Bayar)', 'callback_data' => "set_status_unpaid_{$invoice->id}"],
+            ];
+        }
+
+        // File download buttons
+        $buttons[] = [
+            ['text' => '📄 Minta File PDF', 'callback_data' => "send_pdf_{$invoice->id}"],
+            ['text' => '🖼️ Minta File PNG', 'callback_data' => "send_png_{$invoice->id}"],
+        ];
+
+        $buttons[] = [
+            ['text' => '🔙 Kembali ke Menu', 'callback_data' => 'wizard_cancel'],
+        ];
+
+        $this->telegram->sendMessage($chatId, $text, [
+            'reply_markup' => json_encode(['inline_keyboard' => $buttons])
+        ]);
+    }
+
+    /**
+     * Handle status change button callback (set_status_{status}_{id}).
+     */
+    protected function handleStatusUpdateCallback(string $chatId, string $data): void
+    {
+        // Example: set_status_paid_85 or set_status_dp_paid_85
+        $parts = explode('_', $data);
+        // data format: set_status_{status}_{id} or set_status_dp_paid_{id}
+        $invId = (int)end($parts);
+        $invoice = Invoice::find($invId);
+
+        if (!$invoice) {
+            $this->telegram->sendMessage($chatId, "❌ Invoice tidak ditemukan.");
+            return;
+        }
+
+        $newStatus = 'unpaid';
+        if (str_contains($data, 'set_status_paid_')) {
+            $newStatus = 'paid';
+        } elseif (str_contains($data, 'set_status_dp_paid_')) {
+            $newStatus = 'dp_paid';
+        } elseif (str_contains($data, 'set_status_canceled_')) {
+            $newStatus = 'canceled';
+        } elseif (str_contains($data, 'set_status_unpaid_')) {
+            $newStatus = 'unpaid';
+        }
+
+        $invoice->update([
+            'status' => $newStatus,
+            'paid_at' => $newStatus === 'paid' ? now() : null,
+        ]);
+
+        $statusHuman = match($newStatus) {
+            'paid' => '✅ LUNAS',
+            'dp_paid' => '💳 DP TERBAYAR',
+            'canceled' => '❌ DIBATALKAN',
+            default => '⏳ BELUM BAYAR'
+        };
+
+        // WhatsApp Confirmation text generator
+        $brand = $invoice->category->brand_name ?: 'ABT-FREELANCE';
+        $waMsg = "";
+        if ($newStatus === 'paid') {
+            $waMsg = "Halo {$invoice->client_name}, pembayaran untuk Invoice *{$invoice->invoice_number}* telah kami terima dan terverifikasi *LUNAS*. Terima kasih atas kepercayaannya! 🙏";
+        } elseif ($newStatus === 'dp_paid') {
+            $dpStr = 'Rp ' . number_format($invoice->dp_amount, 0, ',', '.');
+            $waMsg = "Halo {$invoice->client_name}, pembayaran uang muka (DP) sebesar *{$dpStr}* untuk Invoice *{$invoice->invoice_number}* telah terverifikasi. Tugas segera kami proses. Terima kasih! 🙏";
+        }
+
+        $notificationText = "🎉 <b>STATUS BERHASIL DIUPDATE!</b>\n\n"
+                          . "📄 <b>Invoice:</b> <code>{$invoice->invoice_number}</code>\n"
+                          . "👤 <b>Klien:</b> {$invoice->client_name}\n"
+                          . "📊 <b>Status Baru:</b> <b>{$statusHuman}</b>\n\n"
+                          . "🌐 <b>Status di Portal Klien & Dashboard Otomatis Tersinkron!</b>";
+
+        if ($waMsg) {
+            $notificationText .= "\n\n📲 <b>Pesan Konfirmasi WhatsApp (Tinggal Salin):</b>\n"
+                               . "<code>" . htmlspecialchars($waMsg) . "</code>";
+        }
+
+        $this->telegram->sendMessage($chatId, $notificationText);
+
+        // Show refreshed detail card with updated buttons
+        $this->showInvoiceDetailCard($chatId, $invoice->fresh());
+    }
+
+    /**
      * Send welcome message with persistent keyboard buttons.
      */
     protected function sendWelcomeMenu(string $chatId, string $userName): void
     {
         $text = "⚡ <b>Halo, {$userName}! Selamat datang di Asisten Invoice ABT-FREELANCE</b>\n\n"
-              . "Anda dapat membuat invoice profesional, memilih format pengiriman (PDF / Gambar PNG), dan membagikan link portal klien langsung dari sini.\n\n"
+              . "Anda dapat membuat invoice profesional, mengecek status cukup dengan mengetik nomor (contoh: <code>86</code>), dan mengunduh PDF/PNG langsung dari sini.\n\n"
               . "👇 <b>Tekan tombol di bawah untuk memulai:</b>";
 
         $this->telegram->sendMessage($chatId, $text, [
@@ -704,46 +940,32 @@ class TelegramBotHandler
     }
 
     /**
-     * Check invoice status.
+     * Legacy Fallback for /status command.
      */
     protected function handleInvoiceStatus(string $chatId, string $rawText): void
     {
         $query = trim(substr($rawText, 7));
         if (empty($query)) {
-            $this->telegram->sendMessage($chatId, "Gunakan: <code>/status INV-...</code> atau ketik ID/nomornya.");
+            $this->showStatusMenu($chatId);
             return;
         }
 
-        $invoice = Invoice::where('invoice_number', 'like', "%{$query}%")->first();
+        if (is_numeric($query)) {
+            $this->findAndShowInvoiceByNumber($chatId, (int)$query);
+            return;
+        }
+
+        $invoice = Invoice::where('invoice_number', 'like', "%{$query}%")
+            ->orWhere('client_name', 'like', "%{$query}%")
+            ->latest('id')
+            ->first();
+
         if (!$invoice) {
             $this->telegram->sendMessage($chatId, "❌ Invoice tidak ditemukan.");
             return;
         }
 
-        $statusText = match ($invoice->status) {
-            'paid' => '✅ LUNAS',
-            'dp_paid' => '💳 DP TERBAYAR',
-            'canceled' => '❌ DIBATALKAN',
-            default => '⏳ BELUM BAYAR'
-        };
-
-        $msg = "📄 <b>Detail Invoice {$invoice->invoice_number}</b>\n\n"
-             . "👤 Klien: {$invoice->client_name}\n"
-             . "📋 Proyek: {$invoice->title}\n"
-             . "💰 Total: Rp " . number_format($invoice->total_amount, 0, ',', '.') . "\n"
-             . "📊 Status: <b>{$statusText}</b>\n"
-             . "🔗 Link: {$invoice->getClientViewUrl()}";
-
-        $buttons = [
-            [
-                ['text' => '📄 Minta PDF', 'callback_data' => "send_pdf_{$invoice->id}"],
-                ['text' => '🖼️ Minta PNG', 'callback_data' => "send_png_{$invoice->id}"],
-            ]
-        ];
-
-        $this->telegram->sendMessage($chatId, $msg, [
-            'reply_markup' => json_encode(['inline_keyboard' => $buttons])
-        ]);
+        $this->showInvoiceDetailCard($chatId, $invoice);
     }
 
     /**
