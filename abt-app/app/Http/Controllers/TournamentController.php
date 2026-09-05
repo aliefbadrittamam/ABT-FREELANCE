@@ -181,12 +181,33 @@ class TournamentController extends Controller
     }
 
     /**
+     * Memulai pertandingan turnamen (Ubah status ke 'ongoing').
+     */
+    public function startTournament(Tournament $tournament)
+    {
+        if ($tournament->participants()->count() < 2) {
+            return back()->with('error', 'Minimal harus ada 2 tim terdaftar untuk dapat memulai turnamen!');
+        }
+
+        $tournament->update([
+            'status' => 'ongoing',
+        ]);
+
+        return back()->with('success', "🚀 Turnamen {$tournament->name} ({$tournament->session_label}) resmi DIMULAI! Anda sekarang dapat menandai tim pemenang setelah laga selesai.");
+    }
+
+    /**
      * Tandai salah satu tim peserta sebagai JUARA 1 (Winner Takes All).
+     * HANYA BISA KETIKA TURNAMEN SUDAH DIMULAI (status: ongoing).
      */
     public function setWinner(Tournament $tournament, TournamentParticipant $participant)
     {
         if ($participant->tournament_id !== $tournament->id) {
             abort(403);
+        }
+
+        if ($tournament->status !== 'ongoing') {
+            return back()->with('error', '⛔ Pemenang belum dapat dipilih! Turnamen harus dimulai terlebih dahulu (tekan tombol Mulai Turnamen).');
         }
 
         DB::transaction(function () use ($tournament, $participant) {

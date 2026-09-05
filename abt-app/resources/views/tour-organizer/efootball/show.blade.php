@@ -29,13 +29,24 @@
             </div>
             <h1 class="text-2xl font-black text-on-surface dark:text-white tracking-tight flex items-center gap-2">
                 {{ $tournament->name }}
-                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase {{ $tournament->status === 'completed' ? 'bg-gray-100 dark:bg-[#333] text-gray-700 dark:text-gray-300' : ($tournament->status === 'full' ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200') }}">
-                    {{ $tournament->status === 'completed' ? 'SELESAI' : ($tournament->status === 'full' ? 'PENUH' : 'OPEN') }}
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase {{ $tournament->status === 'completed' ? 'bg-gray-100 dark:bg-[#333] text-gray-700 dark:text-gray-300' : ($tournament->status === 'ongoing' ? 'bg-blue-50 text-blue-600 border border-blue-200 animate-pulse' : ($tournament->status === 'full' ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200')) }}">
+                    {{ $tournament->status === 'completed' ? 'SELESAI' : ($tournament->status === 'ongoing' ? '⚔️ SEDANG BERTANDING' : ($tournament->status === 'full' ? 'PENUH' : 'OPEN')) }}
                 </span>
             </h1>
         </div>
 
         <div class="flex items-center gap-2">
+            <!-- Start Tournament Button (Only before started) -->
+            @if(($tournament->status === 'open' || $tournament->status === 'full') && $tournament->filled_slots_count >= 2)
+            <form action="{{ route('tour-organizer.efootball.start', $tournament) }}" method="POST" onsubmit="return confirm('Mulai turnamen sekarang? Status akan berubah ke Sedang Bertanding dan Anda dapat menentukan Juara 1.')" class="inline">
+                @csrf
+                <button type="submit" class="px-3.5 py-2 bg-primary-container text-on-surface text-xs font-black rounded-lg shadow-xs hover:brightness-95 transition flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-base">sports_soccer</span>
+                    Mulai Turnamen
+                </button>
+            </form>
+            @endif
+
             <!-- 1-Click Copy Broadcast Button -->
             <button type="button" 
                     @click="navigator.clipboard.writeText(`{{ addslashes($broadcastMessage) }}`); copiedBroadcast = true; setTimeout(() => copiedBroadcast = false, 2500)"
@@ -146,14 +157,18 @@
                 <!-- Right: Slot Actions -->
                 <div class="flex items-center gap-1.5 shrink-0">
                     @if($p)
-                        <!-- Winner Toggle -->
-                        @if(!$p->is_winner && $tournament->status !== 'completed')
+                        <!-- Winner Button (Only active when status is ongoing) -->
+                        @if(!$p->is_winner && $tournament->status === 'ongoing')
                         <form action="{{ route('tour-organizer.efootball.setWinner', [$tournament, $p]) }}" method="POST" class="inline">
                             @csrf
                             <button type="submit" class="p-1.5 text-amber-500 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded-lg transition" title="Tandai Sebagai Juara 1">
                                 <span class="material-symbols-outlined text-lg">emoji_events</span>
                             </button>
                         </form>
+                        @elseif(!$p->is_winner && ($tournament->status === 'open' || $tournament->status === 'full'))
+                        <span class="p-1.5 text-secondary/30 dark:text-gray-600 cursor-not-allowed" title="Mulai turnamen terlebih dahulu untuk menentukan Juara 1">
+                            <span class="material-symbols-outlined text-lg">emoji_events</span>
+                        </span>
                         @endif
 
                         <!-- WA Direct Chat -->

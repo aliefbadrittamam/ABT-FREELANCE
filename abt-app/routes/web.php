@@ -119,6 +119,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{tournament}', [TournamentController::class, 'destroy'])->name('destroy');
         Route::post('/{tournament}/register', [TournamentController::class, 'registerParticipant'])->name('register');
         Route::delete('/{tournament}/participants/{participant}', [TournamentController::class, 'removeParticipant'])->name('removeParticipant');
+        Route::post('/{tournament}/start', [TournamentController::class, 'startTournament'])->name('start');
         Route::post('/{tournament}/winner/{participant}', [TournamentController::class, 'setWinner'])->name('setWinner');
         Route::post('/{tournament}/upload-prize-proof', [TournamentController::class, 'uploadPrizeProof'])->name('uploadPrizeProof');
         Route::post('/{tournament}/complete', [TournamentController::class, 'completeSession'])->name('complete');
