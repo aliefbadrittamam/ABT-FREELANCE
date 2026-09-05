@@ -116,9 +116,19 @@
         </div>
     </div>
 
+    @php 
+        $defaultGlobalLiveLink = \App\Models\PaymentSetting::getDefaultTournamentLiveLink(); 
+        $effectiveLiveLink = $tournament->live_link ?: $defaultGlobalLiveLink;
+    @endphp
+
     <!-- Link Live Monitoring / Streaming Input Bar (Disertakan di Broadcast WA) -->
     <div class="bg-white dark:bg-[#1e1e1e] rounded-xl border border-border-subtle dark:border-[#2a2a2a] p-4 sm:p-5 shadow-xs"
-         x-data="{ liveUrlInput: '{{ $tournament->live_link ?: url('/turnamen/efootball/live') }}' }">
+         x-data="{ 
+             liveUrlInput: '{{ $effectiveLiveLink }}',
+             defaultGlobal: '{{ $defaultGlobalLiveLink }}',
+             systemUrl: '{{ url('/turnamen/efootball/live') }}',
+             saveDefault: true
+         }">
         <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-3">
             <div class="flex items-center gap-2.5">
                 <div class="w-8 h-8 rounded-lg bg-red-500/10 text-red-600 flex items-center justify-center font-bold shrink-0">
@@ -128,38 +138,53 @@
                     <h3 class="text-xs font-bold text-on-surface dark:text-white uppercase tracking-wider flex items-center gap-2">
                         Link Live Monitoring / Streaming
                         @if($tournament->live_link)
-                        <span class="text-[9.5px] font-bold bg-emerald-50 text-emerald-600 px-2 py-0.2 rounded-full border border-emerald-200">Aktif di Broadcast</span>
+                        <span class="text-[9.5px] font-bold bg-emerald-50 text-emerald-600 px-2 py-0.2 rounded-full border border-emerald-200">Custom Sesi Ini</span>
                         @else
-                        <span class="text-[9.5px] font-bold bg-gray-100 text-secondary px-2 py-0.2 rounded-full">Default Sistem</span>
+                        <span class="text-[9.5px] font-bold bg-primary-container/30 text-on-surface px-2 py-0.2 rounded-full border border-primary-container">Default Global Aktif</span>
                         @endif
                     </h3>
                     <p class="text-[11px] text-secondary dark:text-gray-400 mt-0.5">
-                        Link ini otomatis disertakan di dalam teks broadcast WA saat disalin (contoh: Link Live Ngrok, YouTube Live, atau TikTok).
+                        Link ini otomatis disertakan di dalam teks broadcast WA saat disalin. Cukup simpan sekali sebagai default, maka semua sesi berikutnya otomatis menggunakan link ini tanpa perlu paste berulang kali.
                     </p>
                 </div>
             </div>
             
             <div class="flex items-center gap-1.5 shrink-0">
-                <button type="button" @click="liveUrlInput = '{{ url('/turnamen/efootball/live') }}'"
-                        class="px-2.5 py-1.5 border border-border-subtle dark:border-[#333] hover:bg-surface-variant text-secondary text-[11px] font-semibold rounded-lg transition" title="Gunakan Link Live Sistem">
-                    Reset Default
+                <button type="button" @click="liveUrlInput = defaultGlobal"
+                        class="px-2.5 py-1.5 border border-border-subtle dark:border-[#333] hover:bg-surface-variant text-secondary text-[11px] font-semibold rounded-lg transition" title="Pakai Link Default Global">
+                    Default Global
+                </button>
+                <button type="button" @click="liveUrlInput = systemUrl"
+                        class="px-2.5 py-1.5 border border-border-subtle dark:border-[#333] hover:bg-surface-variant text-secondary text-[11px] font-semibold rounded-lg transition" title="Gunakan Link Bawaan Sistem">
+                    Reset URL Sistem
                 </button>
             </div>
         </div>
 
-        <form action="{{ route('tour-organizer.efootball.updateLiveLink', $tournament) }}" method="POST" class="flex items-center gap-2">
+        <form action="{{ route('tour-organizer.efootball.updateLiveLink', $tournament) }}" method="POST" class="space-y-2.5">
             @csrf
-            <div class="relative flex-1">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-secondary text-sm">
-                    <span class="material-symbols-outlined text-base">link</span>
-                </span>
-                <input type="url" name="live_link" x-model="liveUrlInput" placeholder="https://xxxx.ngrok-free.app/turnamen/efootball/live atau https://youtube.com/live/..."
-                       class="w-full pl-9 pr-3.5 py-2 bg-surface dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs font-mono text-on-surface dark:text-white outline-none focus:ring-2 focus:ring-primary">
+            <div class="flex items-center gap-2">
+                <div class="relative flex-1">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-secondary text-sm">
+                        <span class="material-symbols-outlined text-base">link</span>
+                    </span>
+                    <input type="url" name="live_link" x-model="liveUrlInput" placeholder="https://xxxx.ngrok-free.app/turnamen/efootball/live atau link streaming..."
+                           class="w-full pl-9 pr-3.5 py-2 bg-surface dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs font-mono text-on-surface dark:text-white outline-none focus:ring-2 focus:ring-primary">
+                </div>
+                <button type="submit" class="px-4 py-2 bg-primary-container text-on-surface text-xs font-bold rounded-lg hover:brightness-95 transition shrink-0 shadow-xs flex items-center gap-1">
+                    <span class="material-symbols-outlined text-sm">save</span>
+                    Simpan Link
+                </button>
             </div>
-            <button type="submit" class="px-4 py-2 bg-primary-container text-on-surface text-xs font-bold rounded-lg hover:brightness-95 transition shrink-0 shadow-xs flex items-center gap-1">
-                <span class="material-symbols-outlined text-sm">save</span>
-                Simpan Link
-            </button>
+
+            <!-- Checkbox Simpan sebagai Default untuk Semua Sesi -->
+            <div class="flex items-center gap-2 pt-0.5">
+                <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs text-secondary dark:text-gray-300 select-none">
+                    <input type="checkbox" name="save_as_default" value="1" x-model="saveDefault"
+                           class="w-3.5 h-3.5 rounded text-black focus:ring-black border-gray-300 dark:border-gray-600">
+                    <span>Jadikan sebagai <strong>Link Default untuk Semua Sesi</strong> (otomatis dipakai di semua sesi baru tanpa perlu paste lagi)</span>
+                </label>
+            </div>
         </form>
     </div>
 

@@ -107,12 +107,12 @@ class Tournament extends Model
         $sisa = $this->remaining_slots_count;
         $lines[] = "";
         
-        // Link Live Monitoring / Streaming
-        if (!empty($this->live_link)) {
-            $lines[] = "🌐 *Link Live Slot / Bagan:* {$this->live_link}";
-        } else {
-            $lines[] = "🌐 *Link Live Slot:* " . url('/turnamen/efootball/live');
-        }
+        // Link Live Monitoring / Streaming (Gunakan custom link sesi atau fallback ke default global)
+        $effectiveLiveLink = !empty($this->live_link) 
+            ? $this->live_link 
+            : PaymentSetting::getDefaultTournamentLiveLink();
+
+        $lines[] = "🌐 *Link Live Slot / Bagan:* {$effectiveLiveLink}";
 
         $lines[] = "";
         if ($sisa > 0) {

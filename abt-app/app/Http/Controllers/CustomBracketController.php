@@ -251,13 +251,23 @@ class CustomBracketController extends Controller
     {
         $request->validate([
             'live_link' => 'nullable|string|max:500',
+            'save_as_default' => 'nullable|boolean',
         ]);
+
+        $link = $request->filled('live_link') ? trim($request->live_link) : null;
 
         $tournament->update([
-            'live_link' => $request->filled('live_link') ? trim($request->live_link) : null,
+            'live_link' => $link,
         ]);
 
-        return back()->with('success', 'Link live bagan berhasil disimpan & otomatis disertakan di broadcast WA!');
+        if ($request->boolean('save_as_default')) {
+            \App\Models\PaymentSetting::getSettings()->update([
+                'default_tournament_live_link' => $link,
+            ]);
+            return back()->with('success', 'Link live berhasil disimpan & dijadikan sebagai DEFAULT untuk semua turnamen!');
+        }
+
+        return back()->with('success', 'Link live bagan berhasil disimpan untuk turnamen ini!');
     }
 
     /**

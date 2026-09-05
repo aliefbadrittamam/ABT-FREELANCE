@@ -9,7 +9,16 @@ class PaymentSetting extends Model
     protected $fillable = [
         'bank_info',
         'qris_image_path',
+        'default_tournament_live_link',
     ];
+
+    public static function getDefaultTournamentLiveLink(): string
+    {
+        $settings = static::getSettings();
+        return !empty($settings->default_tournament_live_link) 
+            ? $settings->default_tournament_live_link 
+            : url('/turnamen/efootball/live');
+    }
 
     public static function getSettings(): self
     {
