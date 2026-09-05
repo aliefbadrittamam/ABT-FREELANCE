@@ -119,7 +119,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6" x-show="tournaments.length > 0">
             <template x-for="tournament in tournaments" :key="tournament.id">
                 <div class="bg-white rounded-2xl border border-border-subtle p-5 sm:p-6 shadow-sm flex flex-col justify-between relative overflow-hidden transition-all"
-                     x-data="{ showList: true }">
+                     x-data="{ viewTab: 'slots', showList: true }">
                     
                     <!-- Accent Bar -->
                     <div class="absolute top-0 left-0 w-full h-1.5" :class="tournament.is_full ? 'bg-red-500' : 'bg-primary-container'"></div>
@@ -149,14 +149,29 @@
                             </div>
                         </div>
 
-                        <!-- Slot List Table -->
-                        <div class="space-y-2">
-                            <div class="flex justify-between items-center text-[11px] font-bold text-secondary uppercase tracking-wider mb-2">
-                                <span>Slot Tim (<span x-text="tournament.filled_slots_count"></span>/<span x-text="tournament.max_slots"></span>)</span>
-                                <button type="button" @click="showList = !showList" class="text-primary font-bold hover:underline" x-text="showList ? 'Tutup Detail' : 'Buka Detail'"></button>
-                            </div>
+                        <!-- View Tab Switcher (Slots vs Bagan) -->
+                        <div class="flex items-center gap-2 mb-3 border-b border-border-subtle pb-2">
+                            <button type="button" @click="viewTab = 'slots'" 
+                                    :class="viewTab === 'slots' ? 'bg-on-surface text-white font-bold' : 'text-secondary hover:text-on-surface'"
+                                    class="px-2.5 py-1 text-[11px] rounded-lg transition flex items-center gap-1">
+                                <span class="material-symbols-outlined text-xs">format_list_numbered</span>
+                                <span>Slot (<span x-text="tournament.filled_slots_count + '/' + tournament.max_slots"></span>)</span>
+                            </button>
 
-                            <div x-show="showList" class="space-y-1.5" x-transition>
+                            <button type="button" @click="viewTab = 'bracket'" 
+                                    :class="viewTab === 'bracket' ? 'bg-on-surface text-white font-bold' : 'text-secondary hover:text-on-surface'"
+                                    class="px-2.5 py-1 text-[11px] rounded-lg transition flex items-center gap-1">
+                                <span class="material-symbols-outlined text-xs">account_tree</span>
+                                <span>Bagan</span>
+                                <template x-if="tournament.matches && Object.keys(tournament.matches).length > 0">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+                                </template>
+                            </button>
+                        </div>
+
+                        <!-- TAB 1: Slot List Table -->
+                        <div x-show="viewTab === 'slots'" class="space-y-2">
+                            <div class="space-y-1.5 max-h-[280px] overflow-y-auto pr-1">
                                 <template x-for="s in tournament.max_slots" :key="s">
                                     <div class="px-3 py-2 rounded-lg border text-xs flex items-center justify-between transition-all"
                                          :class="tournament.participants[s] ? (tournament.participants[s].is_winner ? 'bg-amber-50/70 border-amber-300' : 'bg-white border-border-subtle') : 'bg-gray-50 border-dashed border-gray-200 text-secondary'">
@@ -184,6 +199,41 @@
                                     </div>
                                 </template>
                             </div>
+                        </div>
+
+                        <!-- TAB 2: Bagan Pertandingan (Bracket Tree View) -->
+                        <div x-show="viewTab === 'bracket'" class="space-y-2">
+                            <template x-if="!tournament.matches || Object.keys(tournament.matches).length === 0">
+                                <div class="text-center py-6 text-xs text-secondary italic">
+                                    Bagan belum diacak oleh Admin. Pantau ketersediaan slot pendaftaran!
+                                </div>
+                            </template>
+
+                            <template x-if="tournament.matches && Object.keys(tournament.matches).length > 0">
+                                <div class="overflow-x-auto pb-2 max-h-[300px]">
+                                    <div class="flex items-stretch gap-4 min-w-[500px]">
+                                        <template x-for="(matches, roundNum) in tournament.matches" :key="roundNum">
+                                            <div class="flex-1 flex flex-col justify-around space-y-3">
+                                                <div class="text-center py-1 bg-gray-100 rounded text-[10px] font-bold uppercase text-secondary">
+                                                    <span x-text="matches[0].round_name"></span>
+                                                </div>
+                                                <template x-for="m in matches" :key="m.id">
+                                                    <div class="p-2 rounded-lg border text-xs bg-gray-50 border-border-subtle space-y-1">
+                                                        <div class="p-1 rounded bg-white border truncate text-[11px]"
+                                                             :class="m.team1_id && m.team1_id === m.winner_id ? 'border-emerald-400 text-emerald-700 font-bold bg-emerald-50' : 'border-border-subtle'">
+                                                            <span x-text="m.team1"></span>
+                                                        </div>
+                                                        <div class="p-1 rounded bg-white border truncate text-[11px]"
+                                                             :class="m.team2_id && m.team2_id === m.winner_id ? 'border-emerald-400 text-emerald-700 font-bold bg-emerald-50' : 'border-border-subtle'">
+                                                            <span x-text="m.team2"></span>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
                         </div>
                     </div>
 
@@ -418,6 +468,25 @@
                         'is_winner' => (bool)$p->is_winner,
                     ];
                 }
+
+                $matchesGrouped = [];
+                foreach ($t->matches as $m) {
+                    $matchesGrouped[$m->round][] = [
+                        'id' => $m->id,
+                        'round' => $m->round,
+                        'round_name' => $m->round_name,
+                        'match_number' => $m->match_number,
+                        'team1' => $m->team1?->team_name ?? '-',
+                        'team1_id' => $m->team1_id,
+                        'team2' => $m->team2?->team_name ?? '-',
+                        'team2_id' => $m->team2_id,
+                        'winner_id' => $m->winner_id,
+                        'score1' => $m->score1,
+                        'score2' => $m->score2,
+                        'status' => $m->status,
+                    ];
+                }
+
                 return [
                     'id' => $t->id,
                     'name' => $t->name,
@@ -432,6 +501,7 @@
                     'is_full' => $t->isFull(),
                     'status' => $t->status,
                     'participants' => $pMap,
+                    'matches' => $matchesGrouped,
                 ];
             });
         @endphp

@@ -31,6 +31,11 @@ class Tournament extends Model
         return $this->hasMany(TournamentParticipant::class)->orderBy('slot_number');
     }
 
+    public function matches(): HasMany
+    {
+        return $this->hasMany(TournamentMatch::class)->orderBy('round')->orderBy('match_number');
+    }
+
     public function winner(): BelongsTo
     {
         return $this->belongsTo(TournamentParticipant::class, 'winner_participant_id');

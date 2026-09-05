@@ -28,7 +28,7 @@ Route::get('/i/{token}/task-file', [ClientInvoiceController::class, 'downloadTas
 
 // 4. Public Live Monitoring Slot Turnamen (Tanpa Login / Siap Ngrok)
 Route::get('/turnamen/efootball/live', function () {
-    $activeTournaments = \App\Models\Tournament::with('participants')
+    $activeTournaments = \App\Models\Tournament::with(['participants', 'matches.team1', 'matches.team2', 'matches.winner'])
         ->whereIn('status', ['open', 'full', 'ongoing'])
         ->latest('id')
         ->get();
@@ -51,7 +51,7 @@ Route::get('/turnamen/efootball/live', function () {
 
 // Endpoint JSON Real-time Polling untuk Halaman Publik (Auto-refresh tanpa reload)
 Route::get('/turnamen/efootball/live/data', function () {
-    $activeTournaments = \App\Models\Tournament::with('participants')
+    $activeTournaments = \App\Models\Tournament::with(['participants', 'matches.team1', 'matches.team2', 'matches.winner'])
         ->whereIn('status', ['open', 'full', 'ongoing'])
         ->latest('id')
         ->get()
@@ -61,6 +61,24 @@ Route::get('/turnamen/efootball/live/data', function () {
                 $participantsMap[$p->slot_number] = [
                     'team_name' => $p->team_name,
                     'is_winner' => (bool)$p->is_winner,
+                ];
+            }
+
+            $matchesGrouped = [];
+            foreach ($t->matches as $m) {
+                $matchesGrouped[$m->round][] = [
+                    'id' => $m->id,
+                    'round' => $m->round,
+                    'round_name' => $m->round_name,
+                    'match_number' => $m->match_number,
+                    'team1' => $m->team1?->team_name ?? '-',
+                    'team1_id' => $m->team1_id,
+                    'team2' => $m->team2?->team_name ?? '-',
+                    'team2_id' => $m->team2_id,
+                    'winner_id' => $m->winner_id,
+                    'score1' => $m->score1,
+                    'score2' => $m->score2,
+                    'status' => $m->status,
                 ];
             }
 
@@ -78,6 +96,7 @@ Route::get('/turnamen/efootball/live/data', function () {
                 'is_full' => $t->isFull(),
                 'status' => $t->status,
                 'participants' => $participantsMap,
+                'matches' => $matchesGrouped,
             ];
         });
 
@@ -121,6 +140,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/{tournament}/register', [TournamentController::class, 'registerParticipant'])->name('register');
         Route::delete('/{tournament}/participants/{participant}', [TournamentController::class, 'removeParticipant'])->name('removeParticipant');
         Route::post('/{tournament}/start', [TournamentController::class, 'startTournament'])->name('start');
+        Route::post('/{tournament}/generate-bracket', [TournamentController::class, 'generateBracket'])->name('generateBracket');
+        Route::post('/{tournament}/matches/{match}/advance', [TournamentController::class, 'advanceMatch'])->name('advanceMatch');
         Route::post('/{tournament}/winner/{participant}', [TournamentController::class, 'setWinner'])->name('setWinner');
         Route::post('/{tournament}/upload-prize-proof', [TournamentController::class, 'uploadPrizeProof'])->name('uploadPrizeProof');
         Route::post('/{tournament}/complete', [TournamentController::class, 'completeSession'])->name('complete');

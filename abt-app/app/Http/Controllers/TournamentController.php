@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Tournament;
 use App\Models\TournamentParticipant;
+use App\Models\TournamentMatch;
+use App\Services\TournamentBracketService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
@@ -62,7 +64,7 @@ class TournamentController extends Controller
             'session_label' => 'required|string|max:50',
             'entry_fee' => 'required|numeric|min:0',
             'prize_pool' => 'required|numeric|min:0',
-            'max_slots' => 'required|in:4,8',
+            'max_slots' => 'required|in:4,8,16,32,64',
             'notes' => 'nullable|string|max:500',
         ]);
 
@@ -101,7 +103,66 @@ class TournamentController extends Controller
         $tournament->load(['participants', 'winner']);
         $broadcastMessage = $tournament->generateBroadcastMessage();
 
-        return view('tour-organizer.efootball.show', compact('tournament', 'broadcastMessage'));
+        $matchesByRound = $tournament->matches()
+            ->with(['team1', 'team2', 'winner'])
+            ->get()
+            ->groupBy('round');
+
+        return view('tour-organizer.efootball.show', compact('tournament', 'broadcastMessage', 'matchesByRound'));
+    }
+
+    /**
+     * Generate or randomize bagan / tournament bracket.
+     */
+    public function generateBracket(Request $request, Tournament $tournament, TournamentBracketService $bracketService)
+    {
+        if ($tournament->participants()->count() < 2) {
+            return back()->with('error', 'Minimal harus ada 2 tim terdaftar untuk membuat bagan!');
+        }
+
+        $randomize = $request->boolean('randomize');
+        $bracketService->generateBracket($tournament, $randomize);
+
+        $msg = $randomize 
+            ? "Bagan turnamen ({$tournament->max_slots} Tim) berhasil diacak (Randomized)!"
+            : "Bagan turnamen ({$tournament->max_slots} Tim) berhasil dibuat sesuai nomor slot!";
+
+        return back()->with('success', $msg);
+    }
+
+    /**
+     * Advance winner of a specific bracket match.
+     */
+    public function advanceMatch(Request $request, Tournament $tournament, TournamentMatch $match, TournamentBracketService $bracketService)
+    {
+        $request->validate([
+            'winner_id' => 'required|exists:tournament_participants,id',
+            'score1' => 'nullable|integer|min:0',
+            'score2' => 'nullable|integer|min:0',
+        ]);
+
+        $winnerId = (int)$request->winner_id;
+        $score1 = $request->filled('score1') ? (int)$request->score1 : null;
+        $score2 = $request->filled('score2') ? (int)$request->score2 : null;
+
+        $bracketService->setMatchWinner($match, $winnerId, $score1, $score2);
+
+        $winner = TournamentParticipant::find($winnerId);
+        $teamName = $winner?->team_name ?? 'Tim';
+
+        // Check if this was the final match
+        if (!$match->next_match_id) {
+            $prizeFormatted = 'Rp ' . number_format($tournament->prize_pool, 0, ',', '.');
+            $waConfirmText = "Halo Tim *{$teamName}*, Selamat telah berhasil menjadi *JUARA 1* pada Turnamen eFootball Mobile ({$tournament->name} - {$tournament->session_label})!\n\n"
+                           . "🎁 Hadiah sebesar *{$prizeFormatted}* akan segera kami transfer.\n"
+                           . "Mohon kirimkan data rekening Bank / Nomor E-Wallet Anda. Terima kasih!";
+
+            return back()->with('success', "🎉 Tim {$teamName} memenangkan Grand Final dan dinobatkan sebagai JUARA 1!")
+                         ->with('winner_wa_message', $waConfirmText)
+                         ->with('winner_wa_phone', $winner?->contact_wa);
+        }
+
+        return back()->with('success', "Tim {$teamName} berhasil melaju ke babak berikutnya!");
     }
 
     /**
