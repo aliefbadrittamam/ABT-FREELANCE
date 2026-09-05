@@ -143,7 +143,7 @@
                             <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-secondary/60 flex items-center pointer-events-none">
                                 <span class="material-symbols-outlined text-lg">person</span>
                             </span>
-                            <input type="text" name="email" value="{{ old('email') }}" required autofocus placeholder="aliefbadrittamam@gmail.com"
+                            <input type="text" name="email" value="{{ old('email') }}" required autofocus
                                    class="w-full pl-10 pr-3.5 py-2.5 bg-[#fafafa] border border-border-subtle rounded-xl text-xs sm:text-sm font-medium text-on-surface focus:bg-white focus:ring-2 focus:ring-primary focus:border-primary outline-none transition">
                         </div>
                     </div>

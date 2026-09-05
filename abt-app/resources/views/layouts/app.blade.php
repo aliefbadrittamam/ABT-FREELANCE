@@ -229,8 +229,8 @@
                     <li>
                         <a href="{{ route('tour-organizer.efootball') }}" 
                            class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors {{ request()->routeIs('tour-organizer.efootball*') ? 'text-primary dark:text-primary-container font-bold bg-primary-container/15' : 'text-secondary dark:text-gray-400 hover:text-on-surface dark:hover:text-white' }}">
-                            <span class="material-symbols-outlined text-sm">sports_esports</span>
-                            Kelola Turnamen
+                            <span class="material-symbols-outlined text-sm">sports_soccer</span>
+                            eFootball Mobile
                         </a>
                     </li>
                 </ul>

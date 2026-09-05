@@ -48,6 +48,44 @@ Route::get('/turnamen/efootball/live', function () {
     return view('tour-organizer.efootball.live', compact('activeTournaments', 'settings', 'qrisBase64', 'bcaBase64', 'danaBase64', 'seaBase64'));
 })->name('tour-organizer.efootball.live');
 
+// Endpoint JSON Real-time Polling untuk Halaman Publik (Auto-refresh tanpa reload)
+Route::get('/turnamen/efootball/live/data', function () {
+    $activeTournaments = \App\Models\Tournament::with('participants')
+        ->whereIn('status', ['open', 'full', 'ongoing'])
+        ->latest('id')
+        ->get()
+        ->map(function ($t) {
+            $participantsMap = [];
+            foreach ($t->participants as $p) {
+                $participantsMap[$p->slot_number] = [
+                    'team_name' => $p->team_name,
+                    'is_winner' => (bool)$p->is_winner,
+                ];
+            }
+
+            return [
+                'id' => $t->id,
+                'name' => $t->name,
+                'session_label' => $t->session_label,
+                'entry_fee' => (float)$t->entry_fee,
+                'formatted_entry_fee' => number_format($t->entry_fee, 0, ',', '.'),
+                'prize_pool' => (float)$t->prize_pool,
+                'formatted_prize_pool' => number_format($t->prize_pool, 0, ',', '.'),
+                'max_slots' => (int)$t->max_slots,
+                'filled_slots_count' => (int)$t->filled_slots_count,
+                'remaining_slots_count' => (int)$t->remaining_slots_count,
+                'is_full' => $t->isFull(),
+                'status' => $t->status,
+                'participants' => $participantsMap,
+            ];
+        });
+
+    return response()->json([
+        'tournaments' => $activeTournaments,
+        'timestamp' => now()->toIso8601String(),
+    ]);
+})->name('tour-organizer.efootball.live.data');
+
 // 5. Protected Admin Routes (Requires Authentication)
 Route::middleware('auth')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
