@@ -2,8 +2,11 @@
 
 @section('title', 'eFootball Mobile — Tour Organizer')
 @section('header', 'eFootball Mobile')
+@section('favicon', asset('assets/logo-abt-efootball-tur.jpg'))
+@section('header_logo', asset('assets/logo-abt-efootball-tur.jpg'))
 
 @section('content')
+<div x-data="{ resetModalOpen: false }">
 <!-- Header Greeting -->
 <div class="mb-6 sm:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
     <div>
@@ -15,12 +18,22 @@
         <h1 class="text-2xl sm:text-[30px] font-black text-on-surface dark:text-white tracking-tight leading-tight">Manajemen Turnamen eFootball</h1>
         <p class="text-xs sm:text-sm text-on-surface-variant dark:text-gray-400 mt-0.5">Kelola sesi turnamen kilat, slot tim peserta, dan rekap profit.</p>
     </div>
-    <div class="flex items-center gap-2.5">
+    <div class="flex flex-wrap items-center gap-2.5">
         <a href="{{ url('/turnamen/efootball/live') }}" target="_blank" 
            class="px-3.5 py-2 bg-white dark:bg-[#1e1e1e] border border-border-subtle dark:border-[#333] text-on-surface dark:text-gray-200 text-xs font-bold rounded-lg hover:bg-surface-variant dark:hover:bg-[#252525] transition-all flex items-center gap-1.5 shadow-xs">
             <span class="material-symbols-outlined text-base text-primary dark:text-primary-container">open_in_new</span>
             Halaman Publik Live
         </a>
+
+        @if($activeSessionsCount > 0)
+        <!-- Reset Sesi Button with Confirmation Modal -->
+        <button type="button" @click="resetModalOpen = true"
+                class="px-3.5 py-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/40 text-red-600 dark:text-red-400 text-xs font-bold rounded-lg hover:bg-red-100 transition-all flex items-center gap-1.5 shadow-xs">
+            <span class="material-symbols-outlined text-base">restart_alt</span>
+            Reset Sesi
+        </button>
+        @endif
+
         <a href="{{ route('tour-organizer.efootball.create') }}" 
            class="px-4 py-2 bg-primary-container text-on-surface text-xs font-bold rounded-lg shadow-sm hover:brightness-95 transition-all flex items-center gap-1.5">
             <span class="material-symbols-outlined text-base">add</span>
@@ -201,5 +214,41 @@
     </div>
     <div class="mt-4">{{ $completedTournaments->links() }}</div>
     @endif
+</div>
+
+<!-- Modal Konfirmasi Reset Sesi Hari Ini -->
+<div x-show="resetModalOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+    <div class="bg-white dark:bg-[#1e1e1e] rounded-2xl border border-border-subtle dark:border-[#2a2a2a] max-w-md w-full p-6 shadow-2xl space-y-4"
+         @click.outside="resetModalOpen = false">
+        
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-xl">warning</span>
+            </div>
+            <div>
+                <h3 class="text-base font-bold text-on-surface dark:text-white">Reset Semua Sesi Turnamen?</h3>
+                <p class="text-xs text-secondary dark:text-gray-400">{{ $activeSessionsCount }} sesi aktif akan direset</p>
+            </div>
+        </div>
+
+        <p class="text-xs text-secondary dark:text-gray-300 leading-relaxed">
+            Apakah Anda yakin ingin mereset semua sesi aktif hari ini? 
+            Sesi yang sudah ada pesertanya akan <strong>otomatis direkap selesai (profit tercatat aman)</strong>, sedangkan sesi yang kosong akan dibersihkan agar Anda bisa membuka sesi baru dari awal (Sesi 1).
+        </p>
+
+        <form action="{{ route('tour-organizer.efootball.resetSessions') }}" method="POST" class="flex justify-end gap-2.5 pt-2">
+            @csrf
+            <button type="button" @click="resetModalOpen = false" 
+                    class="px-4 py-2 border border-border-subtle dark:border-[#333] rounded-lg text-xs font-semibold text-secondary hover:bg-surface-variant transition">
+                Batal
+            </button>
+            <button type="submit" 
+                    class="px-4 py-2 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition flex items-center gap-1.5 shadow-sm">
+                <span class="material-symbols-outlined text-sm">restart_alt</span>
+                Ya, Reset Sesi Sekarang
+            </button>
+        </form>
+    </div>
+</div>
 </div>
 @endsection

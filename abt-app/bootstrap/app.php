@@ -14,7 +14,16 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'api/telegram/webhook',
         ]);
+        $middleware->redirectGuestsTo('/login');
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->render(function (\Illuminate\Database\Eloquent\ModelNotFoundException $e, $request) {
+            if ($request->is('api/*')) {
+                return response()->json(['error' => 'Data tidak ditemukan.'], 404);
+            }
+            if ($request->is('i/*')) {
+                return response()->view('errors.404', [], 404);
+            }
+            return redirect()->back()->with('error', 'Data yang Anda cari tidak ditemukan atau telah dihapus.');
+        });
     })->create();

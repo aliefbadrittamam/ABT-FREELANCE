@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Invoice;
 use App\Models\Category;
+use App\Models\Tournament;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -61,21 +62,27 @@ class DashboardController extends Controller
 
     public function index()
     {
-        // 1. Total Pendapatan Keseluruhan (Cash in to date)
+        // 1. Total Pendapatan Keseluruhan (Cash in to date + Total Profit Turnamen Selesai)
         $totalPaidFull = Invoice::where('status', 'paid')->where('payment_type', 'full')->sum('total_amount');
         $totalDpCollected = Invoice::whereIn('status', ['dp_paid', 'paid'])->where('payment_type', 'dp')->sum('dp_amount');
         $totalPelunasanPaid = Invoice::where('status', 'paid')->where('payment_type', 'dp')->get()->sum(function ($inv) {
             return max(0, (float)$inv->total_amount - (float)$inv->dp_amount);
         });
-        $totalRevenue = (float)$totalPaidFull + (float)$totalDpCollected + (float)$totalPelunasanPaid;
+        $invoiceRevenue = (float)$totalPaidFull + (float)$totalDpCollected + (float)$totalPelunasanPaid;
+        $totalTournamentProfit = (float)Tournament::where('status', 'completed')->sum('admin_profit');
+        $totalRevenue = $invoiceRevenue + $totalTournamentProfit;
 
-        // 2. Pendapatan Hari Ini (Uang masuk riil hari ini)
-        $todayRevenue = $this->calculateCashInflow(date: Carbon::today());
+        // 2. Pendapatan Hari Ini (Uang masuk riil hari ini + Profit turnamen selesai hari ini)
+        $todayInvoiceRevenue = $this->calculateCashInflow(date: Carbon::today());
+        $todayTournamentProfit = (float)Tournament::where('status', 'completed')->whereDate('completed_at', Carbon::today())->sum('admin_profit');
+        $todayRevenue = $todayInvoiceRevenue + $todayTournamentProfit;
 
         // 3. Pendapatan Bulan Ini (tgl 1 sampai akhir bulan berjalan)
         $startOfMonth = Carbon::now()->startOfMonth();
         $endOfMonth = Carbon::now()->endOfMonth();
-        $thisMonthRevenue = $this->calculateCashInflow(start: $startOfMonth, end: $endOfMonth);
+        $thisMonthInvoiceRevenue = $this->calculateCashInflow(start: $startOfMonth, end: $endOfMonth);
+        $thisMonthTournamentProfit = (float)Tournament::where('status', 'completed')->whereBetween('completed_at', [$startOfMonth, $endOfMonth])->sum('admin_profit');
+        $thisMonthRevenue = $thisMonthInvoiceRevenue + $thisMonthTournamentProfit;
         
         $thisMonthInvoicesCount = Invoice::where('status', 'paid')
             ->whereBetween('paid_at', [$startOfMonth, $endOfMonth])
@@ -111,7 +118,8 @@ class DashboardController extends Controller
         for ($i = 6; $i >= 0; $i--) {
             $date = Carbon::today()->subDays($i);
             $dailyLabels[] = $date->translatedFormat('d M');
-            $dailyValues[] = $this->calculateCashInflow(date: $date);
+            $tourDaily = (float)Tournament::where('status', 'completed')->whereDate('completed_at', $date)->sum('admin_profit');
+            $dailyValues[] = $this->calculateCashInflow(date: $date) + $tourDaily;
         }
 
         // 8. Dataset Grafik Mingguan (6 Minggu Terakhir)
@@ -121,7 +129,8 @@ class DashboardController extends Controller
             $startWeek = Carbon::now()->subWeeks($w)->startOfWeek();
             $endWeek = Carbon::now()->subWeeks($w)->endOfWeek();
             $weeklyLabels[] = $startWeek->format('d/m') . '-' . $endWeek->format('d/m');
-            $weeklyValues[] = $this->calculateCashInflow(start: $startWeek, end: $endWeek);
+            $tourWeekly = (float)Tournament::where('status', 'completed')->whereBetween('completed_at', [$startWeek, $endWeek])->sum('admin_profit');
+            $weeklyValues[] = $this->calculateCashInflow(start: $startWeek, end: $endWeek) + $tourWeekly;
         }
 
         // 9. Dataset Grafik Bulanan (Tahun Berjalan)
@@ -133,7 +142,8 @@ class DashboardController extends Controller
             $monthlyLabels[] = $monthsName[$m - 1];
             $startMonth = Carbon::createFromDate($currentYear, $m, 1)->startOfMonth();
             $endMonth = Carbon::createFromDate($currentYear, $m, 1)->endOfMonth();
-            $monthlyValues[] = $this->calculateCashInflow(start: $startMonth, end: $endMonth);
+            $tourMonthly = (float)Tournament::where('status', 'completed')->whereBetween('completed_at', [$startMonth, $endMonth])->sum('admin_profit');
+            $monthlyValues[] = $this->calculateCashInflow(start: $startMonth, end: $endMonth) + $tourMonthly;
         }
 
         // Breakdown per Kategori
@@ -149,12 +159,14 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
+        $totalCompletedTournaments = Tournament::where('status', 'completed')->count();
+
         return view('dashboard', compact(
             'totalRevenue', 'todayRevenue', 'thisMonthRevenue', 'thisMonthPeriod', 'thisMonthInvoicesCount',
             'totalDpTerbayar', 'sisaPelunasan', 'totalPiutang',
             'totalInvoices', 'paidInvoices', 'dpPaidInvoices', 'unpaidInvoices', 'canceledInvoices',
             'dailyLabels', 'dailyValues', 'weeklyLabels', 'weeklyValues', 'monthlyLabels', 'monthlyValues',
-            'categoryBreakdown', 'recentInvoices'
+            'categoryBreakdown', 'recentInvoices', 'totalTournamentProfit', 'totalCompletedTournaments'
         ));
     }
 }

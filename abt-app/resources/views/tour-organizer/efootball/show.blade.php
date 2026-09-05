@@ -2,6 +2,8 @@
 
 @section('title', $tournament->name . ' (' . $tournament->session_label . ') — eFootball')
 @section('header', 'eFootball Mobile')
+@section('favicon', asset('assets/logo-abt-efootball-tur.jpg'))
+@section('header_logo', asset('assets/logo-abt-efootball-tur.jpg'))
 
 @section('content')
 <div class="max-w-5xl mx-auto space-y-6" x-data="{

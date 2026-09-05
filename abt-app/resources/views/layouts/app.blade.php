@@ -16,8 +16,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'ABT-FREELANCE')</title>
+    @hasSection('favicon')
+    <link rel="icon" type="image/jpeg" href="@yield('favicon')">
+    <link rel="shortcut icon" href="@yield('favicon')">
+    @else
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}?v={{ time() }}">
     <link rel="shortcut icon" href="{{ asset('favicon.ico') }}?v={{ time() }}">
+    @endif
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -69,6 +74,20 @@
     <style>
         [x-cloak] { display: none !important; }
         .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined' !important;
+            font-weight: normal;
+            font-style: normal;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+            -moz-osx-font-smoothing: grayscale;
+            font-feature-settings: 'liga';
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
         }
     </style>
@@ -82,8 +101,12 @@
                 <span class="material-symbols-outlined text-2xl">menu</span>
             </button>
 
+            @hasSection('header_logo')
+            <img src="@yield('header_logo')" alt="Logo" class="w-8 h-8 rounded-lg object-contain border border-border-subtle dark:border-[#333] bg-white p-0.5 shadow-xs">
+            @else
             @if(file_exists(storage_path('app/public/assets/logo.png')))
             <img src="{{ asset('storage/assets/logo.png') }}?v={{ time() }}" alt="ABT" class="w-8 h-8 rounded-lg object-contain border border-border-subtle dark:border-[#333] bg-white p-0.5">
+            @endif
             @endif
             <h2 class="text-base sm:text-lg font-bold text-on-surface dark:text-white tracking-tight truncate">@yield('header', 'ABT-FREELANCE')</h2>
         </div>
@@ -198,25 +221,51 @@
                 <ul x-show="open" x-collapse x-cloak class="pl-10 pr-2 py-1.5 space-y-1">
                     <li>
                         <a href="{{ route('tour-organizer.index') }}" 
-                           class="block px-3 py-1.5 rounded-lg text-xs font-medium transition-colors {{ request()->routeIs('tour-organizer.index') ? 'text-primary dark:text-primary-container font-bold bg-primary-container/15' : 'text-secondary dark:text-gray-400 hover:text-on-surface dark:hover:text-white' }}">
-                            Overview
+                           class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors {{ request()->routeIs('tour-organizer.index') ? 'text-primary dark:text-primary-container font-bold bg-primary-container/15' : 'text-secondary dark:text-gray-400 hover:text-on-surface dark:hover:text-white' }}">
+                            <span class="material-symbols-outlined text-sm">monitoring</span>
+                            Dashboard Penghasilan
                         </a>
                     </li>
                     <li>
                         <a href="{{ route('tour-organizer.efootball') }}" 
-                           class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors {{ request()->routeIs('tour-organizer.efootball') ? 'text-primary dark:text-primary-container font-bold bg-primary-container/15' : 'text-secondary dark:text-gray-400 hover:text-on-surface dark:hover:text-white' }}">
+                           class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors {{ request()->routeIs('tour-organizer.efootball*') ? 'text-primary dark:text-primary-container font-bold bg-primary-container/15' : 'text-secondary dark:text-gray-400 hover:text-on-surface dark:hover:text-white' }}">
                             <span class="material-symbols-outlined text-sm">sports_esports</span>
-                            eFootball Mobile
+                            Kelola Turnamen
                         </a>
                     </li>
                 </ul>
             </li>
         </ul>
 
-        <div class="mt-auto pt-4 border-t border-border-subtle dark:border-[#2a2a2a] flex items-center justify-between px-2">
-            <span class="text-[11px] text-secondary dark:text-gray-500 font-medium">ABT v1.0</span>
-            <span class="inline-flex items-center gap-1 text-[10px] bg-primary-container/20 text-on-surface dark:text-primary-container px-2 py-0.5 rounded font-bold">PRO</span>
+        <!-- Admin Profile & Logout Section in Sidebar -->
+        @auth
+        <div class="mt-auto pt-3 border-t border-border-subtle dark:border-[#2a2a2a] space-y-2">
+            <div class="flex items-center justify-between px-2">
+                <div class="flex items-center gap-2 min-w-0">
+                    <div class="w-7 h-7 rounded-full bg-primary-container text-on-surface flex items-center justify-center font-bold text-xs shrink-0">
+                        {{ substr(auth()->user()->name ?? 'A', 0, 1) }}
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-xs font-bold text-on-surface dark:text-white truncate">{{ auth()->user()->name }}</p>
+                        <p class="text-[10px] text-secondary dark:text-gray-400 truncate">Admin Active</p>
+                    </div>
+                </div>
+                
+                <!-- Logout Button -->
+                <form action="{{ route('logout') }}" method="POST" class="inline" onsubmit="return confirm('Keluar dari sesi admin?')">
+                    @csrf
+                    <button type="submit" class="p-1.5 text-secondary hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition" title="Logout">
+                        <span class="material-symbols-outlined text-base">logout</span>
+                    </button>
+                </form>
+            </div>
+
+            <div class="flex items-center justify-between px-2 pt-1">
+                <span class="text-[10px] text-secondary dark:text-gray-500 font-medium">ABT v1.0</span>
+                <span class="inline-flex items-center gap-1 text-[9px] bg-primary-container/20 text-on-surface dark:text-primary-container px-1.5 py-0.5 rounded font-bold">PRO</span>
+            </div>
         </div>
+        @endauth
     </nav>
 
     <!-- Main Content Area (Responsive margins and paddings, safe from fixed topbar) -->

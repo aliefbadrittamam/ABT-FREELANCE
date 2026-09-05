@@ -170,6 +170,23 @@
                 Belum ada data kategori
             </div>
             @endforelse
+
+            <!-- Lini Bisnis Turnamen eFootball Terintegrasi -->
+            <div class="flex items-center justify-between p-3 hover:bg-surface-variant/50 dark:hover:bg-[#252525] rounded-lg transition-colors group border border-border-subtle/80 dark:border-[#333] bg-surface/50 dark:bg-[#181818]/50">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-md bg-primary-container/20 text-on-surface dark:text-primary-container flex items-center justify-center transition-colors shrink-0">
+                        <span class="material-symbols-outlined text-sm">sports_esports</span>
+                    </div>
+                    <div>
+                        <a href="{{ route('tour-organizer.index') }}" class="text-xs font-bold text-on-surface dark:text-white hover:text-primary transition flex items-center gap-1">
+                            Turnamen eFootball
+                            <span class="material-symbols-outlined text-xs">arrow_forward</span>
+                        </a>
+                        <p class="text-[11px] text-secondary dark:text-gray-400">{{ $totalCompletedTournaments ?? 0 }} Sesi Selesai</p>
+                    </div>
+                </div>
+                <span class="text-xs font-bold font-mono text-status-lunas">Rp {{ number_format($totalTournamentProfit ?? 0, 0, ',', '.') }}</span>
+            </div>
         </div>
     </div>
 </div>

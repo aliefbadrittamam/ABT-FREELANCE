@@ -265,4 +265,98 @@ class TournamentController extends Controller
         return redirect()->route('tour-organizer.efootball.index')
             ->with('success', "{$name} berhasil dihapus.");
     }
+
+    /**
+     * Reset semua sesi turnamen yang sedang aktif untuk memulai hari baru.
+     */
+    public function resetSessions(Request $request)
+    {
+        $activeSessions = Tournament::whereIn('status', ['open', 'full', 'ongoing'])->get();
+        $count = $activeSessions->count();
+
+        foreach ($activeSessions as $session) {
+            // Jika sesi sudah ada pesertanya, tandai selesai agar profit tercatat
+            if ($session->participants()->count() > 0) {
+                $session->update([
+                    'status' => 'completed',
+                    'completed_at' => now(),
+                ]);
+            } else {
+                // Jika sesi masih kosong tanpa peserta, hapus langsung
+                $session->delete();
+            }
+        }
+
+        return redirect()->route('tour-organizer.efootball.index')
+            ->with('success', "Berhasil mereset {$count} sesi aktif! Sesi baru sekarang dapat dibuka dari awal.");
+    }
+
+    /**
+     * Dashboard Penghasilan Khusus Divisi Turnamen eFootball.
+     */
+    public function dashboard()
+    {
+        // 1. Metrik Finansial Turnamen
+        $totalCompleted = Tournament::where('status', 'completed')->count();
+        $totalProfitAccumulated = (float)Tournament::where('status', 'completed')->sum('admin_profit');
+        
+        $startOfMonth = now()->startOfMonth();
+        $endOfMonth = now()->endOfMonth();
+        $thisMonthProfit = (float)Tournament::where('status', 'completed')
+            ->whereBetween('completed_at', [$startOfMonth, $endOfMonth])
+            ->sum('admin_profit');
+        $thisMonthCompletedCount = Tournament::where('status', 'completed')
+            ->whereBetween('completed_at', [$startOfMonth, $endOfMonth])
+            ->count();
+
+        $todayProfit = (float)Tournament::where('status', 'completed')
+            ->whereDate('completed_at', now()->today())
+            ->sum('admin_profit');
+
+        $activeSessionsCount = Tournament::whereIn('status', ['open', 'full', 'ongoing'])->count();
+
+        // 2. Dataset Grafik Harian (7 Hari Terakhir)
+        $dailyLabels = [];
+        $dailyValues = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->today()->subDays($i);
+            $dailyLabels[] = $date->translatedFormat('d M');
+            $dailyValues[] = (float)Tournament::where('status', 'completed')
+                ->whereDate('completed_at', $date)
+                ->sum('admin_profit');
+        }
+
+        // 3. Dataset Grafik Mingguan (6 Minggu Terakhir)
+        $weeklyLabels = [];
+        $weeklyValues = [];
+        for ($w = 5; $w >= 0; $w--) {
+            $startWeek = now()->subWeeks($w)->startOfWeek();
+            $endWeek = now()->subWeeks($w)->endOfWeek();
+            $weeklyLabels[] = $startWeek->format('d/m') . '-' . $endWeek->format('d/m');
+            $weeklyValues[] = (float)Tournament::where('status', 'completed')
+                ->whereBetween('completed_at', [$startWeek, $endWeek])
+                ->sum('admin_profit');
+        }
+
+        // 4. Breakdown Performa berdasarkan Biaya Pendaftaran (5K, 10K, 15K, 20K, dll)
+        $presetBreakdown = Tournament::where('status', 'completed')
+            ->select('entry_fee', DB::raw('count(*) as count'), DB::raw('sum(admin_profit) as total_profit'))
+            ->groupBy('entry_fee')
+            ->orderBy('entry_fee')
+            ->get();
+
+        // 5. Pemenang Terakhir (Hall of Fame)
+        $recentWinners = Tournament::with('winner')
+            ->where('status', 'completed')
+            ->whereNotNull('winner_participant_id')
+            ->latest('completed_at')
+            ->take(5)
+            ->get();
+
+        return view('tour-organizer.index', compact(
+            'totalCompleted', 'totalProfitAccumulated', 'thisMonthProfit', 'thisMonthCompletedCount',
+            'todayProfit', 'activeSessionsCount', 'dailyLabels', 'dailyValues', 'weeklyLabels', 'weeklyValues',
+            'presetBreakdown', 'recentWinners'
+        ));
+    }
 }

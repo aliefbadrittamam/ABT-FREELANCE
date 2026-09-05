@@ -2,6 +2,8 @@
 
 @section('title', 'Buat Sesi Turnamen Baru — eFootball')
 @section('header', 'eFootball Mobile')
+@section('favicon', asset('assets/logo-abt-efootball-tur.jpg'))
+@section('header_logo', asset('assets/logo-abt-efootball-tur.jpg'))
 
 @section('content')
 <div class="max-w-2xl mx-auto" x-data="{
