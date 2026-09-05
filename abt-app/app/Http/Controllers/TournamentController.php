@@ -320,6 +320,22 @@ class TournamentController extends Controller
     }
 
     /**
+     * Update link live monitoring / streaming sesi turnamen.
+     */
+    public function updateLiveLink(Request $request, Tournament $tournament)
+    {
+        $request->validate([
+            'live_link' => 'nullable|string|max:500',
+        ]);
+
+        $tournament->update([
+            'live_link' => $request->filled('live_link') ? trim($request->live_link) : null,
+        ]);
+
+        return back()->with('success', 'Link live berhasil disimpan & otomatis disertakan di broadcast WA!');
+    }
+
+    /**
      * Selesaikan sesi turnamen (Tandai Selesai & kunci hasil).
      */
     public function completeSession(Tournament $tournament)

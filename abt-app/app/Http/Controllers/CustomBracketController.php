@@ -245,6 +245,22 @@ class CustomBracketController extends Controller
     }
 
     /**
+     * Update link live monitoring / streaming.
+     */
+    public function updateLiveLink(Request $request, Tournament $tournament)
+    {
+        $request->validate([
+            'live_link' => 'nullable|string|max:500',
+        ]);
+
+        $tournament->update([
+            'live_link' => $request->filled('live_link') ? trim($request->live_link) : null,
+        ]);
+
+        return back()->with('success', 'Link live bagan berhasil disimpan & otomatis disertakan di broadcast WA!');
+    }
+
+    /**
      * Hapus turnamen custom.
      */
     public function destroy(Tournament $tournament)

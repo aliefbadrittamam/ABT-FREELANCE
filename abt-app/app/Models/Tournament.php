@@ -11,7 +11,8 @@ class Tournament extends Model
     protected $fillable = [
         'name', 'type', 'session_label', 'entry_fee', 'prize_pool',
         'max_slots', 'admin_profit', 'status', 'winner_participant_id',
-        'prize_transferred', 'prize_proof_path', 'completed_at', 'notes'
+        'prize_transferred', 'prize_proof_path', 'completed_at', 'notes',
+        'live_link',
     ];
 
     public function scopeFastur($query)
@@ -104,6 +105,15 @@ class Tournament extends Model
         }
 
         $sisa = $this->remaining_slots_count;
+        $lines[] = "";
+        
+        // Link Live Monitoring / Streaming
+        if (!empty($this->live_link)) {
+            $lines[] = "🌐 *Link Live Slot / Bagan:* {$this->live_link}";
+        } else {
+            $lines[] = "🌐 *Link Live Slot:* " . url('/turnamen/efootball/live');
+        }
+
         $lines[] = "";
         if ($sisa > 0) {
             $lines[] = "📢 *Sisa {$sisa} Slot Lagi!*";

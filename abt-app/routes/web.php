@@ -143,6 +143,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/{tournament}/start', [TournamentController::class, 'startTournament'])->name('start');
         Route::post('/{tournament}/winner/{participant}', [TournamentController::class, 'setWinner'])->name('setWinner');
         Route::post('/{tournament}/upload-prize-proof', [TournamentController::class, 'uploadPrizeProof'])->name('uploadPrizeProof');
+        Route::post('/{tournament}/update-live-link', [TournamentController::class, 'updateLiveLink'])->name('updateLiveLink');
         Route::post('/{tournament}/complete', [TournamentController::class, 'completeSession'])->name('complete');
     });
 
@@ -158,6 +159,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/{tournament}/start', [CustomBracketController::class, 'startTournament'])->name('start');
         Route::post('/{tournament}/generate-bracket', [CustomBracketController::class, 'generateBracket'])->name('generateBracket');
         Route::post('/{tournament}/matches/{match}/advance', [CustomBracketController::class, 'advanceMatch'])->name('advanceMatch');
+        Route::post('/{tournament}/update-live-link', [CustomBracketController::class, 'updateLiveLink'])->name('updateLiveLink');
         Route::post('/{tournament}/complete', [CustomBracketController::class, 'complete'])->name('complete');
     });
 

@@ -116,6 +116,53 @@
         </div>
     </div>
 
+    <!-- Link Live Monitoring / Streaming Input Bar (Disertakan di Broadcast WA) -->
+    <div class="bg-white dark:bg-[#1e1e1e] rounded-xl border border-border-subtle dark:border-[#2a2a2a] p-4 sm:p-5 shadow-xs"
+         x-data="{ liveUrlInput: '{{ $tournament->live_link ?: url('/turnamen/efootball/live') }}' }">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-red-500/10 text-red-600 flex items-center justify-center font-bold shrink-0">
+                    <span class="material-symbols-outlined text-lg animate-pulse">sensors</span>
+                </div>
+                <div>
+                    <h3 class="text-xs font-bold text-on-surface dark:text-white uppercase tracking-wider flex items-center gap-2">
+                        Link Live Monitoring / Streaming
+                        @if($tournament->live_link)
+                        <span class="text-[9.5px] font-bold bg-emerald-50 text-emerald-600 px-2 py-0.2 rounded-full border border-emerald-200">Aktif di Broadcast</span>
+                        @else
+                        <span class="text-[9.5px] font-bold bg-gray-100 text-secondary px-2 py-0.2 rounded-full">Default Sistem</span>
+                        @endif
+                    </h3>
+                    <p class="text-[11px] text-secondary dark:text-gray-400 mt-0.5">
+                        Link ini otomatis disertakan di dalam teks broadcast WA saat disalin (contoh: Link Live Ngrok, YouTube Live, atau TikTok).
+                    </p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-1.5 shrink-0">
+                <button type="button" @click="liveUrlInput = '{{ url('/turnamen/efootball/live') }}'"
+                        class="px-2.5 py-1.5 border border-border-subtle dark:border-[#333] hover:bg-surface-variant text-secondary text-[11px] font-semibold rounded-lg transition" title="Gunakan Link Live Sistem">
+                    Reset Default
+                </button>
+            </div>
+        </div>
+
+        <form action="{{ route('tour-organizer.efootball.updateLiveLink', $tournament) }}" method="POST" class="flex items-center gap-2">
+            @csrf
+            <div class="relative flex-1">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-secondary text-sm">
+                    <span class="material-symbols-outlined text-base">link</span>
+                </span>
+                <input type="url" name="live_link" x-model="liveUrlInput" placeholder="https://xxxx.ngrok-free.app/turnamen/efootball/live atau https://youtube.com/live/..."
+                       class="w-full pl-9 pr-3.5 py-2 bg-surface dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs font-mono text-on-surface dark:text-white outline-none focus:ring-2 focus:ring-primary">
+            </div>
+            <button type="submit" class="px-4 py-2 bg-primary-container text-on-surface text-xs font-bold rounded-lg hover:brightness-95 transition shrink-0 shadow-xs flex items-center gap-1">
+                <span class="material-symbols-outlined text-sm">save</span>
+                Simpan Link
+            </button>
+        </form>
+    </div>
+
     <!-- Daftar Slot Peserta Fastur (4 atau 8 Slot) -->
     <div class="bg-white dark:bg-[#1e1e1e] rounded-xl border border-border-subtle dark:border-[#2a2a2a] p-5 sm:p-6 shadow-xs">
         <div class="flex items-center justify-between mb-4">
