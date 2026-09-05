@@ -8,6 +8,7 @@ use App\Http\Controllers\ClientInvoiceController;
 use App\Http\Controllers\TestimonialController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\TournamentController;
+use App\Http\Controllers\CustomBracketController;
 use Illuminate\Support\Facades\Route;
 
 // 1. Authentication Routes (Guest Only & Logout)
@@ -129,7 +130,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/tour-organizer', [TournamentController::class, 'dashboard'])->name('tour-organizer.index');
 
-    // Tournament Management Routes (eFootball Mobile)
+    // Tournament Management Routes (eFootball Mobile Fastur 4 & 8 Slot)
     Route::prefix('tour-organizer/efootball')->name('tour-organizer.efootball.')->group(function () {
         Route::get('/', [TournamentController::class, 'index'])->name('index');
         Route::get('/create', [TournamentController::class, 'create'])->name('create');
@@ -140,11 +141,24 @@ Route::middleware('auth')->group(function () {
         Route::post('/{tournament}/register', [TournamentController::class, 'registerParticipant'])->name('register');
         Route::delete('/{tournament}/participants/{participant}', [TournamentController::class, 'removeParticipant'])->name('removeParticipant');
         Route::post('/{tournament}/start', [TournamentController::class, 'startTournament'])->name('start');
-        Route::post('/{tournament}/generate-bracket', [TournamentController::class, 'generateBracket'])->name('generateBracket');
-        Route::post('/{tournament}/matches/{match}/advance', [TournamentController::class, 'advanceMatch'])->name('advanceMatch');
         Route::post('/{tournament}/winner/{participant}', [TournamentController::class, 'setWinner'])->name('setWinner');
         Route::post('/{tournament}/upload-prize-proof', [TournamentController::class, 'uploadPrizeProof'])->name('uploadPrizeProof');
         Route::post('/{tournament}/complete', [TournamentController::class, 'completeSession'])->name('complete');
+    });
+
+    // Custom Bracket Tournament Routes (Bagan 8, 16, 32, 64 Tim)
+    Route::prefix('tour-organizer/custom-bracket')->name('tour-organizer.custom-bracket.')->group(function () {
+        Route::get('/', [CustomBracketController::class, 'index'])->name('index');
+        Route::get('/create', [CustomBracketController::class, 'create'])->name('create');
+        Route::post('/', [CustomBracketController::class, 'store'])->name('store');
+        Route::get('/{tournament}', [CustomBracketController::class, 'show'])->name('show');
+        Route::delete('/{tournament}', [CustomBracketController::class, 'destroy'])->name('destroy');
+        Route::post('/{tournament}/register', [CustomBracketController::class, 'registerParticipant'])->name('register');
+        Route::delete('/{tournament}/participants/{participant}', [CustomBracketController::class, 'removeParticipant'])->name('removeParticipant');
+        Route::post('/{tournament}/start', [CustomBracketController::class, 'startTournament'])->name('start');
+        Route::post('/{tournament}/generate-bracket', [CustomBracketController::class, 'generateBracket'])->name('generateBracket');
+        Route::post('/{tournament}/matches/{match}/advance', [CustomBracketController::class, 'advanceMatch'])->name('advanceMatch');
+        Route::post('/{tournament}/complete', [CustomBracketController::class, 'complete'])->name('complete');
     });
 
     // Alias for sidebar link

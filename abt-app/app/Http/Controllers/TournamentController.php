@@ -17,21 +17,21 @@ class TournamentController extends Controller
      */
     public function index()
     {
-        // 1. Sesi Aktif (Bisa paralel, status open / full / ongoing)
-        $activeTournaments = Tournament::with(['participants'])
+        // 1. Sesi Fastur Aktif (Bisa paralel, status open / full / ongoing)
+        $activeTournaments = Tournament::fastur()->with(['participants'])
             ->whereIn('status', ['open', 'full', 'ongoing'])
             ->latest('id')
             ->get();
 
-        // 2. Riwayat Turnamen yang Selesai
-        $completedTournaments = Tournament::with(['participants', 'winner'])
+        // 2. Riwayat Fastur yang Selesai
+        $completedTournaments = Tournament::fastur()->with(['participants', 'winner'])
             ->whereIn('status', ['completed', 'canceled'])
             ->latest('completed_at')
             ->paginate(10);
 
-        // 3. Statistik Ringkas Keuangan Turnamen
-        $totalCompleted = Tournament::where('status', 'completed')->count();
-        $totalProfitAccumulated = Tournament::where('status', 'completed')->sum('admin_profit');
+        // 3. Statistik Ringkas Keuangan Fastur
+        $totalCompleted = Tournament::fastur()->where('status', 'completed')->count();
+        $totalProfitAccumulated = Tournament::fastur()->where('status', 'completed')->sum('admin_profit');
         $activeSessionsCount = $activeTournaments->count();
 
         return view('tour-organizer.efootball.index', compact(
@@ -49,7 +49,7 @@ class TournamentController extends Controller
     public function create()
     {
         // Hitung nomor urut sesi hari ini otomatis (contoh: Sesi 1, Sesi 2)
-        $todayCount = Tournament::whereDate('created_at', now()->today())->count();
+        $todayCount = Tournament::fastur()->whereDate('created_at', now()->today())->count();
         $suggestedSession = 'Sesi ' . ($todayCount + 1);
 
         return view('tour-organizer.efootball.create', compact('suggestedSession'));
@@ -64,7 +64,7 @@ class TournamentController extends Controller
             'session_label' => 'required|string|max:50',
             'entry_fee' => 'required|numeric|min:0',
             'prize_pool' => 'required|numeric|min:0',
-            'max_slots' => 'required|in:4,8,16,32,64',
+            'max_slots' => 'required|in:4,8',
             'notes' => 'nullable|string|max:500',
         ]);
 
@@ -82,6 +82,7 @@ class TournamentController extends Controller
 
         $tournament = Tournament::create([
             'name' => $name,
+            'type' => 'fastur',
             'session_label' => $validated['session_label'],
             'entry_fee' => $fee,
             'prize_pool' => $prize,
@@ -353,7 +354,7 @@ class TournamentController extends Controller
      */
     public function resetSessions(Request $request)
     {
-        $activeSessions = Tournament::whereIn('status', ['open', 'full', 'ongoing'])->get();
+        $activeSessions = Tournament::fastur()->whereIn('status', ['open', 'full', 'ongoing'])->get();
         $count = $activeSessions->count();
 
         foreach ($activeSessions as $session) {

@@ -9,10 +9,20 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Tournament extends Model
 {
     protected $fillable = [
-        'name', 'session_label', 'entry_fee', 'prize_pool',
+        'name', 'type', 'session_label', 'entry_fee', 'prize_pool',
         'max_slots', 'admin_profit', 'status', 'winner_participant_id',
         'prize_transferred', 'prize_proof_path', 'completed_at', 'notes'
     ];
+
+    public function scopeFastur($query)
+    {
+        return $query->where('type', 'fastur');
+    }
+
+    public function scopeCustomBracket($query)
+    {
+        return $query->where('type', 'custom_bracket');
+    }
 
     protected function casts(): array
     {

@@ -85,32 +85,17 @@
                                class="w-full px-3.5 py-2.5 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs sm:text-sm font-semibold text-on-surface dark:text-white outline-none">
                     </div>
                     <div>
-                        <label class="block text-[11px] font-bold uppercase tracking-wider text-secondary dark:text-gray-400 mb-1.5">Kapasitas Slot Bagan</label>
-                        <div class="grid grid-cols-5 gap-1.5">
-                            <label class="flex items-center justify-center py-2 px-1 rounded-lg border cursor-pointer text-center"
-                                   :class="maxSlots == 4 ? 'bg-primary-container text-on-surface font-black border-primary-container shadow-xs' : 'border-border-subtle dark:border-[#333] text-secondary'">
-                                <input type="radio" name="max_slots" value="4" x-model="maxSlots" class="sr-only">
-                                <span class="text-xs">4 Tim</span>
-                            </label>
-                            <label class="flex items-center justify-center py-2 px-1 rounded-lg border cursor-pointer text-center"
-                                   :class="maxSlots == 8 ? 'bg-primary-container text-on-surface font-black border-primary-container shadow-xs' : 'border-border-subtle dark:border-[#333] text-secondary'">
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-secondary dark:text-gray-400 mb-1.5">Jumlah Slot Fastur</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <label class="flex items-center justify-center p-2.5 rounded-lg border cursor-pointer text-center"
+                                   :class="maxSlots == 8 ? 'bg-primary-container text-on-surface font-bold border-primary-container shadow-xs' : 'border-border-subtle dark:border-[#333] text-secondary'">
                                 <input type="radio" name="max_slots" value="8" x-model="maxSlots" class="sr-only">
-                                <span class="text-xs">8 Tim</span>
+                                8 Slot Tim (Default)
                             </label>
-                            <label class="flex items-center justify-center py-2 px-1 rounded-lg border cursor-pointer text-center"
-                                   :class="maxSlots == 16 ? 'bg-primary-container text-on-surface font-black border-primary-container shadow-xs' : 'border-border-subtle dark:border-[#333] text-secondary'">
-                                <input type="radio" name="max_slots" value="16" x-model="maxSlots" class="sr-only">
-                                <span class="text-xs">16 Tim</span>
-                            </label>
-                            <label class="flex items-center justify-center py-2 px-1 rounded-lg border cursor-pointer text-center"
-                                   :class="maxSlots == 32 ? 'bg-primary-container text-on-surface font-black border-primary-container shadow-xs' : 'border-border-subtle dark:border-[#333] text-secondary'">
-                                <input type="radio" name="max_slots" value="32" x-model="maxSlots" class="sr-only">
-                                <span class="text-xs">32 Tim</span>
-                            </label>
-                            <label class="flex items-center justify-center py-2 px-1 rounded-lg border cursor-pointer text-center"
-                                   :class="maxSlots == 64 ? 'bg-primary-container text-on-surface font-black border-primary-container shadow-xs' : 'border-border-subtle dark:border-[#333] text-secondary'">
-                                <input type="radio" name="max_slots" value="64" x-model="maxSlots" class="sr-only">
-                                <span class="text-xs">64 Tim</span>
+                            <label class="flex items-center justify-center p-2.5 rounded-lg border cursor-pointer text-center"
+                                   :class="maxSlots == 4 ? 'bg-primary-container text-on-surface font-bold border-primary-container shadow-xs' : 'border-border-subtle dark:border-[#333] text-secondary'">
+                                <input type="radio" name="max_slots" value="4" x-model="maxSlots" class="sr-only">
+                                4 Slot Tim (Mini)
                             </label>
                         </div>
                     </div>
