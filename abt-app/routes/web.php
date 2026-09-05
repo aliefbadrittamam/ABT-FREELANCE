@@ -17,8 +17,9 @@ Route::middleware('guest')->group(function () {
 });
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
-// 2. Telegram Webhook for Production
+// 2. Telegram Webhooks for Production (Invoice Bot & Tournament Bot)
 Route::post('/api/telegram/webhook', [\App\Http\Controllers\TelegramWebhookController::class, 'handle'])->name('telegram.webhook');
+Route::post('/api/tournament/webhook', [\App\Http\Controllers\TournamentWebhookController::class, 'handle'])->name('tournament.webhook');
 
 // 3. Public Customer/Client Invoice Portal (Standalone, No Auth/Sidebar required)
 Route::get('/i/{token}', [ClientInvoiceController::class, 'show'])->name('client.invoices.show');
