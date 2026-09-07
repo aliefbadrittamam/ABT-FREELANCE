@@ -143,11 +143,17 @@
                     </div>
                 </div>
 
-                <div class="pt-4 border-t border-border-subtle dark:border-[#2a2a2a] flex justify-end gap-2.5 sm:gap-3">
+                <div class="pt-4 border-t border-border-subtle dark:border-[#2a2a2a] flex flex-wrap justify-end gap-2.5 sm:gap-3">
                     <a href="{{ route('testimonials.index') }}" class="px-4 sm:px-5 py-2 sm:py-2.5 bg-transparent dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs sm:text-sm text-on-surface-variant dark:text-gray-300 hover:bg-surface-variant dark:hover:bg-[#333] transition">Batal</a>
-                    <button type="submit" class="bg-primary-container text-on-surface font-semibold px-5 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm hover:brightness-95 transition flex items-center gap-2 shadow-sm">
-                        <span class="material-symbols-outlined text-base sm:text-lg">save</span>
-                        Simpan Perubahan
+                    
+                    <button type="submit" name="action" value="draft" class="px-4 py-2 sm:py-2.5 bg-gray-100 dark:bg-[#252525] border border-border-subtle dark:border-[#333] text-on-surface dark:text-gray-200 font-bold rounded-lg text-xs sm:text-sm hover:bg-gray-200 dark:hover:bg-[#333] transition flex items-center gap-1.5 shadow-2xs">
+                        <span class="material-symbols-outlined text-base">save</span>
+                        Perbarui Draft (Lokal)
+                    </button>
+
+                    <button type="submit" name="action" value="publish" class="bg-primary-container text-on-surface font-bold px-5 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm hover:brightness-95 transition flex items-center gap-2 shadow-sm">
+                        <span class="material-symbols-outlined text-base sm:text-lg">send</span>
+                        {{ $testimonial->posted_to_telegram ? 'Simpan & Sync Telegram' : 'Simpan & Terbitkan ke Telegram' }}
                     </button>
                 </div>
             </div>

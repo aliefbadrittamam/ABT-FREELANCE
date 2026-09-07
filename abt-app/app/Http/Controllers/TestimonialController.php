@@ -16,7 +16,15 @@ class TestimonialController extends Controller
         $status = $request->query('status', 'active');
         $search = trim($request->query('search', ''));
 
-        $query = $status === 'trash' ? Testimonial::onlyTrashed() : Testimonial::query();
+        if ($status === 'trash') {
+            $query = Testimonial::onlyTrashed();
+        } elseif ($status === 'draft') {
+            $query = Testimonial::where('posted_to_telegram', false);
+        } elseif ($status === 'published') {
+            $query = Testimonial::where('posted_to_telegram', true);
+        } else {
+            $query = Testimonial::query();
+        }
 
         if ($search !== '') {
             $cleanSearch = ltrim($search, '#');
@@ -39,9 +47,11 @@ class TestimonialController extends Controller
                               ->withQueryString();
 
         $activeCount = Testimonial::count();
+        $draftCount = Testimonial::where('posted_to_telegram', false)->count();
+        $publishedCount = Testimonial::where('posted_to_telegram', true)->count();
         $trashCount = Testimonial::onlyTrashed()->count();
 
-        return view('testimonials.index', compact('testimonials', 'status', 'search', 'activeCount', 'trashCount'));
+        return view('testimonials.index', compact('testimonials', 'status', 'search', 'activeCount', 'draftCount', 'publishedCount', 'trashCount'));
     }
 
     public function create(Request $request)
@@ -112,6 +122,8 @@ class TestimonialController extends Controller
                 ? (int)$request->testimonial_number 
                 : Testimonial::getNextTestimonialNumber();
 
+            $action = $request->input('action', 'publish');
+
             $testimonial = Testimonial::create([
                 'invoice_id' => $request->invoice_id,
                 'testimonial_number' => $testiNumber,
@@ -125,7 +137,14 @@ class TestimonialController extends Controller
                 'composed_image_path' => $composedPath,
                 'caption' => $request->caption,
                 'client_name' => $request->client_name,
+                'posted_to_telegram' => false,
             ]);
+
+            // If action is draft, do not send to Telegram
+            if ($action === 'draft') {
+                return redirect()->route('testimonials.index', ['status' => 'draft'])
+                    ->with('success', "💾 Draft Testimoni #{$testiNumber} berhasil disimpan! Foto & data tersimpan di lokal tanpa diposting ke Telegram.");
+            }
 
             $telegramCaption = $testimonial->getFormattedTelegramCaption();
             $messageId = $telegram->sendPhoto(storage_path("app/public/{$composedPath}"), $telegramCaption);
@@ -141,7 +160,7 @@ class TestimonialController extends Controller
 
             $teleError = $telegram->getLastError();
             return redirect()->route('testimonials.index')
-                ->with('warning', "Testimoni #{$testiNumber} berhasil disimpan di sistem lokal, tetapi gagal diposting ke Telegram. Detail: " . ($teleError ?: 'Koneksi terputus.'));
+                ->with('warning', "Testimoni #{$testiNumber} berhasil disimpan sebagai Draft, tetapi gagal diposting ke Telegram. Detail: " . ($teleError ?: 'Koneksi terputus.'));
 
         } catch (\Exception $e) {
             Log::error('Testimonial store failed', ['error' => $e->getMessage()]);
@@ -220,24 +239,46 @@ class TestimonialController extends Controller
                 'client_name' => $request->client_name,
             ]);
 
-            // Sync update with Telegram post if exists
-            if ($testimonial->posted_to_telegram && $testimonial->telegram_message_id && $composedPath) {
-                $telegramCaption = $testimonial->getFormattedTelegramCaption();
+            $action = $request->input('action', 'publish');
 
-                $updated = $telegram->editMessageMedia(
-                    $testimonial->telegram_message_id,
-                    storage_path("app/public/{$composedPath}"),
-                    $telegramCaption
-                );
+            // Handle publishing or updating on Telegram
+            if ($action === 'publish') {
+                if (!$testimonial->posted_to_telegram || !$testimonial->telegram_message_id) {
+                    // First time publishing to Telegram!
+                    $telegramCaption = $testimonial->getFormattedTelegramCaption();
+                    $messageId = $telegram->sendPhoto(storage_path("app/public/{$composedPath}"), $telegramCaption);
 
-                if (!$updated) {
+                    if ($messageId) {
+                        $testimonial->update([
+                            'posted_to_telegram' => true,
+                            'telegram_message_id' => $messageId,
+                        ]);
+                        return redirect()->route('testimonials.index')
+                            ->with('success', "🚀 Testimoni #{$testiNumber} berhasil diterbitkan dan diposting ke Channel Telegram!");
+                    }
+
                     $teleError = $telegram->getLastError();
                     return redirect()->route('testimonials.index')
-                        ->with('warning', "Testimoni #{$testiNumber} berhasil diperbarui di lokal, tapi gagal sinkron ke Telegram: " . ($teleError ?: 'Cek izin bot.'));
+                        ->with('warning', "Draft Testimoni #{$testiNumber} diperbarui, tetapi gagal diposting ke Telegram: " . ($teleError ?: 'Cek koneksi.'));
+                } else {
+                    // Sync update with existing Telegram post
+                    $telegramCaption = $testimonial->getFormattedTelegramCaption();
+                    $updated = $telegram->editMessageMedia(
+                        $testimonial->telegram_message_id,
+                        storage_path("app/public/{$composedPath}"),
+                        $telegramCaption
+                    );
+
+                    if (!$updated) {
+                        $teleError = $telegram->getLastError();
+                        return redirect()->route('testimonials.index')
+                            ->with('warning', "Testimoni #{$testiNumber} berhasil diperbarui di lokal, tapi gagal sinkron ke Telegram: " . ($teleError ?: 'Cek izin bot.'));
+                    }
                 }
             }
 
-            return redirect()->route('testimonials.index')->with('success', "Testimoni #{$testiNumber} berhasil diperbarui!");
+            return redirect()->route('testimonials.index', ['status' => $testimonial->posted_to_telegram ? 'active' : 'draft'])
+                ->with('success', "Draft Testimoni #{$testiNumber} berhasil diperbarui!");
 
         } catch (\Exception $e) {
             Log::error('Testimonial update failed', ['error' => $e->getMessage()]);

@@ -36,22 +36,43 @@
 
     <!-- Toolbar: Tabs + Search Bar -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b border-border-subtle dark:border-[#2a2a2a] pb-4">
-        <!-- Status Tabs (Aktif & Sampah) -->
-        <div class="flex items-center gap-2">
+        <!-- Status Tabs (Semua, Draft, Published, Sampah) -->
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
             <a href="{{ route('testimonials.index', array_filter(['search' => $search])) }}" 
-               class="px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-2 {{ $status !== 'trash' ? 'bg-on-surface text-white dark:bg-white dark:text-on-surface' : 'text-on-surface-variant hover:bg-surface-variant dark:text-gray-400 dark:hover:bg-[#252525]' }}">
-                <span class="material-symbols-outlined text-base sm:text-lg">photo_library</span>
-                Semua Testimoni
-                <span class="text-[11px] px-2 py-0.5 rounded-full {{ $status !== 'trash' ? 'bg-white/20 text-white dark:bg-black/20 dark:text-on-surface' : 'bg-surface-container dark:bg-[#333]' }}">
+               class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 {{ ($status !== 'trash' && $status !== 'draft' && $status !== 'published') ? 'bg-on-surface text-white dark:bg-white dark:text-on-surface' : 'text-secondary dark:text-gray-400 hover:bg-surface-variant dark:hover:bg-[#252525]' }}">
+                <span class="material-symbols-outlined text-base">photo_library</span>
+                Semua
+                <span class="text-[10px] px-1.5 py-0.2 rounded-full {{ ($status !== 'trash' && $status !== 'draft' && $status !== 'published') ? 'bg-white/20 text-white dark:bg-black/20 dark:text-on-surface' : 'bg-gray-100 dark:bg-[#333]' }}">
                     {{ $activeCount }}
                 </span>
             </a>
+
+            <a href="{{ route('testimonials.index', array_filter(['status' => 'draft', 'search' => $search])) }}" 
+               class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 {{ $status === 'draft' ? 'bg-on-surface text-white dark:bg-white dark:text-on-surface' : 'text-secondary dark:text-gray-400 hover:bg-surface-variant dark:hover:bg-[#252525]' }}">
+                <span class="material-symbols-outlined text-base text-amber-500">edit_note</span>
+                Draft Tersimpan
+                @if(($draftCount ?? 0) > 0)
+                <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-300 font-bold">
+                    {{ $draftCount }}
+                </span>
+                @endif
+            </a>
+
+            <a href="{{ route('testimonials.index', array_filter(['status' => 'published', 'search' => $search])) }}" 
+               class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 {{ $status === 'published' ? 'bg-on-surface text-white dark:bg-white dark:text-on-surface' : 'text-secondary dark:text-gray-400 hover:bg-surface-variant dark:hover:bg-[#252525]' }}">
+                <span class="material-symbols-outlined text-base text-emerald-500">check_circle</span>
+                Terbit Telegram
+                <span class="text-[10px] px-1.5 py-0.2 rounded-full {{ $status === 'published' ? 'bg-white/20 text-white dark:bg-black/20 dark:text-on-surface' : 'bg-gray-100 dark:bg-[#333]' }}">
+                    {{ $publishedCount ?? 0 }}
+                </span>
+            </a>
+
             <a href="{{ route('testimonials.index', array_filter(['status' => 'trash', 'search' => $search])) }}" 
-               class="px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-2 {{ $status === 'trash' ? 'bg-on-surface text-white dark:bg-white dark:text-on-surface' : 'text-on-surface-variant hover:bg-surface-variant dark:text-gray-400 dark:hover:bg-[#252525]' }}">
-                <span class="material-symbols-outlined text-base sm:text-lg">delete_outline</span>
-                Sampah (Trash)
-                @if($trashCount > 0)
-                <span class="text-[11px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-500 dark:bg-red-500/20 font-bold">
+               class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 {{ $status === 'trash' ? 'bg-on-surface text-white dark:bg-white dark:text-on-surface' : 'text-secondary dark:text-gray-400 hover:bg-surface-variant dark:hover:bg-[#252525]' }}">
+                <span class="material-symbols-outlined text-base">delete_outline</span>
+                Sampah
+                @if(($trashCount ?? 0) > 0)
+                <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-red-500/10 text-red-500 font-bold">
                     {{ $trashCount }}
                 </span>
                 @endif
