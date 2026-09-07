@@ -102,7 +102,7 @@
                     @endif
 
                     @if($t->composed_image_path && file_exists(storage_path('app/public/' . $t->composed_image_path)))
-                    <img src="{{ asset('storage/' . $t->composed_image_path) }}" alt="Kolase" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                    <img src="{{ asset('storage/' . $t->composed_image_path) }}" alt="Kolase" class="w-full h-full object-contain bg-white p-1 group-hover:scale-105 transition-transform duration-300">
                     @else
                     <div class="flex flex-col items-center justify-center text-on-surface-variant/40 dark:text-gray-600 gap-2 p-4 text-center">
                         <span class="material-symbols-outlined text-4xl">mark_chat_read</span>

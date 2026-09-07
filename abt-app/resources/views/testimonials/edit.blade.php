@@ -59,7 +59,7 @@
                              @click="$refs.edit_{{ $slot }}.click()">
                             
                             <template x-if="preview">
-                                <img :src="preview" class="w-full h-full object-cover">
+                                <img :src="preview" class="w-full h-full object-contain bg-white">
                             </template>
                             
                             <template x-if="!preview">

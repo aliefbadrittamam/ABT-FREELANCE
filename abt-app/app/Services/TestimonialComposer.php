@@ -9,6 +9,8 @@ class TestimonialComposer
 {
     /**
      * Compose 1 to 4 images into a clean, aesthetic canvas.
+     * Images are NOT cropped — they are scaled proportionally (contain)
+     * so every part of screenshots (chats, transfer proofs) stays fully visible.
      *
      * @param array<string> $imagePaths List of valid existing file paths
      * @param string $outputPath Destination file path
@@ -29,15 +31,18 @@ class TestimonialComposer
         $canvasWidth = 1080;
         $canvasHeight = 1080;
 
-        // 1 Image: Direct single image preservation or fit within standard high-res square canvas
+        // 1 Image: Preserve full aspect ratio on white canvas — nothing is cropped.
+        // Large/long screenshots are scaled down proportionally to fit 1080px max dimension.
         if ($count === 1) {
             $img = $manager->read($validPaths[0]);
-            
-            // If already high-res square or standard, save directly with clean white border
+
+            // Scale proportionally so the longest side is max 1056 (1080 - padding*2)
+            // scaleDown() keeps aspect ratio and never enlarges small images
+            $img->scaleDown(1056, 1056);
+
             $w = $img->width();
             $h = $img->height();
 
-            // Create canvas matching aspect or square
             $canvas = $manager->create($w + ($padding * 2), $h + ($padding * 2))->fill('ffffff');
             $canvas->place($img, 'top-left', $padding, $padding);
             $canvas->toJpeg(92)->save($outputPath);
@@ -45,14 +50,14 @@ class TestimonialComposer
             return $outputPath;
         }
 
-        // 2 Images: Side-by-side 2 columns
+        // 2 Images: Side-by-side 2 columns — each image fully visible (contained, no crop)
         if ($count === 2) {
             $canvas = $manager->create($canvasWidth, $canvasHeight)->fill('ffffff');
-            $colWidth = ($canvasWidth - ($padding * 3)) / 2;
+            $colWidth = (int)(($canvasWidth - ($padding * 3)) / 2);
             $colHeight = $canvasHeight - ($padding * 2);
 
-            $img1 = $manager->read($validPaths[0])->cover($colWidth, $colHeight);
-            $img2 = $manager->read($validPaths[1])->cover($colWidth, $colHeight);
+            $img1 = $manager->read($validPaths[0])->contain($colWidth, $colHeight, 'ffffff', 'center');
+            $img2 = $manager->read($validPaths[1])->contain($colWidth, $colHeight, 'ffffff', 'center');
 
             $canvas->place($img1, 'top-left', $padding, $padding);
             $canvas->place($img2, 'top-left', $colWidth + ($padding * 2), $padding);
@@ -61,7 +66,7 @@ class TestimonialComposer
             return $outputPath;
         }
 
-        // 3 Images: 1 Large Top + 2 Split Bottom
+        // 3 Images: 1 Large Top + 2 Split Bottom — each image fully visible (contained, no crop)
         if ($count === 3) {
             $canvas = $manager->create($canvasWidth, $canvasHeight)->fill('ffffff');
             $topHeight = (int)(($canvasHeight - ($padding * 3)) * 0.52);
@@ -69,9 +74,9 @@ class TestimonialComposer
             $bottomHeight = $canvasHeight - ($padding * 3) - $topHeight;
             $bottomWidth = (int)(($canvasWidth - ($padding * 3)) / 2);
 
-            $img1 = $manager->read($validPaths[0])->cover($topWidth, $topHeight);
-            $img2 = $manager->read($validPaths[1])->cover($bottomWidth, $bottomHeight);
-            $img3 = $manager->read($validPaths[2])->cover($bottomWidth, $bottomHeight);
+            $img1 = $manager->read($validPaths[0])->contain($topWidth, $topHeight, 'ffffff', 'center');
+            $img2 = $manager->read($validPaths[1])->contain($bottomWidth, $bottomHeight, 'ffffff', 'center');
+            $img3 = $manager->read($validPaths[2])->contain($bottomWidth, $bottomHeight, 'ffffff', 'center');
 
             $canvas->place($img1, 'top-left', $padding, $padding);
             $canvas->place($img2, 'top-left', $padding, $topHeight + ($padding * 2));
@@ -81,7 +86,7 @@ class TestimonialComposer
             return $outputPath;
         }
 
-        // 4 Images: Classic 2x2 Grid
+        // 4 Images: Classic 2x2 Grid — each quadrant fully visible (contained, no crop)
         $canvas = $manager->create($canvasWidth, $canvasHeight)->fill('ffffff');
         $boxSize = (int)(($canvasWidth - ($padding * 3)) / 2);
 
@@ -93,7 +98,7 @@ class TestimonialComposer
         ];
 
         foreach (array_slice($validPaths, 0, 4) as $i => $path) {
-            $img = $manager->read($path)->cover($boxSize, $boxSize);
+            $img = $manager->read($path)->contain($boxSize, $boxSize, 'ffffff', 'center');
             $canvas->place($img, 'top-left', $positions[$i][0], $positions[$i][1]);
         }
 

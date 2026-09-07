@@ -71,7 +71,7 @@
                         <div class="relative border-2 border-dashed border-border-subtle dark:border-[#333] rounded-xl text-center hover:border-primary-container cursor-pointer transition-colors aspect-square flex items-center justify-center overflow-hidden bg-surface dark:bg-[#181818]"
                              @click="$refs.input_{{ $slot }}.click()">
                             <template x-if="preview">
-                                <img :src="preview" class="w-full h-full object-cover rounded-lg">
+                                <img :src="preview" class="w-full h-full object-contain bg-white rounded-lg">
                             </template>
                             <template x-if="!preview">
                                 <div class="flex flex-col items-center gap-1.5 sm:gap-2 p-2 text-center">
