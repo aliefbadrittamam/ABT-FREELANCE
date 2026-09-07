@@ -30,7 +30,7 @@
     number: '{{ old('testimonial_number', $nextNumber) }}',
     major: '{{ old('major', isset($fromInvoice) && $fromInvoice ? ($fromInvoice->major_name ?: ($fromInvoice->category->name ?? '')) : '') }}',
     taskTitle: '{{ old('task_title', isset($fromInvoice) && $fromInvoice ? $fromInvoice->title : '') }}',
-    deliverables: '{{ old('deliverables', isset($fromInvoice) && $fromInvoice ? ($fromInvoice->subCategory->name ?? $fromInvoice->description) : '') }}',
+    deliverables: '{{ old('deliverables', isset($fromInvoice) && $fromInvoice ? ($fromInvoice->sub_category_name ?? $fromInvoice->description) : '') }}',
     notes: '{{ old('caption', '') }}',
     get telegramPreview() {
         let n = this.number || '1';

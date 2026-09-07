@@ -74,10 +74,10 @@
                     <td class="py-3.5 px-4 sm:px-6 font-medium text-on-surface dark:text-white">{{ $invoice->client_name }}</td>
                     <td class="py-3.5 px-4 sm:px-6 text-on-surface-variant dark:text-gray-400">
                         <span class="font-medium text-on-surface dark:text-gray-200 block">{{ $invoice->category->name ?? '-' }}</span>
-                        @if($invoice->subCategory || $invoice->major_name)
+                        @if($invoice->sub_category_name || $invoice->major_name)
                         <div class="flex flex-wrap gap-1 mt-0.5">
-                            @if($invoice->subCategory)
-                            <span class="text-[10px] bg-primary-container/20 text-on-surface dark:text-primary-container px-1.5 py-0.2 rounded font-bold">{{ $invoice->subCategory->name }}</span>
+                            @if($invoice->sub_category_name)
+                            <span class="text-[10px] bg-primary-container/20 text-on-surface dark:text-primary-container px-1.5 py-0.2 rounded font-bold">{{ $invoice->sub_category_name }}</span>
                             @endif
                             @if($invoice->major_name)
                             <span class="text-[10px] bg-surface-container dark:bg-[#252525] text-secondary dark:text-gray-400 px-1.5 py-0.2 rounded border border-border-subtle dark:border-[#333]">{{ $invoice->major_name }}</span>

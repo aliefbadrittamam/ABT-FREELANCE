@@ -107,33 +107,42 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 bg-surface dark:bg-[#181818] rounded-lg border border-border-subtle dark:border-[#2a2a2a]">
                     <div>
                         <label class="block text-[10px] font-bold text-on-surface-variant dark:text-gray-400 uppercase tracking-wider mb-1">Sub-Kategori / Jenis Output (Opsional)</label>
-                        <select name="sub_category_id" x-model="subCategoryId" class="w-full px-3 py-2 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] text-on-surface dark:text-white rounded-lg text-xs focus:ring-2 focus:ring-primary outline-none">
-                            <option value="">-- Pilih Jenis Output --</option>
-                            <template x-for="sub in filteredSubCategories" :key="sub.id">
-                                <option :value="sub.id" x-text="sub.name"></option>
+                        <div x-data="{ isCustomSubCat: false }">
+                            <template x-if="!isCustomSubCat">
+                                <select name="sub_category_id" x-model="subCategoryId" @change="if ($event.target.value === 'custom') { isCustomSubCat = true; subCategoryId = ''; }" class="w-full px-3 py-2 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] text-on-surface dark:text-white rounded-lg text-xs focus:ring-2 focus:ring-primary outline-none">
+                                    <option value="">-- Pilih Jenis Output --</option>
+                                    <template x-for="sub in filteredSubCategories" :key="sub.id">
+                                        <option :value="sub.id" x-text="sub.name"></option>
+                                    </template>
+                                    <option value="custom" class="font-bold text-primary dark:text-primary-container">➕ Ketik / Tambah Sub-Kategori Baru...</option>
+                                </select>
                             </template>
-                        </select>
+                            <template x-if="isCustomSubCat">
+                                <div class="flex gap-1.5">
+                                    <input type="text" name="sub_category_custom" x-model="subCategoryCustom" placeholder="Contoh: Skripsi Bab 1-5" class="w-full px-3 py-2 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] text-on-surface dark:text-white rounded-lg text-xs focus:ring-2 focus:ring-primary outline-none font-medium">
+                                    <button type="button" @click="isCustomSubCat = false; subCategoryCustom = ''" class="px-2.5 py-1 bg-surface-container dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs font-bold text-secondary dark:text-gray-300 hover:text-on-surface shrink-0" title="Kembali ke Dropdown List">
+                                        List
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-[10px] font-bold text-on-surface-variant dark:text-gray-400 uppercase tracking-wider mb-1">Jurusan / Spesialisasi (Opsional)</label>
                         <div x-data="{ isCustomMajor: false }">
                             <template x-if="!isCustomMajor">
-                                <div class="flex gap-1.5">
-                                    <select name="major_id" x-model="majorId" class="w-full px-3 py-2 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] text-on-surface dark:text-white rounded-lg text-xs focus:ring-2 focus:ring-primary outline-none">
-                                        <option value="">-- Pilih Jurusan --</option>
-                                        @foreach($majors as $m)
-                                        <option value="{{ $m->id }}">{{ $m->name }}</option>
-                                        @endforeach
-                                    </select>
-                                    <button type="button" @click="isCustomMajor = true; majorId = ''" class="px-2.5 py-1 bg-surface-container dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs font-bold text-secondary dark:text-gray-300 hover:text-on-surface shrink-0" title="Ketik Manual Jurusan">
-                                        +Ketik
-                                    </button>
-                                </div>
+                                <select name="major_id" x-model="majorId" @change="if ($event.target.value === 'custom') { isCustomMajor = true; majorId = ''; }" class="w-full px-3 py-2 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] text-on-surface dark:text-white rounded-lg text-xs focus:ring-2 focus:ring-primary outline-none">
+                                    <option value="">-- Pilih Jurusan --</option>
+                                    @foreach($majors as $m)
+                                    <option value="{{ $m->id }}">{{ $m->name }}</option>
+                                    @endforeach
+                                    <option value="custom" class="font-bold text-primary dark:text-primary-container">➕ Ketik / Tambah Jurusan Baru...</option>
+                                </select>
                             </template>
                             <template x-if="isCustomMajor">
                                 <div class="flex gap-1.5">
                                     <input type="text" name="major_custom" x-model="majorCustom" placeholder="Contoh: D3 Rekam Medis" class="w-full px-3 py-2 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] text-on-surface dark:text-white rounded-lg text-xs focus:ring-2 focus:ring-primary outline-none font-medium">
-                                    <button type="button" @click="isCustomMajor = false; majorCustom = ''" class="px-2.5 py-1 bg-surface-container dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs font-bold text-secondary dark:text-gray-300 hover:text-on-surface shrink-0" title="Pilih dari List Preset">
+                                    <button type="button" @click="isCustomMajor = false; majorCustom = ''" class="px-2.5 py-1 bg-surface-container dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs font-bold text-secondary dark:text-gray-300 hover:text-on-surface shrink-0" title="Kembali ke Dropdown List">
                                         List
                                     </button>
                                 </div>
@@ -534,6 +543,7 @@ function invoiceForm() {
         clientName: @json(old('client_name', '')),
         categoryId: @json(old('category_id', $categories->first()->id ?? '')),
         subCategoryId: @json(old('sub_category_id', '')),
+        subCategoryCustom: @json(old('sub_category_custom', '')),
         majorId: @json(old('major_id', '')),
         majorCustom: @json(old('major_custom', '')),
         subCategoriesMap: @json($categories->mapWithKeys(fn($c) => [$c->id => $c->subCategories])),

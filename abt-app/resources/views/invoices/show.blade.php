@@ -444,11 +444,11 @@
                         <h3 class="text-[10px] sm:text-xs font-semibold text-secondary uppercase tracking-widest mb-1">Ditujukan Kepada</h3>
                         <p class="text-base sm:text-lg font-bold text-on-surface leading-snug">{{ $invoice->client_name }}</p>
                         <p class="text-xs text-secondary mt-0.5">Proyek: <span class="font-semibold text-on-surface">{{ $invoice->title }}</span></p>
-                        @if($invoice->subCategory || $invoice->major_name)
+                        @if($invoice->sub_category_name || $invoice->major_name)
                         <div class="flex flex-wrap gap-1.5 mt-1.5">
                             <span class="text-[10px] bg-primary-container/20 text-on-surface px-2 py-0.5 rounded font-bold">Kategori: {{ $invoice->category->name }}</span>
-                            @if($invoice->subCategory)
-                            <span class="text-[10px] bg-surface-container text-on-surface px-2 py-0.5 rounded font-semibold border border-border-subtle">Output: {{ $invoice->subCategory->name }}</span>
+                            @if($invoice->sub_category_name)
+                            <span class="text-[10px] bg-surface-container text-on-surface px-2 py-0.5 rounded font-semibold border border-border-subtle">Output: {{ $invoice->sub_category_name }}</span>
                             @endif
                             @if($invoice->major_name)
                             <span class="text-[10px] bg-surface-container text-on-surface px-2 py-0.5 rounded font-semibold border border-border-subtle">Jurusan: {{ $invoice->major_name }}</span>
