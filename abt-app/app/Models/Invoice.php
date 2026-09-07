@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 class Invoice extends Model
 {
     protected $fillable = [
-        'invoice_number', 'title', 'client_name', 'category_id',
+        'invoice_number', 'title', 'client_name', 'category_id', 'sub_category_id', 'major_id', 'major_custom',
         'description', 'deadline', 'payment_type', 'dp_amount', 'dp_paid_at',
         'total_amount', 'status', 'access_token', 'paid_at',
         'task_file_path', 'task_file_name',
@@ -37,6 +37,24 @@ class Invoice extends Model
     public function category()
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function subCategory()
+    {
+        return $this->belongsTo(SubCategory::class);
+    }
+
+    public function major()
+    {
+        return $this->belongsTo(Major::class);
+    }
+
+    public function getMajorNameAttribute(): ?string
+    {
+        if ($this->major_custom) {
+            return $this->major_custom;
+        }
+        return $this->major ? $this->major->name : null;
     }
 
     public function testimonial()

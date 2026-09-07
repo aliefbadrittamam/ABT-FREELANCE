@@ -85,7 +85,7 @@
                 <!-- Category & Deadline -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-[11px] font-bold text-on-surface-variant dark:text-gray-300 uppercase tracking-wider mb-1.5">Kategori Jasa</label>
+                        <label class="block text-[11px] font-bold text-on-surface-variant dark:text-gray-300 uppercase tracking-wider mb-1.5">Kategori Jasa Utama</label>
                         <select name="category_id" x-model="categoryId" required class="w-full px-3.5 py-2.5 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] text-on-surface dark:text-white rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-primary outline-none font-medium">
                             @foreach($categories as $cat)
                             <option value="{{ $cat->id }}">{{ $cat->name }}</option>
@@ -102,6 +102,45 @@
                         </div>
                         <input type="datetime-local" name="deadline" x-model="deadlineVal" required
                             class="w-full px-3.5 py-2.5 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] text-on-surface dark:text-white rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-primary outline-none">
+                    </div>
+                </div>
+
+                <!-- Sub-Kategori & Jurusan (Optional) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 bg-surface dark:bg-[#181818] rounded-lg border border-border-subtle dark:border-[#2a2a2a]">
+                    <div>
+                        <label class="block text-[10px] font-bold text-on-surface-variant dark:text-gray-400 uppercase tracking-wider mb-1">Sub-Kategori / Jenis Output (Opsional)</label>
+                        <select name="sub_category_id" x-model="subCategoryId" class="w-full px-3 py-2 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] text-on-surface dark:text-white rounded-lg text-xs focus:ring-2 focus:ring-primary outline-none">
+                            <option value="">-- Pilih Jenis Output --</option>
+                            <template x-for="sub in filteredSubCategories" :key="sub.id">
+                                <option :value="sub.id" x-text="sub.name"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-on-surface-variant dark:text-gray-400 uppercase tracking-wider mb-1">Jurusan / Spesialisasi (Opsional)</label>
+                        <div x-data="{ isCustomMajor: @json(!empty($invoice->major_custom)) }">
+                            <template x-if="!isCustomMajor">
+                                <div class="flex gap-1.5">
+                                    <select name="major_id" x-model="majorId" class="w-full px-3 py-2 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] text-on-surface dark:text-white rounded-lg text-xs focus:ring-2 focus:ring-primary outline-none">
+                                        <option value="">-- Pilih Jurusan --</option>
+                                        @foreach($majors as $m)
+                                        <option value="{{ $m->id }}">{{ $m->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <button type="button" @click="isCustomMajor = true; majorId = ''" class="px-2.5 py-1 bg-surface-container dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs font-bold text-secondary dark:text-gray-300 hover:text-on-surface shrink-0" title="Ketik Manual Jurusan">
+                                        +Ketik
+                                    </button>
+                                </div>
+                            </template>
+                            <template x-if="isCustomMajor">
+                                <div class="flex gap-1.5">
+                                    <input type="text" name="major_custom" x-model="majorCustom" placeholder="Contoh: D3 Rekam Medis" class="w-full px-3 py-2 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] text-on-surface dark:text-white rounded-lg text-xs focus:ring-2 focus:ring-primary outline-none font-medium">
+                                    <button type="button" @click="isCustomMajor = false; majorCustom = ''" class="px-2.5 py-1 bg-surface-container dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs font-bold text-secondary dark:text-gray-300 hover:text-on-surface shrink-0" title="Pilih dari List Preset">
+                                        List
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
                     </div>
                 </div>
 
@@ -524,6 +563,14 @@ function invoiceEditForm() {
         title: @json(old('title', $invoice->title)),
         clientName: @json(old('client_name', $invoice->client_name)),
         categoryId: @json(old('category_id', $invoice->category_id)),
+        subCategoryId: @json(old('sub_category_id', $invoice->sub_category_id ?: '')),
+        majorId: @json(old('major_id', $invoice->major_id ?: '')),
+        majorCustom: @json(old('major_custom', $invoice->major_custom ?: '')),
+        subCategoriesMap: @json($categories->mapWithKeys(fn($c) => [$c->id => $c->subCategories])),
+
+        get filteredSubCategories() {
+            return this.subCategoriesMap[this.categoryId] || [];
+        },
         categories: @json($categoriesData),
         deadlineVal: @json(old('deadline', $invoice->deadline->format('Y-m-d\TH:i'))),
         description: @json(old('description', $invoice->description)),

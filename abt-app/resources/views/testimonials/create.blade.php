@@ -28,9 +28,9 @@
 
 <div class="max-w-3xl" x-data="{
     number: '{{ old('testimonial_number', $nextNumber) }}',
-    major: '{{ old('major', isset($fromInvoice) && $fromInvoice ? ($fromInvoice->category->name ?? '') : '') }}',
+    major: '{{ old('major', isset($fromInvoice) && $fromInvoice ? ($fromInvoice->major_name ?: ($fromInvoice->category->name ?? '')) : '') }}',
     taskTitle: '{{ old('task_title', isset($fromInvoice) && $fromInvoice ? $fromInvoice->title : '') }}',
-    deliverables: '{{ old('deliverables', isset($fromInvoice) && $fromInvoice ? $fromInvoice->description : '') }}',
+    deliverables: '{{ old('deliverables', isset($fromInvoice) && $fromInvoice ? ($fromInvoice->subCategory->name ?? $fromInvoice->description) : '') }}',
     notes: '{{ old('caption', '') }}',
     get telegramPreview() {
         let n = this.number || '1';

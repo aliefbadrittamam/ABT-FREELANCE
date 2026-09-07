@@ -112,6 +112,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::resource('categories', CategoryController::class)->only(['index', 'store', 'update', 'destroy']);
+    Route::post('/categories/sub-category', [CategoryController::class, 'storeSubCategory'])->name('categories.sub-category.store');
+    Route::delete('/categories/sub-category/{subCategory}', [CategoryController::class, 'destroySubCategory'])->name('categories.sub-category.destroy');
+    Route::post('/categories/major', [CategoryController::class, 'storeMajor'])->name('categories.major.store');
+    Route::delete('/categories/major/{major}', [CategoryController::class, 'destroyMajor'])->name('categories.major.destroy');
 
     Route::resource('invoices', InvoiceController::class);
     Route::post('/invoices/{invoice}/cancel', [InvoiceController::class, 'cancel'])->name('invoices.cancel');

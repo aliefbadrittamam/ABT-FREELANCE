@@ -60,7 +60,7 @@ class TestimonialController extends Controller
         $fromInvoice = null;
 
         if ($request->filled('from_invoice')) {
-            $fromInvoice = \App\Models\Invoice::with('category')->find($request->from_invoice);
+            $fromInvoice = \App\Models\Invoice::with(['category', 'subCategory', 'major'])->find($request->from_invoice);
         }
 
         return view('testimonials.create', compact('nextNumber', 'fromInvoice'));

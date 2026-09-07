@@ -1,41 +1,53 @@
 @extends('layouts.app')
 
-@section('title', 'Kategori Jasa — ABT-FREELANCE')
-@section('header', 'Kategori Jasa')
+@section('title', 'Kategori & Sub-Kategori — ABT-FREELANCE')
+@section('header', 'Kategori & Master Data')
 
 @section('content')
 <!-- Page Header Section -->
 <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 gap-4">
     <div>
-        <h1 class="text-2xl sm:text-[30px] font-black text-on-surface dark:text-white tracking-tight leading-tight">Kategori Jasa</h1>
-        <p class="text-xs sm:text-sm text-on-surface-variant dark:text-gray-400 mt-0.5">Kelola lini bisnis, prefix nomor invoice, dan brand header per kategori.</p>
+        <h1 class="text-2xl sm:text-[30px] font-black text-on-surface dark:text-white tracking-tight leading-tight">Kategori & Master Data</h1>
+        <p class="text-xs sm:text-sm text-on-surface-variant dark:text-gray-400 mt-0.5">Kelola Kategori Utama, Sub-Kategori (Jenis Tugas/Output), dan Master Jurusan Klien.</p>
     </div>
-    <button @click="$dispatch('open-modal')" class="flex items-center px-4 sm:px-5 py-2.5 bg-primary-container text-on-surface rounded-lg font-bold text-xs sm:text-sm shadow-sm hover:brightness-95 transition-all w-fit gap-2">
-        <span class="material-symbols-outlined text-base sm:text-lg">add_box</span>
-        Tambah Kategori
-    </button>
+    <div class="flex flex-wrap items-center gap-2">
+        <button @click="$dispatch('open-subcat-modal')" class="flex items-center px-3.5 py-2 bg-surface-container dark:bg-[#252525] border border-border-subtle dark:border-[#333] text-on-surface dark:text-white rounded-lg font-bold text-xs shadow-2xs hover:bg-gray-100 dark:hover:bg-[#333] transition-all gap-1.5">
+            <span class="material-symbols-outlined text-base">alt_route</span>
+            + Sub-Kategori
+        </button>
+        <button @click="$dispatch('open-major-modal')" class="flex items-center px-3.5 py-2 bg-surface-container dark:bg-[#252525] border border-border-subtle dark:border-[#333] text-on-surface dark:text-white rounded-lg font-bold text-xs shadow-2xs hover:bg-gray-100 dark:hover:bg-[#333] transition-all gap-1.5">
+            <span class="material-symbols-outlined text-base">school</span>
+            + Jurusan
+        </button>
+        <button @click="$dispatch('open-modal')" class="flex items-center px-4 py-2 bg-primary-container text-on-surface rounded-lg font-bold text-xs shadow-sm hover:brightness-95 transition-all gap-1.5">
+            <span class="material-symbols-outlined text-base">add_box</span>
+            + Kategori Utama
+        </button>
+    </div>
 </div>
 
-<!-- Content Container -->
-<div class="bg-white dark:bg-[#1e1e1e] border border-border-subtle dark:border-[#2a2a2a] rounded-xl overflow-hidden shadow-sm transition-colors duration-200">
-    <!-- Table Header (Filter/Search) -->
+<!-- 1. Section: Kategori Utama & Sub-Kategori -->
+<div class="bg-white dark:bg-[#1e1e1e] border border-border-subtle dark:border-[#2a2a2a] rounded-xl overflow-hidden shadow-sm transition-colors duration-200 mb-8">
     <div class="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-border-subtle dark:border-[#2a2a2a] bg-surface-container-low dark:bg-[#181818] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3" x-data="{ search: '' }">
-        <h3 class="text-xs font-bold text-on-surface dark:text-white uppercase tracking-wider">Daftar Kategori Layanan</h3>
+        <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-xl">category</span>
+            <h3 class="text-xs font-bold text-on-surface dark:text-white uppercase tracking-wider">Kategori Utama & Sub-Kategori Layanan</h3>
+        </div>
         <div class="relative w-full sm:w-auto">
             <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary dark:text-gray-400 text-sm">filter_list</span>
-            <input x-model="search" @input="$dispatch('filter-categories', search)" class="w-full sm:w-56 pl-9 pr-4 py-1.5 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-md text-xs sm:text-sm text-on-surface dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" placeholder="Cari nama / kode kategori..." type="text"/>
+            <input x-model="search" @input="$dispatch('filter-categories', search)" class="w-full sm:w-56 pl-9 pr-4 py-1.5 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-md text-xs sm:text-sm text-on-surface dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" placeholder="Cari kategori / sub-kategori..." type="text"/>
         </div>
     </div>
 
-    <!-- Table (Scrollable on mobile) -->
     <div class="overflow-x-auto w-full">
-        <table class="w-full text-left border-collapse min-w-[640px]">
+        <table class="w-full text-left border-collapse min-w-[700px]">
             <thead>
                 <tr class="border-b border-border-subtle dark:border-[#2a2a2a] text-secondary dark:text-gray-400 text-[11px] uppercase tracking-wider font-semibold bg-surface-container-low/50 dark:bg-[#181818]/50">
                     <th class="py-3 px-4 sm:px-6 w-12 sm:w-16 text-center">No</th>
-                    <th class="py-3 px-4 sm:px-6">Kategori & Kode Nomor</th>
-                    <th class="py-3 px-4 sm:px-6">Brand & Tagline Invoice</th>
-                    <th class="py-3 px-4 sm:px-6">Total Order</th>
+                    <th class="py-3 px-4 sm:px-6">Kategori Utama & Kode</th>
+                    <th class="py-3 px-4 sm:px-6">Sub-Kategori (Jenis Tugas/Output)</th>
+                    <th class="py-3 px-4 sm:px-6">Brand & Tagline</th>
+                    <th class="py-3 px-4 sm:px-6">Order</th>
                     <th class="py-3 px-4 sm:px-6 text-right">Aksi</th>
                 </tr>
             </thead>
@@ -46,9 +58,10 @@
                 @forelse($categories as $index => $category)
                 @php
                     $icon = $icons[$index % count($icons)];
+                    $subCatNames = implode(' ', $category->subCategories->pluck('name')->toArray());
                 @endphp
                 <tr class="hover:bg-surface-variant/30 dark:hover:bg-[#252525] transition-colors group" 
-                    x-show="!searchQuery || '{{ strtolower($category->name . ' ' . $category->prefix . ' ' . $category->brand_name) }}'.includes(searchQuery)"
+                    x-show="!searchQuery || '{{ strtolower($category->name . ' ' . $category->prefix . ' ' . $category->brand_name . ' ' . $subCatNames) }}'.includes(searchQuery)"
                     x-data="{ editing: false, catName: '{{ $category->name }}', prefix: '{{ $category->invoice_prefix }}', brandName: '{{ $category->brand_name }}', tagline: '{{ $category->tagline }}' }">
                     <td class="py-3.5 px-4 sm:px-6 text-secondary dark:text-gray-400 text-center font-medium">{{ $index + 1 }}</td>
                     <td class="py-3.5 px-4 sm:px-6 font-medium" x-show="!editing">
@@ -62,6 +75,21 @@
                                     INV-{{ $category->prefix }}-xxx
                                 </span>
                             </div>
+                        </div>
+                    </td>
+                    <td class="py-3.5 px-4 sm:px-6" x-show="!editing">
+                        <div class="flex flex-wrap gap-1.5 items-center">
+                            @forelse($category->subCategories as $subCat)
+                            <span class="inline-flex items-center gap-1 bg-surface-container dark:bg-[#252525] border border-border-subtle dark:border-[#333] text-on-surface dark:text-gray-300 text-[11px] px-2 py-0.5 rounded-md font-medium">
+                                {{ $subCat->name }}
+                                <form action="{{ route('categories.sub-category.destroy', $subCat) }}" method="POST" class="inline" onsubmit="return confirm('Hapus sub-kategori {{ $subCat->name }}?')">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="text-gray-400 hover:text-red-500 font-bold ml-0.5">×</button>
+                                </form>
+                            </span>
+                            @empty
+                            <span class="text-xs text-secondary/60 dark:text-gray-500 italic">Belum ada sub-kategori</span>
+                            @endforelse
                         </div>
                     </td>
                     <td class="py-3.5 px-4 sm:px-6 text-on-surface-variant dark:text-gray-400" x-show="!editing">
@@ -88,7 +116,7 @@
                     </td>
 
                     <!-- Inline Edit Mode -->
-                    <td colspan="5" class="py-4 px-4 sm:px-6 bg-surface-container-low/40 dark:bg-[#181818]" x-show="editing" x-cloak>
+                    <td colspan="6" class="py-4 px-4 sm:px-6 bg-surface-container-low/40 dark:bg-[#181818]" x-show="editing" x-cloak>
                         <form action="{{ route('categories.update', $category) }}" method="POST" class="space-y-3">
                             @csrf @method('PUT')
                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -118,12 +146,8 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5" class="py-16 text-center text-secondary dark:text-gray-400">
-                        <div class="w-14 h-14 bg-surface-container dark:bg-[#252525] rounded-full flex items-center justify-center mx-auto mb-3 border border-border-subtle dark:border-[#333]">
-                            <span class="material-symbols-outlined text-secondary dark:text-gray-400 text-2xl">category</span>
-                        </div>
-                        <h4 class="text-sm sm:text-base font-semibold text-on-surface dark:text-white mb-1">Belum ada kategori</h4>
-                        <p class="text-xs sm:text-sm text-secondary dark:text-gray-400 max-w-md mx-auto">Mulai organisir jasa Anda dengan menambahkan kategori baru.</p>
+                    <td colspan="6" class="py-12 text-center text-secondary dark:text-gray-400">
+                        <p class="text-sm font-semibold">Belum ada kategori utama.</p>
                     </td>
                 </tr>
                 @endforelse
@@ -132,60 +156,145 @@
     </div>
 </div>
 
-<!-- Modal: Tambah Kategori -->
+<!-- 2. Section: Master Jurusan / Spesialisasi -->
+<div class="bg-white dark:bg-[#1e1e1e] border border-border-subtle dark:border-[#2a2a2a] rounded-xl overflow-hidden shadow-sm p-4 sm:p-6 transition-colors duration-200">
+    <div class="flex items-center justify-between mb-4 border-b border-border-subtle dark:border-[#2a2a2a] pb-3">
+        <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-xl">school</span>
+            <h3 class="text-xs sm:text-sm font-bold text-on-surface dark:text-white uppercase tracking-wider">Master Data Jurusan / Spesialisasi Klien</h3>
+        </div>
+        <button @click="$dispatch('open-major-modal')" class="text-xs font-bold text-primary dark:text-primary-container hover:underline flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm">add</span> Tambah Jurusan
+        </button>
+    </div>
+
+    <div class="flex flex-wrap gap-2">
+        @forelse($majors as $major)
+        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-container dark:bg-[#252525] border border-border-subtle dark:border-[#333] text-xs text-on-surface dark:text-gray-200">
+            <span class="font-medium">{{ $major->name }}</span>
+            <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-gray-200 dark:bg-[#333] font-bold text-secondary dark:text-gray-400">
+                {{ $major->invoices_count }}
+            </span>
+            <form action="{{ route('categories.major.destroy', $major) }}" method="POST" class="inline" onsubmit="return confirm('Hapus jurusan {{ $major->name }}?')">
+                @csrf @method('DELETE')
+                <button type="submit" class="text-gray-400 hover:text-red-500 font-bold ml-1">×</button>
+            </form>
+        </div>
+        @empty
+        <p class="text-xs text-secondary/60 dark:text-gray-500 italic">Belum ada data jurusan tersimpan.</p>
+        @endforelse
+    </div>
+</div>
+
+<!-- Modal: Tambah Kategori Utama -->
 <div x-data="{ open: false }" @open-modal.window="open = true" x-cloak>
     <div x-show="open" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
-        <!-- Backdrop -->
-        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" @click="open = false" x-show="open" x-transition:enter="ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"></div>
-
-        <!-- Modal Content Card -->
-        <div class="relative bg-white dark:bg-[#1e1e1e] border border-border-subtle dark:border-[#2a2a2a] rounded-xl w-full max-w-lg shadow-xl overflow-hidden flex flex-col z-10 max-h-[90vh]"
-             x-show="open" x-transition:enter="ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
-            <!-- Modal Header -->
-            <div class="px-5 sm:px-6 py-4 sm:py-5 border-b border-border-subtle dark:border-[#2a2a2a] flex justify-between items-center bg-surface dark:bg-[#181818]">
-                <h3 class="font-bold text-on-surface dark:text-white text-base sm:text-lg">Tambah Kategori & Setting Brand</h3>
-                <button class="text-secondary dark:text-gray-400 hover:text-on-surface dark:hover:text-white transition-colors p-1" @click="open = false">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" @click="open = false" x-show="open"></div>
+        <div class="relative bg-white dark:bg-[#1e1e1e] border border-border-subtle dark:border-[#2a2a2a] rounded-xl w-full max-w-lg shadow-xl overflow-hidden flex flex-col z-10 max-h-[90vh]" x-show="open">
+            <div class="px-5 sm:px-6 py-4 border-b border-border-subtle dark:border-[#2a2a2a] flex justify-between items-center bg-surface dark:bg-[#181818]">
+                <h3 class="font-bold text-on-surface dark:text-white text-base">Tambah Kategori Utama</h3>
+                <button class="text-secondary hover:text-on-surface dark:hover:text-white p-1" @click="open = false">
                     <span class="material-symbols-outlined text-xl">close</span>
                 </button>
             </div>
-            <!-- Modal Body -->
-            <form action="{{ route('categories.store') }}" method="POST" class="overflow-y-auto">
+            <form action="{{ route('categories.store') }}" method="POST">
                 @csrf
-                <div class="px-5 sm:px-6 py-5 sm:py-6 bg-white dark:bg-[#1e1e1e] space-y-4">
+                <div class="px-5 sm:px-6 py-5 space-y-4">
                     <div>
-                        <label class="block text-[11px] font-bold text-on-surface dark:text-gray-300 uppercase tracking-wider mb-1" for="kategori-name">Nama Kategori</label>
-                        <input class="w-full px-3.5 py-2.5 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs sm:text-sm text-on-surface dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary placeholder:text-secondary/50 font-medium" 
-                               id="kategori-name" name="name" required placeholder="Misal: Jasa Pembuatan Website" type="text" autofocus/>
-                        @error('name') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        <label class="block text-[11px] font-bold text-on-surface dark:text-gray-300 uppercase tracking-wider mb-1">Nama Kategori</label>
+                        <input class="w-full px-3.5 py-2.5 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs sm:text-sm text-on-surface dark:text-white focus:outline-none focus:border-primary font-medium" 
+                               name="name" required placeholder="Misal: Jasa Pembuatan Website" type="text" autofocus/>
                     </div>
                     <div>
-                        <label class="block text-[11px] font-bold text-on-surface dark:text-gray-300 uppercase tracking-wider mb-1" for="kategori-prefix">Kode Prefix Invoice (Opsional)</label>
-                        <input class="w-full px-3.5 py-2.5 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs sm:text-sm text-on-surface dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary placeholder:text-secondary/50 font-mono font-bold uppercase" 
-                               id="kategori-prefix" name="invoice_prefix" placeholder="Misal: WEB (Akan menghasilkan nomor: INV-WEB-001)" type="text"/>
-                        <p class="text-[11px] text-secondary dark:text-gray-400 mt-1">Kosongkan untuk otomatis mengambil 4 huruf pertama nama kategori.</p>
+                        <label class="block text-[11px] font-bold text-on-surface dark:text-gray-300 uppercase tracking-wider mb-1">Kode Prefix Invoice</label>
+                        <input class="w-full px-3.5 py-2.5 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs sm:text-sm text-on-surface dark:text-white font-mono font-bold uppercase" 
+                               name="invoice_prefix" placeholder="Misal: WEB" type="text"/>
                     </div>
                     <div>
-                        <label class="block text-[11px] font-bold text-on-surface dark:text-gray-300 uppercase tracking-wider mb-1" for="kategori-brand">Brand Header Invoice (Opsional)</label>
-                        <input class="w-full px-3.5 py-2.5 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs sm:text-sm text-on-surface dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary placeholder:text-secondary/50" 
-                               id="kategori-brand" name="brand_name" placeholder="Misal: ABT-DEV STUDIO" type="text"/>
+                        <label class="block text-[11px] font-bold text-on-surface dark:text-gray-300 uppercase tracking-wider mb-1">Brand Header Invoice</label>
+                        <input class="w-full px-3.5 py-2.5 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs sm:text-sm text-on-surface dark:text-white" 
+                               name="brand_name" placeholder="Misal: ABT-DEV STUDIO" type="text"/>
                     </div>
                     <div>
-                        <label class="block text-[11px] font-bold text-on-surface dark:text-gray-300 uppercase tracking-wider mb-1" for="kategori-tagline">Tagline Invoice (Opsional)</label>
-                        <input class="w-full px-3.5 py-2.5 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs sm:text-sm text-on-surface dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary placeholder:text-secondary/50" 
-                               id="kategori-tagline" name="tagline" placeholder="Misal: Fullstack Web Development & Solutions" type="text"/>
+                        <label class="block text-[11px] font-bold text-on-surface dark:text-gray-300 uppercase tracking-wider mb-1">Tagline Invoice</label>
+                        <input class="w-full px-3.5 py-2.5 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs sm:text-sm text-on-surface dark:text-white" 
+                               name="tagline" placeholder="Misal: Fullstack Web Solutions" type="text"/>
                     </div>
                 </div>
-                <!-- Modal Footer -->
                 <div class="px-5 sm:px-6 py-4 bg-surface-container-low dark:bg-[#181818] border-t border-border-subtle dark:border-[#2a2a2a] flex justify-end gap-3">
-                    <button type="button" @click="open = false" class="px-4 sm:px-5 py-2 sm:py-2.5 bg-white dark:bg-[#252525] text-on-surface dark:text-white border border-border-subtle dark:border-[#333] rounded-lg text-xs sm:text-sm font-semibold hover:bg-surface-variant dark:hover:bg-[#333] transition-colors">
-                        Batal
-                    </button>
-                    <button type="submit" class="px-4 sm:px-5 py-2 sm:py-2.5 bg-primary-container text-on-surface border border-transparent rounded-lg text-xs sm:text-sm font-bold shadow-sm hover:brightness-95 transition-all">
-                        Simpan Kategori
-                    </button>
+                    <button type="button" @click="open = false" class="px-4 py-2 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs font-semibold">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-primary-container text-on-surface rounded-lg text-xs font-bold shadow-sm">Simpan Kategori</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<!-- Modal: Tambah Sub-Kategori -->
+<div x-data="{ open: false }" @open-subcat-modal.window="open = true" x-cloak>
+    <div x-show="open" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" @click="open = false" x-show="open"></div>
+        <div class="relative bg-white dark:bg-[#1e1e1e] border border-border-subtle dark:border-[#2a2a2a] rounded-xl w-full max-w-md shadow-xl overflow-hidden flex flex-col z-10" x-show="open">
+            <div class="px-5 sm:px-6 py-4 border-b border-border-subtle dark:border-[#2a2a2a] flex justify-between items-center bg-surface dark:bg-[#181818]">
+                <h3 class="font-bold text-on-surface dark:text-white text-base">Tambah Sub-Kategori Baru</h3>
+                <button class="text-secondary hover:text-on-surface dark:hover:text-white p-1" @click="open = false">
+                    <span class="material-symbols-outlined text-xl">close</span>
+                </button>
+            </div>
+            <form action="{{ route('categories.sub-category.store') }}" method="POST">
+                @csrf
+                <div class="px-5 sm:px-6 py-5 space-y-4">
+                    <div>
+                        <label class="block text-[11px] font-bold text-on-surface dark:text-gray-300 uppercase tracking-wider mb-1">Kategori Utama</label>
+                        <select name="category_id" required class="w-full px-3.5 py-2.5 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs sm:text-sm text-on-surface dark:text-white font-medium">
+                            @foreach($categories as $cat)
+                            <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-on-surface dark:text-gray-300 uppercase tracking-wider mb-1">Nama Sub-Kategori (Jenis Output/Tugas)</label>
+                        <input class="w-full px-3.5 py-2.5 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs sm:text-sm text-on-surface dark:text-white font-medium" 
+                               name="name" required placeholder="Misal: Skripsi, Web Landing Page, Design Logo" type="text"/>
+                    </div>
+                </div>
+                <div class="px-5 sm:px-6 py-4 bg-surface-container-low dark:bg-[#181818] border-t border-border-subtle dark:border-[#2a2a2a] flex justify-end gap-3">
+                    <button type="button" @click="open = false" class="px-4 py-2 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs font-semibold">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-primary-container text-on-surface rounded-lg text-xs font-bold shadow-sm">Tambah Sub-Kategori</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Tambah Jurusan -->
+<div x-data="{ open: false }" @open-major-modal.window="open = true" x-cloak>
+    <div x-show="open" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" @click="open = false" x-show="open"></div>
+        <div class="relative bg-white dark:bg-[#1e1e1e] border border-border-subtle dark:border-[#2a2a2a] rounded-xl w-full max-w-md shadow-xl overflow-hidden flex flex-col z-10" x-show="open">
+            <div class="px-5 sm:px-6 py-4 border-b border-border-subtle dark:border-[#2a2a2a] flex justify-between items-center bg-surface dark:bg-[#181818]">
+                <h3 class="font-bold text-on-surface dark:text-white text-base">Tambah Jurusan / Spesialisasi Baru</h3>
+                <button class="text-secondary hover:text-on-surface dark:hover:text-white p-1" @click="open = false">
+                    <span class="material-symbols-outlined text-xl">close</span>
+                </button>
+            </div>
+            <form action="{{ route('categories.major.store') }}" method="POST">
+                @csrf
+                <div class="px-5 sm:px-6 py-5 space-y-4">
+                    <div>
+                        <label class="block text-[11px] font-bold text-on-surface dark:text-gray-300 uppercase tracking-wider mb-1">Nama Jurusan / Spesialisasi</label>
+                        <input class="w-full px-3.5 py-2.5 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs sm:text-sm text-on-surface dark:text-white font-medium" 
+                               name="name" required placeholder="Misal: Teknik Elektro, Farmasi, D3 Sistem Informasi" type="text"/>
+                    </div>
+                </div>
+                <div class="px-5 sm:px-6 py-4 bg-surface-container-low dark:bg-[#181818] border-t border-border-subtle dark:border-[#2a2a2a] flex justify-end gap-3">
+                    <button type="button" @click="open = false" class="px-4 py-2 bg-white dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs font-semibold">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-primary-container text-on-surface rounded-lg text-xs font-bold shadow-sm">Tambah Jurusan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endsection
+
 @endsection

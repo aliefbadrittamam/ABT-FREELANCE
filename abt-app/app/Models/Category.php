@@ -22,6 +22,11 @@ class Category extends Model
         return strtoupper(substr($words[0], 0, 4));
     }
 
+    public function subCategories()
+    {
+        return $this->hasMany(SubCategory::class);
+    }
+
     public function invoices()
     {
         return $this->hasMany(Invoice::class);

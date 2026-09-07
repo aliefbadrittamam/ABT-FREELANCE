@@ -11,7 +11,7 @@ class InvoiceController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Invoice::with('category')->orderBy('id', 'desc');
+        $query = Invoice::with(['category', 'subCategory', 'major'])->orderBy('id', 'desc');
 
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
@@ -28,12 +28,13 @@ class InvoiceController extends Controller
 
     public function create()
     {
-        $categories = Category::all();
+        $categories = Category::with('subCategories')->get();
+        $majors = \App\Models\Major::orderBy('name')->get();
         $nextNumbers = [];
         foreach ($categories as $cat) {
             $nextNumbers[$cat->id] = Invoice::generateInvoiceNumber($cat->id);
         }
-        return view('invoices.create', compact('categories', 'nextNumbers'));
+        return view('invoices.create', compact('categories', 'majors', 'nextNumbers'));
     }
 
     public function store(Request $request)
@@ -42,6 +43,9 @@ class InvoiceController extends Controller
             'title' => 'required|string|max:255',
             'client_name' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
+            'sub_category_id' => 'nullable|exists:sub_categories,id',
+            'major_id' => 'nullable|exists:majors,id',
+            'major_custom' => 'nullable|string|max:255',
             'description' => 'required|string',
             'deadline' => 'required|date',
             'payment_type' => 'required|in:dp,full',
@@ -79,14 +83,15 @@ class InvoiceController extends Controller
 
     public function show(Invoice $invoice)
     {
-        $invoice->load('category');
+        $invoice->load(['category', 'subCategory', 'major']);
         return view('invoices.show', compact('invoice'));
     }
 
     public function edit(Invoice $invoice)
     {
-        $categories = Category::all();
-        return view('invoices.edit', compact('invoice', 'categories'));
+        $categories = Category::with('subCategories')->get();
+        $majors = \App\Models\Major::orderBy('name')->get();
+        return view('invoices.edit', compact('invoice', 'categories', 'majors'));
     }
 
     public function update(Request $request, Invoice $invoice)
@@ -95,6 +100,9 @@ class InvoiceController extends Controller
             'title' => 'required|string|max:255',
             'client_name' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
+            'sub_category_id' => 'nullable|exists:sub_categories,id',
+            'major_id' => 'nullable|exists:majors,id',
+            'major_custom' => 'nullable|string|max:255',
             'description' => 'required|string',
             'deadline' => 'required|date',
             'payment_type' => 'required|in:dp,full',
