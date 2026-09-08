@@ -55,41 +55,71 @@
             <input type="hidden" name="invoice_id" value="{{ $fromInvoice->id }}">
             @endif
 
-            <!-- 1 to 4 Slot Upload Grid -->
-            <div class="mb-6 sm:mb-8">
+            <!-- 1 to 4 Slot Upload Grid with Paste (Ctrl+V) Support -->
+            <div class="mb-6 sm:mb-8" x-data="testimonialImageGrid()" @paste.window="handlePaste($event)">
                 <div class="flex items-center justify-between mb-2 sm:mb-3">
                     <label class="block text-[11px] font-semibold text-on-surface dark:text-white uppercase tracking-wider">
-                        Upload Bukti Gambar <span class="text-secondary dark:text-gray-400 font-normal">(Bebas 1 s/d 4 Foto)</span>
+                        Upload Bukti Gambar <span class="text-secondary dark:text-gray-400 font-normal">(1 s/d 4 Foto — Klik & Ctrl+V Paste)</span>
                     </label>
                     <span class="text-[11px] text-primary dark:text-primary-container font-medium">Minimal 1 foto</span>
                 </div>
                 
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                     @foreach(['tugas' => '1. Tugas', 'chat' => '2. Chat', 'hasil' => '3. Hasil', 'pelunasan' => '4. Pelunasan'] as $slot => $label)
-                    <div x-data="{ preview: null }">
-                        <label class="block text-[11px] font-semibold text-on-surface-variant dark:text-gray-400 uppercase tracking-wider mb-1.5">{{ $label }}</label>
-                        <div class="relative border-2 border-dashed border-border-subtle dark:border-[#333] rounded-xl text-center hover:border-primary-container cursor-pointer transition-colors aspect-square flex items-center justify-center overflow-hidden bg-surface dark:bg-[#181818]"
-                             @click="$refs.input_{{ $slot }}.click()">
-                            <template x-if="preview">
-                                <img :src="preview" class="w-full h-full object-contain bg-white rounded-lg">
-                            </template>
-                            <template x-if="!preview">
-                                <div class="flex flex-col items-center gap-1.5 sm:gap-2 p-2 text-center">
-                                    <span class="material-symbols-outlined text-2xl text-on-surface-variant/30 dark:text-gray-600">add_photo_alternate</span>
-                                    <p class="text-[10px] text-on-surface-variant dark:text-gray-400">Pilih Foto</p>
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-[11px] font-semibold uppercase tracking-wider transition-colors"
+                                   :class="activeSlot === '{{ $slot }}' ? 'text-primary dark:text-primary-container font-bold' : 'text-on-surface-variant dark:text-gray-400'">
+                                {{ $label }}
+                            </label>
+                            <span x-show="activeSlot === '{{ $slot }}'" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-primary-container/30 text-on-surface dark:text-primary-container">
+                                Active Slot
+                            </span>
+                        </div>
+
+                        <div class="relative border-2 rounded-xl text-center cursor-pointer transition-all aspect-square flex items-center justify-center overflow-hidden bg-surface dark:bg-[#181818] group"
+                             :class="activeSlot === '{{ $slot }}' ? 'border-primary dark:border-primary-container ring-2 ring-primary/20' : (previews['{{ $slot }}'] ? 'border-emerald-500/50' : 'border-dashed border-border-subtle dark:border-[#333] hover:border-primary/60')"
+                             @click="setActive('{{ $slot }}')">
+                            
+                            <template x-if="previews['{{ $slot }}']">
+                                <div class="w-full h-full relative">
+                                    <img :src="previews['{{ $slot }}']" class="w-full h-full object-contain bg-white">
+                                    <button type="button" @click.stop="clearSlot('{{ $slot }}')" class="absolute top-1.5 right-1.5 w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center font-bold text-xs shadow-md hover:bg-red-700 transition" title="Hapus foto ini">
+                                        ×
+                                    </button>
                                 </div>
                             </template>
+
+                            <template x-if="!previews['{{ $slot }}']">
+                                <div class="flex flex-col items-center gap-1.5 sm:gap-2 p-2 text-center" @click="$refs.input_{{ $slot }}.click()">
+                                    <span class="material-symbols-outlined text-2xl transition-transform group-hover:scale-110" :class="activeSlot === '{{ $slot }}' ? 'text-primary dark:text-primary-container' : 'text-on-surface-variant/40 dark:text-gray-600'">add_photo_alternate</span>
+                                    <p class="text-[10px] font-medium text-on-surface-variant dark:text-gray-400">Pilih / Ctrl+V</p>
+                                </div>
+                            </template>
+
+                            <!-- Bottom Action Bar (Paste / Browse) -->
+                            <div class="absolute bottom-0 inset-x-0 bg-black/60 backdrop-blur-2xs py-1 px-2 flex items-center justify-between text-[10px] text-white transition-opacity"
+                                 :class="activeSlot === '{{ $slot }}' ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
+                                 @click.stop="$refs.input_{{ $slot }}.click()">
+                                <span class="flex items-center gap-1 font-semibold text-emerald-300">
+                                    <span class="material-symbols-outlined text-xs">content_paste</span> Ctrl+V
+                                </span>
+                                <span class="text-gray-300 underline font-medium">Browse</span>
+                            </div>
+
                             <input type="file" name="image_{{ $slot }}" accept="image/*" class="hidden"
                                    x-ref="input_{{ $slot }}"
-                                   @change="preview = URL.createObjectURL($event.target.files[0])">
+                                   @change="onFileSelect('{{ $slot }}', $event)">
                         </div>
                         @error("image_{$slot}") <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                     </div>
                     @endforeach
                 </div>
-                <p class="text-[11px] text-secondary dark:text-gray-400 mt-2.5">
-                    💡 <em>Tips:</em> Jika hanya 1 foto, gambar akan langsung ditampilkan utuh. Jika 2-4 foto, sistem akan otomatis menyusunnya menjadi kolase rapi.
-                </p>
+                
+                <div class="mt-3 p-2.5 rounded-lg bg-surface-container/60 dark:bg-[#181818] border border-border-subtle dark:border-[#2a2a2a] text-[11px] text-secondary dark:text-gray-400 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-base shrink-0">content_paste_go</span>
+                    <span><strong>Tips Super Cepat:</strong> Ambil screenshot layar (`Win + Shift + S`), klik pada slot (misal: <em>2. Chat</em>), lalu tekan <strong>Ctrl + V</strong> untuk langsung me-paste screenshot tanpa simpan file!</span>
+                </div>
             </div>
 
             <!-- Structured Telegram Caption Builder -->
@@ -172,4 +202,69 @@
         </form>
     </div>
 </div>
+
+<script>
+function testimonialImageGrid(initialPreviews = {}) {
+    return {
+        activeSlot: 'tugas',
+        previews: {
+            tugas: initialPreviews.tugas || null,
+            chat: initialPreviews.chat || null,
+            hasil: initialPreviews.hasil || null,
+            pelunasan: initialPreviews.pelunasan || null,
+        },
+        slots: ['tugas', 'chat', 'hasil', 'pelunasan'],
+
+        getFirstEmptySlot() {
+            return this.slots.find(s => !this.previews[s]) || null;
+        },
+
+        setActive(slot) {
+            this.activeSlot = slot;
+        },
+
+        onFileSelect(slot, event) {
+            const file = event.target.files[0];
+            if (file) {
+                this.previews[slot] = URL.createObjectURL(file);
+                this.activeSlot = slot;
+            }
+        },
+
+        clearSlot(slot) {
+            this.previews[slot] = null;
+            if (this.$refs['input_' + slot]) {
+                this.$refs['input_' + slot].value = '';
+            }
+        },
+
+        handlePaste(event) {
+            if (!event.clipboardData || !event.clipboardData.files) return;
+            const file = Array.from(event.clipboardData.files).find(f => f.type.startsWith('image/'));
+            if (!file) return;
+
+            let targetSlot = this.activeSlot;
+            if (!targetSlot || (this.previews[targetSlot] && this.getFirstEmptySlot())) {
+                targetSlot = this.getFirstEmptySlot() || targetSlot || 'tugas';
+            }
+
+            const dt = new DataTransfer();
+            dt.items.add(file);
+
+            const inputEl = this.$refs['input_' + targetSlot];
+            if (inputEl) {
+                inputEl.files = dt.files;
+                this.previews[targetSlot] = URL.createObjectURL(file);
+                
+                const nextEmpty = this.slots.find(s => s !== targetSlot && !this.previews[s]);
+                if (nextEmpty) {
+                    this.activeSlot = nextEmpty;
+                } else {
+                    this.activeSlot = targetSlot;
+                }
+            }
+        }
+    };
+}
+</script>
 @endsection

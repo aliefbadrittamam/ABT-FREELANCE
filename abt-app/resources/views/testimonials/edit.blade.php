@@ -41,48 +41,73 @@
         @csrf @method('PUT')
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-            <!-- Left: 1-4 Slot Images -->
-            <div class="bg-white dark:bg-[#1e1e1e] rounded-xl border border-border-subtle dark:border-[#2a2a2a] p-5 sm:p-6 shadow-sm transition-colors duration-200">
+            <!-- Left: 1-4 Slot Images with Paste (Ctrl+V) Support -->
+            @php
+                $initialPreviews = [
+                    'tugas' => $testimonial->image_tugas_path && file_exists(storage_path('app/public/' . $testimonial->image_tugas_path)) ? asset('storage/' . $testimonial->image_tugas_path) : null,
+                    'chat' => $testimonial->image_chat_path && file_exists(storage_path('app/public/' . $testimonial->image_chat_path)) ? asset('storage/' . $testimonial->image_chat_path) : null,
+                    'hasil' => $testimonial->image_hasil_path && file_exists(storage_path('app/public/' . $testimonial->image_hasil_path)) ? asset('storage/' . $testimonial->image_hasil_path) : null,
+                    'pelunasan' => $testimonial->image_pelunasan_path && file_exists(storage_path('app/public/' . $testimonial->image_pelunasan_path)) ? asset('storage/' . $testimonial->image_pelunasan_path) : null,
+                ];
+            @endphp
+            <div class="bg-white dark:bg-[#1e1e1e] rounded-xl border border-border-subtle dark:border-[#2a2a2a] p-5 sm:p-6 shadow-sm transition-colors duration-200"
+                 x-data="testimonialImageGrid(@json($initialPreviews))" @paste.window="handlePaste($event)">
                 <label class="block text-[11px] font-semibold text-on-surface dark:text-white uppercase tracking-wider mb-2.5 sm:mb-3">
-                    Ganti / Tambah Gambar Slot <span class="text-secondary dark:text-gray-400 font-normal">(Opsional)</span>
+                    Ganti / Tambah Gambar Slot <span class="text-secondary dark:text-gray-400 font-normal">(Klik & Ctrl+V Paste)</span>
                 </label>
                 <div class="grid grid-cols-2 gap-2.5 sm:gap-3 mb-4">
                     @foreach(['tugas' => '1. Tugas', 'chat' => '2. Chat Customer', 'hasil' => '3. Hasil', 'pelunasan' => '4. Pelunasan'] as $slot => $label)
-                    @php 
-                        $pathField = "image_{$slot}_path"; 
-                        $hasImage = $testimonial->$pathField && file_exists(storage_path('app/public/' . $testimonial->$pathField));
-                    @endphp
-                    <div x-data="{ preview: '{{ $hasImage ? asset('storage/' . $testimonial->$pathField) : '' }}', changed: false }">
-                        <label class="block text-[11px] font-semibold text-on-surface-variant dark:text-gray-400 uppercase tracking-wider mb-1">{{ $label }}</label>
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-[11px] font-semibold uppercase tracking-wider transition-colors"
+                                   :class="activeSlot === '{{ $slot }}' ? 'text-primary dark:text-primary-container font-bold' : 'text-on-surface-variant dark:text-gray-400'">
+                                {{ $label }}
+                            </label>
+                            <span x-show="activeSlot === '{{ $slot }}'" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-primary-container/30 text-on-surface dark:text-primary-container">
+                                Active Slot
+                            </span>
+                        </div>
+
                         <div class="relative aspect-square rounded-xl overflow-hidden border-2 cursor-pointer transition-colors group bg-surface dark:bg-[#181818] flex items-center justify-center"
-                             :class="changed ? 'border-primary-container' : 'border-border-subtle dark:border-[#333] hover:border-primary-container/50'"
-                             @click="$refs.edit_{{ $slot }}.click()">
+                             :class="activeSlot === '{{ $slot }}' ? 'border-primary dark:border-primary-container ring-2 ring-primary/20' : (previews['{{ $slot }}'] ? 'border-emerald-500/50' : 'border-dashed border-border-subtle dark:border-[#333] hover:border-primary/60')"
+                             @click="setActive('{{ $slot }}')">
                             
-                            <template x-if="preview">
-                                <img :src="preview" class="w-full h-full object-contain bg-white">
+                            <template x-if="previews['{{ $slot }}']">
+                                <div class="w-full h-full relative">
+                                    <img :src="previews['{{ $slot }}']" class="w-full h-full object-contain bg-white">
+                                    <button type="button" @click.stop="clearSlot('{{ $slot }}')" class="absolute top-1.5 right-1.5 w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center font-bold text-xs shadow-md hover:bg-red-700 transition" title="Hapus foto slot ini">
+                                        ×
+                                    </button>
+                                </div>
                             </template>
                             
-                            <template x-if="!preview">
-                                <div class="flex flex-col items-center gap-1 p-2 text-center">
-                                    <span class="material-symbols-outlined text-2xl text-on-surface-variant/30 dark:text-gray-600">add_photo_alternate</span>
-                                    <p class="text-[10px] text-secondary dark:text-gray-400">Kosong (Klik untuk isi)</p>
+                            <template x-if="!previews['{{ $slot }}']">
+                                <div class="flex flex-col items-center gap-1 p-2 text-center" @click="$refs.input_{{ $slot }}.click()">
+                                    <span class="material-symbols-outlined text-2xl" :class="activeSlot === '{{ $slot }}' ? 'text-primary dark:text-primary-container' : 'text-on-surface-variant/30 dark:text-gray-600'">add_photo_alternate</span>
+                                    <p class="text-[10px] text-secondary dark:text-gray-400">Pilih / Ctrl+V</p>
                                 </div>
                             </template>
 
-                            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <span class="text-white text-[11px] font-semibold bg-black/60 px-2.5 py-1 rounded-full flex items-center gap-1">
-                                    <span class="material-symbols-outlined text-sm">swap_horiz</span>
-                                    Pilih
+                            <div class="absolute bottom-0 inset-x-0 bg-black/60 backdrop-blur-2xs py-1 px-2 flex items-center justify-between text-[10px] text-white transition-opacity"
+                                 :class="activeSlot === '{{ $slot }}' ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
+                                 @click.stop="$refs.input_{{ $slot }}.click()">
+                                <span class="flex items-center gap-1 font-semibold text-emerald-300">
+                                    <span class="material-symbols-outlined text-xs">content_paste</span> Ctrl+V
                                 </span>
+                                <span class="text-gray-300 underline font-medium">Browse</span>
                             </div>
+
                             <input type="file" name="image_{{ $slot }}" accept="image/*" class="hidden"
-                                   x-ref="edit_{{ $slot }}"
-                                   @change="preview = URL.createObjectURL($event.target.files[0]); changed = true">
+                                   x-ref="input_{{ $slot }}"
+                                   @change="onFileSelect('{{ $slot }}', $event)">
                         </div>
                     </div>
                     @endforeach
                 </div>
-                <p class="text-[11px] text-secondary dark:text-gray-400">Klik pada kotak mana saja untuk mengganti atau mengisi gambar baru pada slot tersebut.</p>
+                <div class="p-2.5 rounded-lg bg-surface-container/60 dark:bg-[#181818] border border-border-subtle dark:border-[#2a2a2a] text-[11px] text-secondary dark:text-gray-400 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-base shrink-0">content_paste_go</span>
+                    <span><strong>Tips Edit:</strong> Klik pada slot (misal: <em>3. Hasil</em>) lalu tekan <strong>Ctrl + V</strong> untuk langsung me-paste screenshot dari Clipboard!</span>
+                </div>
             </div>
 
             <!-- Right: Caption Details & Live Preview -->
@@ -160,4 +185,69 @@
         </div>
     </form>
 </div>
+
+<script>
+function testimonialImageGrid(initialPreviews = {}) {
+    return {
+        activeSlot: 'tugas',
+        previews: {
+            tugas: initialPreviews.tugas || null,
+            chat: initialPreviews.chat || null,
+            hasil: initialPreviews.hasil || null,
+            pelunasan: initialPreviews.pelunasan || null,
+        },
+        slots: ['tugas', 'chat', 'hasil', 'pelunasan'],
+
+        getFirstEmptySlot() {
+            return this.slots.find(s => !this.previews[s]) || null;
+        },
+
+        setActive(slot) {
+            this.activeSlot = slot;
+        },
+
+        onFileSelect(slot, event) {
+            const file = event.target.files[0];
+            if (file) {
+                this.previews[slot] = URL.createObjectURL(file);
+                this.activeSlot = slot;
+            }
+        },
+
+        clearSlot(slot) {
+            this.previews[slot] = null;
+            if (this.$refs['input_' + slot]) {
+                this.$refs['input_' + slot].value = '';
+            }
+        },
+
+        handlePaste(event) {
+            if (!event.clipboardData || !event.clipboardData.files) return;
+            const file = Array.from(event.clipboardData.files).find(f => f.type.startsWith('image/'));
+            if (!file) return;
+
+            let targetSlot = this.activeSlot;
+            if (!targetSlot || (this.previews[targetSlot] && this.getFirstEmptySlot())) {
+                targetSlot = this.getFirstEmptySlot() || targetSlot || 'tugas';
+            }
+
+            const dt = new DataTransfer();
+            dt.items.add(file);
+
+            const inputEl = this.$refs['input_' + targetSlot];
+            if (inputEl) {
+                inputEl.files = dt.files;
+                this.previews[targetSlot] = URL.createObjectURL(file);
+                
+                const nextEmpty = this.slots.find(s => s !== targetSlot && !this.previews[s]);
+                if (nextEmpty) {
+                    this.activeSlot = nextEmpty;
+                } else {
+                    this.activeSlot = targetSlot;
+                }
+            }
+        }
+    };
+}
+</script>
 @endsection
