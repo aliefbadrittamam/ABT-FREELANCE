@@ -11,13 +11,26 @@ class InvoiceController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Invoice::with(['category', 'subCategory', 'major'])->orderBy('id', 'desc');
+        $query = Invoice::with(['category', 'subCategory', 'major', 'testimonial'])->orderBy('id', 'desc');
 
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
         }
         if ($request->filled('status')) {
             $query->where('status', $request->status);
+        }
+        if ($request->filled('testimonial_status')) {
+            if ($request->testimonial_status === 'published') {
+                $query->whereHas('testimonial', function ($q) {
+                    $q->where('posted_to_telegram', true);
+                });
+            } elseif ($request->testimonial_status === 'draft') {
+                $query->whereHas('testimonial', function ($q) {
+                    $q->where('posted_to_telegram', false);
+                });
+            } elseif ($request->testimonial_status === 'none') {
+                $query->whereDoesntHave('testimonial');
+            }
         }
 
         $invoices = $query->paginate(15);

@@ -47,6 +47,12 @@
             <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
             @endforeach
         </select>
+        <select name="testimonial_status" onchange="this.form.submit()" class="px-3 sm:px-4 py-2 bg-white dark:bg-[#1e1e1e] border border-border-subtle dark:border-[#2a2a2a] text-on-surface dark:text-white rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-primary outline-none">
+            <option value="">Semua Status Testi</option>
+            <option value="published" {{ request('testimonial_status') === 'published' ? 'selected' : '' }}>🟢 Testimoni Terbit</option>
+            <option value="draft" {{ request('testimonial_status') === 'draft' ? 'selected' : '' }}>🟡 Draft Testimoni</option>
+            <option value="none" {{ request('testimonial_status') === 'none' ? 'selected' : '' }}>⚪ Belum Ada Testi</option>
+        </select>
     </form>
 </div>
 
@@ -60,7 +66,8 @@
                     <th class="py-3 px-4 sm:px-6 text-[11px] font-semibold text-on-surface-variant dark:text-gray-400 uppercase tracking-wider">Nama Klien</th>
                     <th class="py-3 px-4 sm:px-6 text-[11px] font-semibold text-on-surface-variant dark:text-gray-400 uppercase tracking-wider">Kategori</th>
                     <th class="py-3 px-4 sm:px-6 text-[11px] font-semibold text-on-surface-variant dark:text-gray-400 uppercase tracking-wider text-right">Total</th>
-                    <th class="py-3 px-4 sm:px-6 text-[11px] font-semibold text-on-surface-variant dark:text-gray-400 uppercase tracking-wider text-center">Status</th>
+                    <th class="py-3 px-4 sm:px-6 text-[11px] font-semibold text-on-surface-variant dark:text-gray-400 uppercase tracking-wider text-center">Status Pembayaran</th>
+                    <th class="py-3 px-4 sm:px-6 text-[11px] font-semibold text-on-surface-variant dark:text-gray-400 uppercase tracking-wider text-center">Testimoni</th>
                     <th class="py-3 px-4 sm:px-6 text-[11px] font-semibold text-on-surface-variant dark:text-gray-400 uppercase tracking-wider">Deadline</th>
                     <th class="py-3 px-4 sm:px-6 text-[11px] font-semibold text-on-surface-variant dark:text-gray-400 uppercase tracking-wider text-right">Aksi</th>
                 </tr>
@@ -97,6 +104,32 @@
                         <span class="inline-flex items-center gap-1 text-[11px] font-semibold bg-status-pending/10 text-status-pending px-2.5 py-0.5 rounded-full">Belum Bayar</span>
                         @endif
                     </td>
+                    <td class="py-3.5 px-4 sm:px-6 text-center">
+                        @if($invoice->testimonial)
+                            @if($invoice->testimonial->posted_to_telegram)
+                            <a href="{{ route('testimonials.edit', $invoice->testimonial) }}" 
+                               class="inline-flex items-center gap-1 text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-0.5 rounded-full border border-emerald-500/20 hover:bg-emerald-500/20 transition"
+                               title="Testimoni #{{ $invoice->testimonial->testimonial_number }} terbit di Telegram Channel">
+                                <span class="material-symbols-outlined text-[13px]">check_circle</span>
+                                #{{ $invoice->testimonial->testimonial_number }} Terbit
+                            </a>
+                            @else
+                            <a href="{{ route('testimonials.edit', $invoice->testimonial) }}" 
+                               class="inline-flex items-center gap-1 text-[11px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2.5 py-0.5 rounded-full border border-amber-500/20 hover:bg-amber-500/20 transition"
+                               title="Draft Testimoni #{{ $invoice->testimonial->testimonial_number }} tersimpan di lokal">
+                                <span class="material-symbols-outlined text-[13px]">edit_note</span>
+                                #{{ $invoice->testimonial->testimonial_number }} Draft
+                            </a>
+                            @endif
+                        @else
+                        <a href="{{ route('testimonials.create', ['from_invoice' => $invoice->id]) }}" 
+                           class="inline-flex items-center gap-1 text-[11px] font-semibold bg-surface-container dark:bg-[#252525] text-secondary dark:text-gray-400 hover:text-primary dark:hover:text-primary-container px-2 py-0.5 rounded-md border border-border-subtle dark:border-[#333] hover:border-primary/40 transition"
+                           title="Buat Testimoni Baru dari Invoice Ini">
+                            <span class="material-symbols-outlined text-[13px]">add</span>
+                            + Testi
+                        </a>
+                        @endif
+                    </td>
                     <td class="py-3.5 px-4 sm:px-6 text-on-surface-variant dark:text-gray-400">{{ $invoice->deadline->format('d M Y') }}</td>
                     <td class="py-3.5 px-4 sm:px-6 text-right">
                         <div class="flex items-center justify-end gap-1.5">
@@ -117,7 +150,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" class="py-12 text-center text-on-surface-variant dark:text-gray-400">Belum ada invoice. Mulai buat invoice pertama!</td>
+                    <td colspan="8" class="py-12 text-center text-on-surface-variant dark:text-gray-400">Belum ada invoice. Mulai buat invoice pertama!</td>
                 </tr>
                 @endforelse
             </tbody>
