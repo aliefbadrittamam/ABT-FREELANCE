@@ -115,12 +115,20 @@ class TestimonialController extends Controller
             $composedFilename = 'composed_' . time() . '_' . uniqid() . '.jpg';
             $composedPath = "testimonials/composed/{$composedFilename}";
 
-            // Process image dynamically (1 to 4 images)
-            $composer->composeDynamic($uploadedAbsolutePaths, storage_path("app/public/{$composedPath}"));
-
             $testiNumber = $request->filled('testimonial_number') 
                 ? (int)$request->testimonial_number 
                 : Testimonial::getNextTestimonialNumber();
+
+            $fromInvoice = $request->filled('invoice_id') ? \App\Models\Invoice::find($request->invoice_id) : null;
+            $invoiceNumber = $fromInvoice ? $fromInvoice->invoice_number : null;
+
+            // Process image dynamically (1 to 4 images)
+            $composer->composeDynamic(
+                $uploadedAbsolutePaths,
+                storage_path("app/public/{$composedPath}"),
+                $testiNumber,
+                $invoiceNumber
+            );
 
             $action = $request->input('action', 'publish');
 
@@ -214,16 +222,24 @@ class TestimonialController extends Controller
                 }
             }
 
+            $testiNumber = $request->filled('testimonial_number') 
+                ? (int)$request->testimonial_number 
+                : ($testimonial->testimonial_number ?: Testimonial::getNextTestimonialNumber());
+
+            $invObj = $testimonial->invoice ?: ($request->filled('invoice_id') ? \App\Models\Invoice::find($request->invoice_id) : null);
+            $invoiceNumber = $invObj ? $invObj->invoice_number : null;
+
             // Re-compose if images changed or if composed image was missing
             if ($hasChangedImage && !empty($activeImageAbsolutePaths)) {
                 $composedFilename = 'composed_' . time() . '_' . uniqid() . '.jpg';
                 $composedPath = "testimonials/composed/{$composedFilename}";
-                $composer->composeDynamic($activeImageAbsolutePaths, storage_path("app/public/{$composedPath}"));
+                $composer->composeDynamic(
+                    $activeImageAbsolutePaths,
+                    storage_path("app/public/{$composedPath}"),
+                    $testiNumber,
+                    $invoiceNumber
+                );
             }
-
-            $testiNumber = $request->filled('testimonial_number') 
-                ? (int)$request->testimonial_number 
-                : ($testimonial->testimonial_number ?: Testimonial::getNextTestimonialNumber());
 
             $testimonial->update([
                 'testimonial_number' => $testiNumber,

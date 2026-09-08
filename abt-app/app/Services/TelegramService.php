@@ -51,6 +51,7 @@ class TelegramService
             )->post("{$this->baseUrl}/sendPhoto", [
                 'chat_id' => $this->channelId,
                 'caption' => $caption ?? '',
+                'parse_mode' => 'HTML',
             ]);
 
             if ($response->successful()) {
@@ -93,6 +94,7 @@ class TelegramService
                     'type' => 'photo',
                     'media' => 'attach://photo',
                     'caption' => $caption ?? '',
+                    'parse_mode' => 'HTML',
                 ]),
             ]);
 

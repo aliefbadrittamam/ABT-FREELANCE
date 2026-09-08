@@ -8,20 +8,22 @@ use Intervention\Image\Drivers\Gd\Driver;
 class TestimonialComposer
 {
     /**
-     * Compose 1 to 4 images into a branded dark theme canvas.
-     * Features:
-     * - Midnight Charcoal Dark Background (#0c0d10)
-     * - Subtle Tech Grid lines
-     * - Repeating ABTJOKI Watermark Pattern
-     * - Large Center ABT Logo Watermark (80% Transparent)
-     * - Neon Yellow Border (#E8FF00) around each photo slot box
-     * - No-crop proportional scaling (contain) so chat/proof screenshots are 100% visible
+     * Compose 1 to 4 images into a clean, professional dark theme canvas.
+     * Design Structure:
+     * - Midnight Charcoal Dark Background (#0c0d10) + Tech Grid + Subtle ABTJOKI Watermark Pattern
+     * - Top Header Bar:
+     *   * Left: Testimonial Number (#XX)
+     *   * Right: Invoice Number (INV-XXXX)
+     * - Middle Area: Screenshots contained inside 3px Neon Yellow (#E8FF00) Framed Boxes
+     * - NO logos or center overlays on top of screenshot content!
      *
      * @param array<string> $imagePaths List of valid existing file paths
      * @param string $outputPath Destination file path
+     * @param string|int|null $testiNumber Testimonial Number (e.g. 14)
+     * @param string|null $invoiceNumber Invoice Number (e.g. INV-JOKI-082-260904)
      * @return string
      */
-    public function composeDynamic(array $imagePaths, string $outputPath): string
+    public function composeDynamic(array $imagePaths, string $outputPath, $testiNumber = null, ?string $invoiceNumber = null): string
     {
         $validPaths = array_values(array_filter($imagePaths, fn($p) => !empty($p) && file_exists($p)));
         $count = count($validPaths);
@@ -37,7 +39,7 @@ class TestimonialComposer
         // 1 Image Layout
         if ($count === 1) {
             $img = $manager->read($validPaths[0]);
-            $img->scaleDown(1020, 1020);
+            $img->scaleDown(1020, 990);
 
             $w = $img->width();
             $h = $img->height();
@@ -46,12 +48,12 @@ class TestimonialComposer
             $boxH = $h + 20;
 
             $canvasW = max($canvasWidth, $boxW + 40);
-            $canvasH = max($canvasHeight, $boxH + 40);
+            $canvasH = max($canvasHeight, $boxH + 60);
 
-            $canvas = $this->createBrandedBackground($manager, $canvasW, $canvasH);
+            $canvas = $this->createBrandedBackground($manager, $canvasW, $canvasH, $testiNumber, $invoiceNumber);
             $framed = $this->frameImage($manager, $validPaths[0], $boxW, $boxH);
 
-            $canvas->place($framed, 'center');
+            $canvas->place($framed, 'top-left', (int)(($canvasW - $boxW) / 2), (int)(($canvasH - $boxH + 40) / 2));
             $canvas->toJpeg(92)->save($outputPath);
 
             return $outputPath;
@@ -59,15 +61,16 @@ class TestimonialComposer
 
         // 2 Images Layout: Side-by-Side
         if ($count === 2) {
-            $canvas = $this->createBrandedBackground($manager, $canvasWidth, $canvasHeight);
+            $canvas = $this->createBrandedBackground($manager, $canvasWidth, $canvasHeight, $testiNumber, $invoiceNumber);
             $boxWidth = 516;
-            $boxHeight = 1040;
+            $boxHeight = 1000;
 
             $framed1 = $this->frameImage($manager, $validPaths[0], $boxWidth, $boxHeight);
             $framed2 = $this->frameImage($manager, $validPaths[1], $boxWidth, $boxHeight);
 
-            $canvas->place($framed1, 'top-left', 16, 20);
-            $canvas->place($framed2, 'top-left', 548, 20);
+            $canvas->place($framed1, 'top-left', 16, 55);
+            $canvas->place($framed2, 'top-left', 548, 55);
+
             $canvas->toJpeg(92)->save($outputPath);
 
             return $outputPath;
@@ -75,33 +78,34 @@ class TestimonialComposer
 
         // 3 Images Layout: 1 Large Top + 2 Split Bottom
         if ($count === 3) {
-            $canvas = $this->createBrandedBackground($manager, $canvasWidth, $canvasHeight);
+            $canvas = $this->createBrandedBackground($manager, $canvasWidth, $canvasHeight, $testiNumber, $invoiceNumber);
             $topWidth = 1048;
-            $topHeight = 530;
+            $topHeight = 495;
             $bottomWidth = 516;
-            $bottomHeight = 494;
+            $bottomHeight = 490;
 
             $framed1 = $this->frameImage($manager, $validPaths[0], $topWidth, $topHeight);
             $framed2 = $this->frameImage($manager, $validPaths[1], $bottomWidth, $bottomHeight);
             $framed3 = $this->frameImage($manager, $validPaths[2], $bottomWidth, $bottomHeight);
 
-            $canvas->place($framed1, 'top-left', 16, 16);
-            $canvas->place($framed2, 'top-left', 16, 562);
-            $canvas->place($framed3, 'top-left', 548, 562);
+            $canvas->place($framed1, 'top-left', 16, 55);
+            $canvas->place($framed2, 'top-left', 16, 565);
+            $canvas->place($framed3, 'top-left', 548, 565);
+
             $canvas->toJpeg(92)->save($outputPath);
 
             return $outputPath;
         }
 
         // 4 Images Layout: Classic 2x2 Grid
-        $canvas = $this->createBrandedBackground($manager, $canvasWidth, $canvasHeight);
-        $boxSize = 516;
+        $canvas = $this->createBrandedBackground($manager, $canvasWidth, $canvasHeight, $testiNumber, $invoiceNumber);
+        $boxSize = 506;
 
         $positions = [
-            [16, 16],
-            [548, 16],
-            [16, 548],
-            [548, 548],
+            [16, 55],
+            [548, 55],
+            [16, 565],
+            [548, 565],
         ];
 
         foreach (array_slice($validPaths, 0, 4) as $i => $path) {
@@ -115,15 +119,16 @@ class TestimonialComposer
     }
 
     /**
-     * Create branded Dark Background with Grid, ABTJOKI Watermark Pattern & Center Logo Watermark (80% transparent)
+     * Create branded Dark Background with Grid, ABTJOKI Watermark Pattern & Header Info
      */
-    private function createBrandedBackground(ImageManager $manager, int $width, int $height)
+    private function createBrandedBackground(ImageManager $manager, int $width, int $height, $testiNumber = null, ?string $invoiceNumber = null)
     {
         $canvas = $manager->create($width, $height)->fill('0c0d10');
         $core = $canvas->core()->native();
 
-        $gridColor = imagecolorallocate($core, 24, 27, 36);      // Subtle tech grid lines
-        $textColor = imagecolorallocate($core, 42, 50, 26);      // Subtle ABTJOKI watermark text
+        $gridColor = imagecolorallocate($core, 22, 25, 32);      // Tech grid lines
+        $textColor = imagecolorallocate($core, 35, 40, 26);      // Subtle ABTJOKI watermark pattern
+        $headerColor = imagecolorallocate($core, 232, 255, 0);   // Neon Yellow
 
         // 1. Grid Lines
         for ($x = 0; $x <= $width; $x += 60) {
@@ -142,17 +147,17 @@ class TestimonialComposer
             }
         }
 
-        // 3. Center Logo Watermark (80% Transparent / 20% Opacity)
-        $logoPath = storage_path('app/public/assets/logo.png');
-        if (!file_exists($logoPath)) {
-            $logoPath = base_path('logo.png');
+        // 3. Header Bar Info Overlay
+        // Left: #XX
+        if ($testiNumber) {
+            $labelLeft = "#" . ltrim((string)$testiNumber, '#');
+            imagestring($core, 5, 24, 18, $labelLeft, $headerColor);
         }
 
-        if (file_exists($logoPath)) {
-            $logo = $manager->read($logoPath);
-            $targetLogoSize = (int)(min($width, $height) * 0.40); // 40% of canvas dimension
-            $logo->scaleDown($targetLogoSize, $targetLogoSize);
-            $canvas->place($logo, 'center', 0, 0, 20); // 20% opacity = 80% transparent
+        // Right: Invoice Number
+        if (!empty($invoiceNumber)) {
+            $invX = $width - (strlen($invoiceNumber) * 10) - 24;
+            imagestring($core, 4, max(24, $invX), 18, $invoiceNumber, $headerColor);
         }
 
         return $canvas;

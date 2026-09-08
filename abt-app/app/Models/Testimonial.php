@@ -76,6 +76,10 @@ class Testimonial extends Model
             $caption .= "\n\n" . $this->caption;
         }
 
+        if ($this->invoice && $this->invoice->invoice_number) {
+            $caption .= "\n\n<i>Invoice: {$this->invoice->invoice_number}</i>";
+        }
+
         return $caption;
     }
 
