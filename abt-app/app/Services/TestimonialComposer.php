@@ -8,9 +8,13 @@ use Intervention\Image\Drivers\Gd\Driver;
 class TestimonialComposer
 {
     /**
-     * Compose 1 to 4 images into a clean, aesthetic canvas.
-     * Images are NOT cropped — they are scaled proportionally (contain)
-     * so every part of screenshots (chats, transfer proofs) stays fully visible.
+     * Compose 1 to 4 images into a branded dark theme canvas.
+     * Features:
+     * - Midnight Charcoal Dark Background (#0c0d10)
+     * - Subtle Tech Grid lines
+     * - Repeating ABTJOKI Watermark Pattern
+     * - Neon Yellow Border (#E8FF00) around each photo slot box
+     * - No-crop proportional scaling (contain) so chat/proof screenshots are 100% visible
      *
      * @param array<string> $imagePaths List of valid existing file paths
      * @param string $outputPath Destination file path
@@ -18,7 +22,6 @@ class TestimonialComposer
      */
     public function composeDynamic(array $imagePaths, string $outputPath): string
     {
-        // Filter out empty paths or non-existent files
         $validPaths = array_values(array_filter($imagePaths, fn($p) => !empty($p) && file_exists($p)));
         $count = count($validPaths);
 
@@ -27,84 +30,143 @@ class TestimonialComposer
         }
 
         $manager = new ImageManager(new Driver());
-        $padding = 12;
         $canvasWidth = 1080;
         $canvasHeight = 1080;
 
-        // 1 Image: Preserve full aspect ratio on white canvas — nothing is cropped.
-        // Large/long screenshots are scaled down proportionally to fit 1080px max dimension.
+        // 1 Image Layout
         if ($count === 1) {
             $img = $manager->read($validPaths[0]);
-
-            // Scale proportionally so the longest side is max 1056 (1080 - padding*2)
-            // scaleDown() keeps aspect ratio and never enlarges small images
-            $img->scaleDown(1056, 1056);
+            $img->scaleDown(1020, 1020);
 
             $w = $img->width();
             $h = $img->height();
 
-            $canvas = $manager->create($w + ($padding * 2), $h + ($padding * 2))->fill('ffffff');
-            $canvas->place($img, 'top-left', $padding, $padding);
+            $boxW = $w + 20;
+            $boxH = $h + 20;
+
+            $canvasW = max($canvasWidth, $boxW + 40);
+            $canvasH = max($canvasHeight, $boxH + 40);
+
+            $canvas = $this->createBrandedBackground($manager, $canvasW, $canvasH);
+            $framed = $this->frameImage($manager, $validPaths[0], $boxW, $boxH);
+
+            $canvas->place($framed, 'center');
             $canvas->toJpeg(92)->save($outputPath);
 
             return $outputPath;
         }
 
-        // 2 Images: Side-by-side 2 columns — each image fully visible (contained, no crop)
+        // 2 Images Layout: Side-by-Side
         if ($count === 2) {
-            $canvas = $manager->create($canvasWidth, $canvasHeight)->fill('ffffff');
-            $colWidth = (int)(($canvasWidth - ($padding * 3)) / 2);
-            $colHeight = $canvasHeight - ($padding * 2);
+            $canvas = $this->createBrandedBackground($manager, $canvasWidth, $canvasHeight);
+            $boxWidth = 516;
+            $boxHeight = 1040;
 
-            $img1 = $manager->read($validPaths[0])->contain($colWidth, $colHeight, 'ffffff', 'center');
-            $img2 = $manager->read($validPaths[1])->contain($colWidth, $colHeight, 'ffffff', 'center');
+            $framed1 = $this->frameImage($manager, $validPaths[0], $boxWidth, $boxHeight);
+            $framed2 = $this->frameImage($manager, $validPaths[1], $boxWidth, $boxHeight);
 
-            $canvas->place($img1, 'top-left', $padding, $padding);
-            $canvas->place($img2, 'top-left', $colWidth + ($padding * 2), $padding);
+            $canvas->place($framed1, 'top-left', 16, 20);
+            $canvas->place($framed2, 'top-left', 548, 20);
             $canvas->toJpeg(92)->save($outputPath);
 
             return $outputPath;
         }
 
-        // 3 Images: 1 Large Top + 2 Split Bottom — each image fully visible (contained, no crop)
+        // 3 Images Layout: 1 Large Top + 2 Split Bottom
         if ($count === 3) {
-            $canvas = $manager->create($canvasWidth, $canvasHeight)->fill('ffffff');
-            $topHeight = (int)(($canvasHeight - ($padding * 3)) * 0.52);
-            $topWidth = $canvasWidth - ($padding * 2);
-            $bottomHeight = $canvasHeight - ($padding * 3) - $topHeight;
-            $bottomWidth = (int)(($canvasWidth - ($padding * 3)) / 2);
+            $canvas = $this->createBrandedBackground($manager, $canvasWidth, $canvasHeight);
+            $topWidth = 1048;
+            $topHeight = 530;
+            $bottomWidth = 516;
+            $bottomHeight = 494;
 
-            $img1 = $manager->read($validPaths[0])->contain($topWidth, $topHeight, 'ffffff', 'center');
-            $img2 = $manager->read($validPaths[1])->contain($bottomWidth, $bottomHeight, 'ffffff', 'center');
-            $img3 = $manager->read($validPaths[2])->contain($bottomWidth, $bottomHeight, 'ffffff', 'center');
+            $framed1 = $this->frameImage($manager, $validPaths[0], $topWidth, $topHeight);
+            $framed2 = $this->frameImage($manager, $validPaths[1], $bottomWidth, $bottomHeight);
+            $framed3 = $this->frameImage($manager, $validPaths[2], $bottomWidth, $bottomHeight);
 
-            $canvas->place($img1, 'top-left', $padding, $padding);
-            $canvas->place($img2, 'top-left', $padding, $topHeight + ($padding * 2));
-            $canvas->place($img3, 'top-left', $bottomWidth + ($padding * 2), $topHeight + ($padding * 2));
+            $canvas->place($framed1, 'top-left', 16, 16);
+            $canvas->place($framed2, 'top-left', 16, 562);
+            $canvas->place($framed3, 'top-left', 548, 562);
             $canvas->toJpeg(92)->save($outputPath);
 
             return $outputPath;
         }
 
-        // 4 Images: Classic 2x2 Grid — each quadrant fully visible (contained, no crop)
-        $canvas = $manager->create($canvasWidth, $canvasHeight)->fill('ffffff');
-        $boxSize = (int)(($canvasWidth - ($padding * 3)) / 2);
+        // 4 Images Layout: Classic 2x2 Grid
+        $canvas = $this->createBrandedBackground($manager, $canvasWidth, $canvasHeight);
+        $boxSize = 516;
 
         $positions = [
-            [$padding, $padding],
-            [$boxSize + ($padding * 2), $padding],
-            [$padding, $boxSize + ($padding * 2)],
-            [$boxSize + ($padding * 2), $boxSize + ($padding * 2)],
+            [16, 16],
+            [548, 16],
+            [16, 548],
+            [548, 548],
         ];
 
         foreach (array_slice($validPaths, 0, 4) as $i => $path) {
-            $img = $manager->read($path)->contain($boxSize, $boxSize, 'ffffff', 'center');
-            $canvas->place($img, 'top-left', $positions[$i][0], $positions[$i][1]);
+            $framed = $this->frameImage($manager, $path, $boxSize, $boxSize);
+            $canvas->place($framed, 'top-left', $positions[$i][0], $positions[$i][1]);
         }
 
         $canvas->toJpeg(92)->save($outputPath);
 
         return $outputPath;
+    }
+
+    /**
+     * Create branded Dark Background with Grid & ABTJOKI Watermark Pattern
+     */
+    private function createBrandedBackground(ImageManager $manager, int $width, int $height)
+    {
+        $canvas = $manager->create($width, $height)->fill('0c0d10');
+        $core = $canvas->core()->native();
+
+        $gridColor = imagecolorallocate($core, 24, 27, 36);      // Subtle tech grid lines
+        $textColor = imagecolorallocate($core, 42, 50, 26);      // Subtle ABTJOKI watermark text
+
+        // 1. Grid Lines
+        for ($x = 0; $x <= $width; $x += 60) {
+            imageline($core, $x, 0, $x, $height, $gridColor);
+        }
+        for ($y = 0; $y <= $height; $y += 60) {
+            imageline($core, 0, $y, $width, $y, $gridColor);
+        }
+
+        // 2. Staggered ABTJOKI Watermark Text Pattern
+        $text = "ABTJOKI";
+        for ($y = 15; $y < $height; $y += 65) {
+            $shift = (($y / 65) % 2 === 0) ? 10 : 70;
+            for ($x = $shift; $x < $width; $x += 140) {
+                imagestring($core, 4, $x, $y, $text, $textColor);
+            }
+        }
+
+        return $canvas;
+    }
+
+    /**
+     * Wrap an image inside a Neon Yellow Framed Box
+     */
+    private function frameImage(ImageManager $manager, string $imagePath, int $boxWidth, int $boxHeight, string $bgColor = '13141a')
+    {
+        $borderSize = 3;
+        
+        // 1. Outer Box filled with Neon Yellow (#E8FF00)
+        $frame = $manager->create($boxWidth, $boxHeight)->fill('e8ff00');
+        
+        // 2. Inner Dark Box offset by 3px border
+        $innerW = max(1, $boxWidth - ($borderSize * 2));
+        $innerH = max(1, $boxHeight - ($borderSize * 2));
+        $innerBox = $manager->create($innerW, $innerH)->fill($bgColor);
+        
+        // 3. Contain screenshot inside inner box without cropping
+        $img = $manager->read($imagePath)->contain($innerW, $innerH, $bgColor, 'center');
+        $innerBox->place($img, 'center');
+        
+        // 4. Place inner box into neon yellow frame
+        $frame->place($innerBox, 'top-left', $borderSize, $borderSize);
+        
+        return $frame;
     }
 
     /**
