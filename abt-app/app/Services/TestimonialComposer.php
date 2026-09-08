@@ -13,6 +13,7 @@ class TestimonialComposer
      * - Midnight Charcoal Dark Background (#0c0d10)
      * - Subtle Tech Grid lines
      * - Repeating ABTJOKI Watermark Pattern
+     * - Large Center ABT Logo Watermark (80% Transparent)
      * - Neon Yellow Border (#E8FF00) around each photo slot box
      * - No-crop proportional scaling (contain) so chat/proof screenshots are 100% visible
      *
@@ -114,7 +115,7 @@ class TestimonialComposer
     }
 
     /**
-     * Create branded Dark Background with Grid & ABTJOKI Watermark Pattern
+     * Create branded Dark Background with Grid, ABTJOKI Watermark Pattern & Center Logo Watermark (80% transparent)
      */
     private function createBrandedBackground(ImageManager $manager, int $width, int $height)
     {
@@ -139,6 +140,19 @@ class TestimonialComposer
             for ($x = $shift; $x < $width; $x += 140) {
                 imagestring($core, 4, $x, $y, $text, $textColor);
             }
+        }
+
+        // 3. Center Logo Watermark (80% Transparent / 20% Opacity)
+        $logoPath = storage_path('app/public/assets/logo.png');
+        if (!file_exists($logoPath)) {
+            $logoPath = base_path('logo.png');
+        }
+
+        if (file_exists($logoPath)) {
+            $logo = $manager->read($logoPath);
+            $targetLogoSize = (int)(min($width, $height) * 0.40); // 40% of canvas dimension
+            $logo->scaleDown($targetLogoSize, $targetLogoSize);
+            $canvas->place($logo, 'center', 0, 0, 20); // 20% opacity = 80% transparent
         }
 
         return $canvas;
