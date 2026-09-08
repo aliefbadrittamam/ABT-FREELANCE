@@ -154,6 +154,11 @@ class TestimonialComposer
             imagestring($core, 5, 24, 18, $labelLeft, $headerColor);
         }
 
+        // Center: ABTJOKI
+        $centerText = "ABTJOKI";
+        $centerX = (int)(($width - (strlen($centerText) * 10)) / 2);
+        imagestring($core, 5, $centerX, 18, $centerText, $headerColor);
+
         // Right: Invoice Number
         if (!empty($invoiceNumber)) {
             $invX = $width - (strlen($invoiceNumber) * 10) - 24;
