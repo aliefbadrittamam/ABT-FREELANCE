@@ -166,14 +166,14 @@ class TestimonialComposer
     /**
      * Wrap an image inside a Neon Yellow Framed Box
      */
-    private function frameImage(ImageManager $manager, string $imagePath, int $boxWidth, int $boxHeight, string $bgColor = '13141a')
+    private function frameImage(ImageManager $manager, string $imagePath, int $boxWidth, int $boxHeight, string $bgColor = 'ffffff')
     {
         $borderSize = 3;
         
         // 1. Outer Box filled with Neon Yellow (#E8FF00)
         $frame = $manager->create($boxWidth, $boxHeight)->fill('e8ff00');
         
-        // 2. Inner Dark Box offset by 3px border
+        // 2. Inner Box offset by 3px border
         $innerW = max(1, $boxWidth - ($borderSize * 2));
         $innerH = max(1, $boxHeight - ($borderSize * 2));
         $innerBox = $manager->create($innerW, $innerH)->fill($bgColor);
