@@ -26,7 +26,8 @@ class TelegramBotHandler
         return [
             'keyboard' => [
                 [['text' => '📄 Buat Invoice Baru']],
-                [['text' => '📊 Cek Status Invoice'], ['text' => '💡 Panduan & Bantuan']],
+                [['text' => '📊 Cek Status Invoice'], ['text' => '📢 Materi Iklan / Promo']],
+                [['text' => '💡 Panduan & Bantuan']],
             ],
             'resize_keyboard' => true,
             'is_persistent' => true,
@@ -91,6 +92,11 @@ class TelegramBotHandler
             return;
         }
 
+        if ($text === '📢 Materi Iklan / Promo' || str_starts_with($text, '/iklan') || str_starts_with($text, '/promo')) {
+            $this->showPromotionsMenu($chatId);
+            return;
+        }
+
         if ($text === '💡 Panduan & Bantuan' || str_starts_with($text, '/start') || str_starts_with($text, '/help')) {
             $this->sendWelcomeMenu($chatId, $userName);
             return;
@@ -150,6 +156,26 @@ class TelegramBotHandler
         // Switch Payment Type: Full Pay ↔ DP
         if (str_starts_with($data, 'switch_paytype_')) {
             $this->handleSwitchPaymentTypeCallback($chatId, $data);
+            return;
+        }
+
+        // Open Promotions Menu
+        if ($data === 'open_promos_menu') {
+            $this->showPromotionsMenu($chatId);
+            return;
+        }
+
+        // View Promotion Details
+        if (str_starts_with($data, 'view_promo_')) {
+            $promoId = (int)substr($data, 11);
+            $this->showPromotionDetailCard($chatId, $promoId);
+            return;
+        }
+
+        // Post Promotion directly to Telegram Channel
+        if (str_starts_with($data, 'post_promo_tg_')) {
+            $promoId = (int)substr($data, 14);
+            $this->postPromotionToChannel($chatId, $promoId);
             return;
         }
 
@@ -864,6 +890,114 @@ class TelegramBotHandler
             $this->telegram->sendMessage($chatId, "❌ Terjadi kesalahan saat memproses testimoni: " . $e->getMessage(), [
                 'reply_markup' => json_encode($this->getMainKeyboard()),
             ]);
+        }
+    }
+
+    /**
+     * Show list of active promotions/ads to copy or broadcast.
+     */
+    protected function showPromotionsMenu(string $chatId): void
+    {
+        $promos = \App\Models\Promotion::where('is_active', true)->orderBy('sort_order')->get();
+
+        if ($promos->isEmpty()) {
+            $this->telegram->sendMessage($chatId, "📢 <b>Belum ada materi iklan tersimpan.</b>\n\nSilakan tambahkan materi penawaran jasa melalui menu <b>Materi Iklan</b> di Web Admin.", [
+                'reply_markup' => json_encode($this->getMainKeyboard()),
+            ]);
+            return;
+        }
+
+        $buttons = [];
+        foreach ($promos as $p) {
+            $icon = match($p->category_type) {
+                'joki' => '🎓',
+                'website' => '💻',
+                'tournament' => '⚽',
+                default => '📢'
+            };
+            $buttons[] = [
+                ['text' => "{$icon} " . \Illuminate\Support\Str::limit($p->title, 35), 'callback_data' => "view_promo_{$p->id}"]
+            ];
+        }
+
+        $buttons[] = [['text' => '🔙 Kembali ke Menu', 'callback_data' => 'wizard_cancel']];
+
+        $text = "📢 <b>GUDANG MATERI IKLAN & PROMOSI SIAP SEBAR</b>\n"
+              . "────────────────────────\n"
+              . "Pilih materi iklan di bawah untuk menyalin teks copywriting atau mempostingnya ke Channel Telegram:";
+
+        $this->telegram->sendMessage($chatId, $text, [
+            'reply_markup' => json_encode(['inline_keyboard' => $buttons])
+        ]);
+    }
+
+    /**
+     * Show detail of a specific promotion with copyable text and action buttons.
+     */
+    protected function showPromotionDetailCard(string $chatId, int $promoId): void
+    {
+        $promo = \App\Models\Promotion::find($promoId);
+        if (!$promo) {
+            $this->telegram->sendMessage($chatId, "❌ Materi iklan tidak ditemukan.");
+            return;
+        }
+
+        $text = "📢 <b>" . strtoupper($promo->title) . "</b>\n"
+              . ($promo->tagline ? "✨ <i>{$promo->tagline}</i>\n" : "")
+              . "🏷️ <b>Kategori:</b> {$promo->category_label}\n"
+              . "────────────────────────\n"
+              . "📲 <b>Format Copywriting (Tinggal Salin):</b>\n\n"
+              . "<code>" . htmlspecialchars($promo->copywriting) . "</code>\n\n"
+              . "👇 <b>Pilih aksi di bawah:</b>";
+
+        $buttons = [];
+
+        if ($promo->banner_path && file_exists(storage_path('app/public/' . $promo->banner_path))) {
+            $buttons[] = [
+                ['text' => '🚀 Posting ke Channel (@ABT_TESTIMONI)', 'callback_data' => "post_promo_tg_{$promo->id}"],
+            ];
+        }
+
+        $buttons[] = [
+            ['text' => '🔙 Kembali ke Daftar Iklan', 'callback_data' => 'open_promos_menu'],
+            ['text' => '🏠 Menu Utama', 'callback_data' => 'wizard_cancel'],
+        ];
+
+        $bannerAbsPath = $promo->banner_path ? storage_path('app/public/' . $promo->banner_path) : null;
+        if ($bannerAbsPath && file_exists($bannerAbsPath)) {
+            $this->telegram->sendPhotoToChat($chatId, $bannerAbsPath, $text, [
+                'reply_markup' => json_encode(['inline_keyboard' => $buttons])
+            ]);
+        } else {
+            $this->telegram->sendMessage($chatId, $text, [
+                'reply_markup' => json_encode(['inline_keyboard' => $buttons])
+            ]);
+        }
+    }
+
+    /**
+     * Post promotion banner and copywriting directly to Telegram Channel.
+     */
+    protected function postPromotionToChannel(string $chatId, int $promoId): void
+    {
+        $promo = \App\Models\Promotion::find($promoId);
+        if (!$promo || !$promo->banner_path || !file_exists(storage_path('app/public/' . $promo->banner_path))) {
+            $this->telegram->sendMessage($chatId, "❌ Banner materi iklan tidak ditemukan.");
+            return;
+        }
+
+        $bannerAbsPath = storage_path('app/public/' . $promo->banner_path);
+        $caption = $promo->copywriting;
+
+        $msgId = $this->telegram->sendPhoto($bannerAbsPath, $caption);
+
+        if ($msgId) {
+            $this->telegram->sendMessage($chatId, "🎉 <b>BERHASIL DIPOSTING!</b>\n\nMateri iklan '{$promo->title}' telah terbit di Channel <b>@ABT_TESTIMONI</b>.", [
+                'reply_markup' => json_encode($this->getMainKeyboard()),
+            ]);
+        } else {
+            $err = $this->telegram->getLastError();
+            $this->telegram->sendMessage($chatId, "❌ Gagal memposting ke Channel: {$err}");
         }
     }
 

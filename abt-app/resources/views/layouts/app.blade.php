@@ -201,6 +201,12 @@
                 </a>
             </li>
             <li>
+                <a href="{{ route('promotions.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 {{ request()->routeIs('promotions.*') ? 'bg-primary dark:bg-primary text-on-primary font-bold shadow-sm' : 'text-secondary dark:text-gray-300 hover:bg-surface-variant dark:hover:bg-[#252525] font-medium' }}">
+                    <span class="material-symbols-outlined text-xl" {{ request()->routeIs('promotions.*') ? "style=font-variation-settings:'FILL'1" : '' }}>campaign</span>
+                    Materi Iklan
+                </a>
+            </li>
+            <li>
                 <a href="{{ route('payment.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 {{ request()->routeIs('payment.*') ? 'bg-primary dark:bg-primary text-on-primary font-bold shadow-sm' : 'text-secondary dark:text-gray-300 hover:bg-surface-variant dark:hover:bg-[#252525] font-medium' }}">
                     <span class="material-symbols-outlined text-xl" {{ request()->routeIs('payment.*') ? "style=font-variation-settings:'FILL'1" : '' }}>payments</span>
                     Pembayaran

@@ -129,6 +129,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/testimonials/{id}/restore', [TestimonialController::class, 'restore'])->name('testimonials.restore');
     Route::delete('/testimonials/{id}/force-delete', [TestimonialController::class, 'forceDelete'])->name('testimonials.forceDelete');
 
+    Route::resource('promotions', PromotionController::class);
+    Route::get('/promotions/{promotion}/download-banner', [PromotionController::class, 'downloadBanner'])->name('promotions.downloadBanner');
+    Route::post('/promotions/{promotion}/post-telegram', [PromotionController::class, 'postToTelegram'])->name('promotions.postTelegram');
+
     Route::get('/payment', [PaymentController::class, 'index'])->name('payment.index');
     Route::post('/payment', [PaymentController::class, 'update'])->name('payment.update');
 
