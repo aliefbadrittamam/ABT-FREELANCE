@@ -51,22 +51,27 @@ class ClientInvoiceController extends Controller
      */
     public function export(string $token, string $format)
     {
-        $invoice = Invoice::with('category')->where('access_token', $token)->firstOrFail();
+        $format = strtolower($format);
+        if (!in_array($format, ['png', 'pdf'])) {
+            return redirect()->back()->with('error', 'Format ekspor tidak didukung (hanya PNG & PDF).');
+        }
+
+        $invoice = Invoice::with(['category', 'subCategory', 'major'])->where('access_token', $token)->firstOrFail();
 
         $exportDir = storage_path('app/public/invoices/exports');
         if (!is_dir($exportDir)) {
             mkdir($exportDir, 0755, true);
         }
 
-        // Render clean standalone view
-        $htmlContent = view('invoices.standalone', compact('invoice'))->render();
-        $tempHtmlPath = storage_path('app/public/invoices/exports/client_temp_' . $invoice->id . '_' . time() . '.html');
-        file_put_contents($tempHtmlPath, $htmlContent);
-
         if ($format === 'png') {
             $filename = $invoice->invoice_number . '.png';
             $filePath = $exportDir . '/' . $filename;
             $scriptPath = base_path('render_image.mjs');
+
+            // Render clean standalone view
+            $htmlContent = view('invoices.standalone', compact('invoice'))->render();
+            $tempHtmlPath = storage_path('app/public/invoices/exports/client_temp_' . $invoice->id . '_' . time() . '.html');
+            file_put_contents($tempHtmlPath, $htmlContent);
 
             $command = "node \"{$scriptPath}\" \"{$tempHtmlPath}\" \"{$filePath}\" 2>&1";
             exec($command, $output, $returnCode);
@@ -75,6 +80,9 @@ class ClientInvoiceController extends Controller
             if ($returnCode === 0 && file_exists($filePath)) {
                 return response()->download($filePath, $filename, ['Content-Type' => 'image/png']);
             }
+
+            \Illuminate\Support\Facades\Log::error('Client PNG Export failed', ['output' => $output, 'code' => $returnCode]);
+            return redirect()->back()->with('error', 'Gagal membuat file PNG invoice: ' . (isset($output[0]) ? implode(' ', $output) : 'Puppeteer error'));
         }
 
         if ($format === 'pdf') {
@@ -100,9 +108,6 @@ class ClientInvoiceController extends Controller
 
             return $pdf->download($filename);
         }
-
-        @unlink($tempHtmlPath);
-        return redirect()->back()->with('error', 'Format tidak didukung.');
     }
 
     /**

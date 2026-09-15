@@ -42,13 +42,24 @@ class TelegramBotHandler
         $text = trim($message['text'] ?? '');
         $userName = $message['from']['first_name'] ?? 'Admin';
 
-        if (empty($chatId) || empty($text)) {
+        if (empty($chatId)) {
+            return;
+        }
+
+        // 0. Check if incoming message contains photo during active testimonial wizard
+        if (isset($message['photo']) && is_array($message['photo'])) {
+            $this->handleIncomingTestimonialPhoto($chatId, $message['photo'], $message['caption'] ?? null);
+            return;
+        }
+
+        if (empty($text)) {
             return;
         }
 
         // 1. Check if user clicks Cancel
         if ($text === '❌ Batalkan' || $text === '/batal' || $text === '/cancel') {
             Cache::forget("tg_wizard_{$chatId}");
+            Cache::forget("tg_testi_{$chatId}");
             $this->telegram->sendMessage($chatId, "❌ Proses telah dibatalkan.", [
                 'reply_markup' => json_encode($this->getMainKeyboard()),
             ]);
@@ -133,6 +144,33 @@ class TelegramBotHandler
             if ($invoice) {
                 $this->showInvoiceDetailCard($chatId, $invoice);
             }
+            return;
+        }
+
+        // Switch Payment Type: Full Pay ↔ DP
+        if (str_starts_with($data, 'switch_paytype_')) {
+            $this->handleSwitchPaymentTypeCallback($chatId, $data);
+            return;
+        }
+
+        // Start Testimonial Wizard from Invoice
+        if (str_starts_with($data, 'create_testi_inv_')) {
+            $invId = (int)substr($data, 17);
+            $this->startTestimonialWizardFromInvoice($chatId, $invId);
+            return;
+        }
+
+        // Testimonial Wizard actions: publish, draft, cancel
+        if ($data === 'testi_publish' || $data === 'testi_draft') {
+            $this->executeTestimonialCreation($chatId, $data === 'testi_publish' ? 'publish' : 'draft');
+            return;
+        }
+
+        if ($data === 'testi_cancel') {
+            Cache::forget("tg_testi_{$chatId}");
+            $this->telegram->sendMessage($chatId, "❌ Pembuatan testimoni dibatalkan.", [
+                'reply_markup' => json_encode($this->getMainKeyboard()),
+            ]);
             return;
         }
 
@@ -445,6 +483,22 @@ class TelegramBotHandler
             ];
         }
 
+        // Switch Payment Type button row
+        if ($invoice->payment_type === 'dp') {
+            $buttons[] = [
+                ['text' => '🔄 Ubah ke Full Pay (Tanpa DP)', 'callback_data' => "switch_paytype_full_{$invoice->id}"],
+            ];
+        } else {
+            $buttons[] = [
+                ['text' => '💳 Ubah ke DP (Uang Muka 50%)', 'callback_data' => "switch_paytype_dp_{$invoice->id}"],
+            ];
+        }
+
+        // Testimonial button row
+        $buttons[] = [
+            ['text' => '⭐ Jadikan Testimoni Telegram', 'callback_data' => "create_testi_inv_{$invoice->id}"],
+        ];
+
         // File download buttons
         $buttons[] = [
             ['text' => '📄 Minta File PDF', 'callback_data' => "send_pdf_{$invoice->id}"],
@@ -535,6 +589,264 @@ class TelegramBotHandler
 
         // Show refreshed detail card with updated buttons
         $this->showInvoiceDetailCard($chatId, $invoice->fresh());
+    }
+
+    /**
+     * Handle switching payment type between Full Pay and DP via Telegram Bot.
+     */
+    protected function handleSwitchPaymentTypeCallback(string $chatId, string $data): void
+    {
+        $parts = explode('_', $data);
+        $invId = (int)end($parts);
+        $invoice = Invoice::find($invId);
+
+        if (!$invoice) {
+            $this->telegram->sendMessage($chatId, "❌ Invoice tidak ditemukan.");
+            return;
+        }
+
+        if (str_contains($data, 'switch_paytype_full_')) {
+            $invoice->update([
+                'payment_type' => 'full',
+                'dp_amount' => null,
+                'status' => ($invoice->status === 'dp_paid') ? 'unpaid' : $invoice->status,
+            ]);
+
+            $this->telegram->sendMessage($chatId, "✅ <b>METODE PEMBAYARAN DIUBAH!</b>\n\n📄 <b>Invoice:</b> <code>{$invoice->invoice_number}</code>\n💵 <b>Metode Baru:</b> <b>Bayar Lunas Langsung (Tanpa DP)</b>\n💰 <b>Total Tagihan:</b> Rp " . number_format($invoice->total_amount, 0, ',', '.'));
+        } elseif (str_contains($data, 'switch_paytype_dp_')) {
+            $dpAmount = round($invoice->total_amount * 0.5);
+            $invoice->update([
+                'payment_type' => 'dp',
+                'dp_amount' => $dpAmount,
+            ]);
+
+            $sisa = max(0, $invoice->total_amount - $dpAmount);
+            $this->telegram->sendMessage($chatId, "✅ <b>METODE PEMBAYARAN DIUBAH!</b>\n\n📄 <b>Invoice:</b> <code>{$invoice->invoice_number}</code>\n💳 <b>Metode Baru:</b> <b>Bertahap (DP 50%)</b>\n• <b>Wajib DP:</b> Rp " . number_format($dpAmount, 0, ',', '.') . "\n• <b>Sisa Pelunasan:</b> Rp " . number_format($sisa, 0, ',', '.'));
+        }
+
+        // Show refreshed detail card
+        $this->showInvoiceDetailCard($chatId, $invoice->fresh());
+    }
+
+    /**
+     * Start the Testimonial creation wizard from an existing Invoice.
+     */
+    protected function startTestimonialWizardFromInvoice(string $chatId, int $invId): void
+    {
+        $invoice = Invoice::with(['category', 'subCategory', 'major'])->find($invId);
+        if (!$invoice) {
+            $this->telegram->sendMessage($chatId, "❌ Invoice tidak ditemukan.");
+            return;
+        }
+
+        $nextNumber = \App\Models\Testimonial::getNextTestimonialNumber();
+        $major = $invoice->major_name ?: ($invoice->category->name ?? 'Tugas Kuliah');
+        $title = $invoice->title;
+        $deliverables = $invoice->sub_category_name ?: $invoice->description;
+
+        Cache::put("tg_testi_{$chatId}", [
+            'step' => 'awaiting_photo',
+            'invoice_id' => $invoice->id,
+            'invoice_number' => $invoice->invoice_number,
+            'testimonial_number' => $nextNumber,
+            'major' => $major,
+            'task_title' => $title,
+            'deliverables' => $deliverables,
+            'client_name' => $invoice->client_name,
+            'photos' => [],
+        ], now()->addMinutes(30));
+
+        $text = "⭐ <b>WIZARD BUAT TESTIMONI TELEGRAM</b>\n"
+              . "────────────────────────\n"
+              . "📄 <b>Invoice:</b> <code>{$invoice->invoice_number}</code>\n"
+              . "🔢 <b>Nomor Testimoni:</b> #{$nextNumber}\n"
+              . "🎓 <b>Jurusan / Kategori:</b> {$major}\n"
+              . "📝 <b>Judul Tugas:</b> {$title}\n"
+              . "📦 <b>Output / Hasil:</b> {$deliverables}\n"
+              . "────────────────────────\n"
+              . "📸 <b>Silakan kirimkan 1 s/d 4 foto screenshot bukti tugas / chat WA / bukti transfer sekarang:</b>\n"
+              . "<i>(Kirimkan foto satu per satu langsung ke chat bot ini)</i>";
+
+        $buttons = [
+            [
+                ['text' => '🚀 Terbitkan ke Channel (@ABT_TESTIMONI)', 'callback_data' => 'testi_publish'],
+            ],
+            [
+                ['text' => '💾 Simpan Draft (Lokal)', 'callback_data' => 'testi_draft'],
+                ['text' => '❌ Batalkan', 'callback_data' => 'testi_cancel'],
+            ]
+        ];
+
+        $this->telegram->sendMessage($chatId, $text, [
+            'reply_markup' => json_encode(['inline_keyboard' => $buttons])
+        ]);
+    }
+
+    /**
+     * Handle incoming photo upload during active testimonial wizard.
+     */
+    protected function handleIncomingTestimonialPhoto(string $chatId, array $photoArray, ?string $caption): void
+    {
+        $session = Cache::get("tg_testi_{$chatId}");
+        if (!$session || !isset($session['step']) || $session['step'] !== 'awaiting_photo') {
+            $this->telegram->sendMessage($chatId, "⚠️ Tidak ada sesi pembuatan testimoni yang aktif. Silakan pilih invoice terlebih dahulu untuk membuat testimoni.", [
+                'reply_markup' => json_encode($this->getMainKeyboard()),
+            ]);
+            return;
+        }
+
+        // Get largest resolution photo
+        $largestPhoto = end($photoArray);
+        $fileId = $largestPhoto['file_id'] ?? '';
+
+        if (empty($fileId)) {
+            $this->telegram->sendMessage($chatId, "❌ Gagal memproses data foto.");
+            return;
+        }
+
+        // Download photo from Telegram
+        $token = config('services.telegram.bot_token');
+        $fileRes = \Illuminate\Support\Facades\Http::get("https://api.telegram.org/bot{$token}/getFile", ['file_id' => $fileId]);
+
+        if (!$fileRes->successful()) {
+            $this->telegram->sendMessage($chatId, "❌ Gagal mengunduh foto dari server Telegram.");
+            return;
+        }
+
+        $filePath = $fileRes->json('result.file_path');
+        $photoBody = \Illuminate\Support\Facades\Http::get("https://api.telegram.org/file/bot{$token}/{$filePath}")->body();
+
+        $rawDir = storage_path('app/public/testimonials/raw');
+        if (!is_dir($rawDir)) {
+            mkdir($rawDir, 0755, true);
+        }
+
+        $filename = 'tg_user_' . time() . '_' . uniqid() . '.jpg';
+        $fullPath = "{$rawDir}/{$filename}";
+        file_put_contents($fullPath, $photoBody);
+
+        $session['photos'][] = $fullPath;
+        Cache::put("tg_testi_{$chatId}", $session, now()->addMinutes(30));
+
+        $photoCount = count($session['photos']);
+        $text = "📸 <b>Foto ke-{$photoCount}/4 Berhasil Diterima!</b>\n\n";
+
+        if ($photoCount < 4) {
+            $text .= "Anda dapat mengirim foto berikutnya, atau tekan tombol di bawah jika sudah selesai:";
+        } else {
+            $text .= "✅ Batas maksimal 4 foto telah tercapai. Silakan pilih aksi di bawah untuk memproses testimoni:";
+        }
+
+        $buttons = [
+            [
+                ['text' => '🚀 Selesai & Terbitkan ke Channel', 'callback_data' => 'testi_publish'],
+            ],
+            [
+                ['text' => '💾 Selesai & Simpan Draft', 'callback_data' => 'testi_draft'],
+                ['text' => '❌ Batalkan', 'callback_data' => 'testi_cancel'],
+            ]
+        ];
+
+        $this->telegram->sendMessage($chatId, $text, [
+            'reply_markup' => json_encode(['inline_keyboard' => $buttons])
+        ]);
+    }
+
+    /**
+     * Execute Testimonial creation (publish to channel or save as draft) from Telegram Bot wizard.
+     */
+    protected function executeTestimonialCreation(string $chatId, string $action): void
+    {
+        $session = Cache::get("tg_testi_{$chatId}");
+        if (!$session || empty($session['photos'])) {
+            $this->telegram->sendMessage($chatId, "⚠️ Minimal harus mengirimkan setidaknya 1 foto bukti screenshot tugas!");
+            return;
+        }
+
+        $this->telegram->sendMessage($chatId, "⏳ <i>Sedang merender gambar kolase testimoni eksklusif...</i>");
+
+        try {
+            $composer = app(\App\Services\TestimonialComposer::class);
+            $testiNum = (int)$session['testimonial_number'];
+            $invNum = $session['invoice_number'] ?? null;
+
+            $composedDir = storage_path('app/public/testimonials/composed');
+            if (!is_dir($composedDir)) {
+                mkdir($composedDir, 0755, true);
+            }
+
+            $composedFilename = 'composed_' . time() . '_' . uniqid() . '.jpg';
+            $composedRelPath = "testimonials/composed/{$composedFilename}";
+            $composedAbsPath = "{$composedDir}/{$composedFilename}";
+
+            // Compose dynamic dark neon layout
+            $composer->composeDynamic($session['photos'], $composedAbsPath, $testiNum, $invNum);
+
+            // Map raw photos to slots
+            $rawSlots = ['tugas' => null, 'chat' => null, 'hasil' => null, 'pelunasan' => null];
+            $slotKeys = ['tugas', 'chat', 'hasil', 'pelunasan'];
+            foreach ($session['photos'] as $idx => $absFile) {
+                if (isset($slotKeys[$idx])) {
+                    $rawSlots[$slotKeys[$idx]] = 'testimonials/raw/' . basename($absFile);
+                }
+            }
+
+            $testimonial = \App\Models\Testimonial::create([
+                'invoice_id' => $session['invoice_id'],
+                'testimonial_number' => $testiNum,
+                'major' => $session['major'],
+                'task_title' => $session['task_title'],
+                'deliverables' => $session['deliverables'],
+                'image_tugas_path' => $rawSlots['tugas'],
+                'image_chat_path' => $rawSlots['chat'],
+                'image_hasil_path' => $rawSlots['hasil'],
+                'image_pelunasan_path' => $rawSlots['pelunasan'],
+                'composed_image_path' => $composedRelPath,
+                'client_name' => $session['client_name'],
+                'posted_to_telegram' => false,
+            ]);
+
+            Cache::forget("tg_testi_{$chatId}");
+
+            if ($action === 'publish') {
+                $caption = $testimonial->getFormattedTelegramCaption();
+                $messageId = $this->telegram->sendPhoto($composedAbsPath, $caption);
+
+                if ($messageId) {
+                    $testimonial->update([
+                        'posted_to_telegram' => true,
+                        'telegram_message_id' => $messageId,
+                    ]);
+
+                    $this->telegram->sendMessage($chatId, "🎉 <b>TESTIMONI #{$testiNum} BERHASIL DITERBITKAN!</b>\n\nPostingan telah aktif terbit di Channel <b>@ABT_TESTIMONI</b>.", [
+                        'reply_markup' => json_encode($this->getMainKeyboard()),
+                    ]);
+
+                    // Send preview to admin chat
+                    $this->telegram->sendPhotoToChat($chatId, $composedAbsPath, "🖼️ <b>Pratinjau Hasil Kolase:</b>\n" . $caption);
+                    return;
+                }
+
+                $err = $this->telegram->getLastError();
+                $this->telegram->sendMessage($chatId, "⚠️ Testimoni #{$testiNum} tersimpan sebagai Draft, namun gagal diposting ke Channel: {$err}", [
+                    'reply_markup' => json_encode($this->getMainKeyboard()),
+                ]);
+                return;
+            }
+
+            // Saved as draft
+            $this->telegram->sendMessage($chatId, "💾 <b>DRAFT TESTIMONI #{$testiNum} BERHASIL DISIMPAN!</b>\n\nData tersimpan aman di server lokal. Anda dapat melengkapinya atau menerbitkannya kapan saja via Web Admin.", [
+                'reply_markup' => json_encode($this->getMainKeyboard()),
+            ]);
+
+            $this->telegram->sendPhotoToChat($chatId, $composedAbsPath, "🖼️ <b>Pratinjau Draft:</b> #{$testiNum}");
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Telegram Bot Testimonial Creation Failed', ['error' => $e->getMessage()]);
+            $this->telegram->sendMessage($chatId, "❌ Terjadi kesalahan saat memproses testimoni: " . $e->getMessage(), [
+                'reply_markup' => json_encode($this->getMainKeyboard()),
+            ]);
+        }
     }
 
     /**

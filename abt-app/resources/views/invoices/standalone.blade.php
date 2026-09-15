@@ -67,20 +67,22 @@
         $seaPath = storage_path('app/public/assets/banks/seabank.png');
         $seaBase64 = file_exists($seaPath) ? 'data:image/png;base64,' . base64_encode(file_get_contents($seaPath)) : null;
 
+        $effectiveDp = ($invoice->dp_amount && $invoice->dp_amount > 0) ? (float)$invoice->dp_amount : round((float)$invoice->total_amount * 0.5);
+
         if ($invoice->payment_type === 'dp') {
             if ($invoice->status === 'unpaid') {
                 $transferLabel = 'Transfer Pembayaran DP:';
-                $transferAmount = $invoice->dp_amount;
+                $transferAmount = $effectiveDp;
             } elseif ($invoice->status === 'dp_paid') {
                 $transferLabel = 'Transfer Sisa Pelunasan:';
-                $transferAmount = $invoice->remaining_amount;
+                $transferAmount = max(0, (float)$invoice->total_amount - $effectiveDp);
             } else {
                 $transferLabel = 'Status Tagihan:';
                 $transferAmount = 0;
             }
         } else {
             $transferLabel = 'Transfer Pembayaran Lunas:';
-            $transferAmount = $invoice->total_amount;
+            $transferAmount = (float)$invoice->total_amount;
         }
     @endphp
 
