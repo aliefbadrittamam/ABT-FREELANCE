@@ -153,6 +153,17 @@ class TelegramBotHandler
             return;
         }
 
+        // Send WhatsApp format copyable text
+        if (str_starts_with($data, 'send_wa_format_')) {
+            $invId = (int)substr($data, 15);
+            $invoice = Invoice::find($invId);
+            if ($invoice) {
+                $waMsg = $invoice->getCustomerShareMessage();
+                $this->telegram->sendMessage($chatId, "📲 <b>Format Chat WhatsApp Klien (Tinggal Salin):</b>\n\n<code>" . htmlspecialchars($waMsg) . "</code>\n\n<i>Salin teks di atas dan kirimkan langsung ke klien di WhatsApp.</i>");
+            }
+            return;
+        }
+
         // Start Testimonial Wizard from Invoice
         if (str_starts_with($data, 'create_testi_inv_')) {
             $invId = (int)substr($data, 17);
@@ -449,8 +460,10 @@ class TelegramBotHandler
                   : "• <b>Metode:</b> Bayar Lunas Langsung\n")
               . "• <b>Status Saat Ini:</b> <b>{$statusText}</b>\n"
               . "────────────────────────\n"
-              . "🌐 <b>Link Portal Klien:</b>\n{$invoice->getClientViewUrl()}\n\n"
-              . "👇 <b>Pilih tombol di bawah untuk mengubah status pembayaran atau meminta file:</b>";
+              . ($invoice->isLocal()
+                  ? "🖥️ <b>Server:</b> Lokal (Link URL publik otomatis aktif saat hosting)\n\n"
+                  : "🌐 <b>Link Portal Klien:</b>\n{$invoice->getClientViewUrl()}\n\n")
+              . "👇 <b>Pilih tombol di bawah untuk aksi cepat:</b>";
 
         // Dynamic Action Buttons according to current status
         $buttons = [];
@@ -482,6 +495,11 @@ class TelegramBotHandler
                 ['text' => '♻️ Aktifkan Kembali (Belum Bayar)', 'callback_data' => "set_status_unpaid_{$invoice->id}"],
             ];
         }
+
+        // WhatsApp Customer format button
+        $buttons[] = [
+            ['text' => '📲 Format Chat WA Klien (Siap Salin)', 'callback_data' => "send_wa_format_{$invoice->id}"],
+        ];
 
         // Switch Payment Type button row
         if ($invoice->payment_type === 'dp') {
@@ -1177,16 +1195,8 @@ class TelegramBotHandler
             $sisa = $isDp ? 'Rp ' . number_format(max(0, $total - $dp), 0, ',', '.') : 'Rp 0';
             $formattedDl = $deadline->translatedFormat('d F Y, H:i') . ' WIB';
 
-            // WhatsApp Share Text
-            $brand = $category->brand_name ?: 'ABT-FREELANCE';
-            $waMessage = "Halo {$session['client_name']}, berikut Invoice resmi dari *{$brand}*:\n\n"
-                       . "📄 *Nomor:* {$invoice->invoice_number}\n"
-                       . "📋 *Proyek:* {$session['title']}\n"
-                       . "📅 *Deadline:* {$formattedDl}\n"
-                       . "💰 *Total Biaya:* {$formattedTotal}\n"
-                       . ($isDp ? "💵 *Tagihan DP:* {$formattedDp}\n" : "")
-                       . "🔗 *Lihat Invoice & QRIS:* {$clientUrl}\n\n"
-                       . "Mohon konfirmasi setelah transfer pembayaran ya. Terima kasih 🙏";
+            // WhatsApp Share Text (Link URL otomatis dihilangkan jika server lokal)
+            $waMessage = $invoice->getCustomerShareMessage();
 
             $caption = "✅ <b>INVOICE RESMI BERHASIL DIBUAT!</b>\n\n"
                      . "📄 <b>Nomor:</b> <code>{$invoice->invoice_number}</code>\n"
@@ -1196,8 +1206,10 @@ class TelegramBotHandler
                      . "🏷️ <b>Kategori:</b> {$category->name}\n"
                      . "💰 <b>Total Biaya:</b> {$formattedTotal}\n"
                      . ($isDp ? "💳 <b>Wajib DP:</b> {$formattedDp} (Sisa: {$sisa})\n" : "💳 <b>Metode:</b> Bayar Lunas Langsung\n")
-                     . "🌐 <b>Link Portal Klien:</b>\n{$clientUrl}\n\n"
-                     . "📲 <b>Format Chat WhatsApp (Tinggal Salin):</b>\n"
+                     . ($invoice->isLocal() 
+                         ? "🖥️ <b>Server:</b> Lokal (Link URL publik otomatis aktif saat hosting)\n\n" 
+                         : "🌐 <b>Link Portal Klien:</b>\n{$clientUrl}\n\n")
+                     . "📲 <b>Format Chat WhatsApp Klien (Tinggal Salin):</b>\n"
                      . "<code>" . htmlspecialchars($waMessage) . "</code>";
 
             // Interactive callback buttons (100% safe from Telegram localhost url validation error)
@@ -1208,9 +1220,8 @@ class TelegramBotHandler
                 ]
             ];
 
-            // Only add external URL buttons if it's a valid public domain
-            $isLocal = str_contains($clientUrl, 'localhost') || str_contains($clientUrl, '127.0.0.1');
-            if (!$isLocal) {
+            // Only add external URL buttons if it's a valid public hosted domain
+            if (!$invoice->isLocal()) {
                 $keyboardButtons[] = [
                     ['text' => '🌐 Buka Portal Klien', 'url' => $clientUrl],
                     ['text' => '💬 Buka di Web Admin', 'url' => config('app.url') . "/invoices/{$invoice->id}"],

@@ -147,40 +147,85 @@
         </div>
     </div>
 
-    <!-- Client Public Access Link Share Bar -->
-    <div class="bg-white dark:bg-[#1e1e1e] rounded-xl border border-border-subtle dark:border-[#2a2a2a] p-4 sm:p-5 mb-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-3.5"
-         x-data="{ linkCopied: false, clientUrl: '{{ $invoice->getClientViewUrl() }}' }">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-200 dark:border-blue-900/40">
-                <span class="material-symbols-outlined text-xl">share</span>
+    <!-- Client WhatsApp Share & Public Portal Access -->
+    <div class="bg-white dark:bg-[#1e1e1e] rounded-xl border border-border-subtle dark:border-[#2a2a2a] p-4 sm:p-5 mb-6 shadow-sm space-y-4"
+         x-data="{ 
+            linkCopied: false, 
+            msgCopied: false, 
+            clientUrl: '{{ $invoice->getClientViewUrl() }}',
+            waMessage: @json($invoice->getCustomerShareMessage())
+         }">
+        
+        <!-- Header Info -->
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-3.5 pb-3 border-b border-border-subtle dark:border-[#2a2a2a]">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-200 dark:border-emerald-900/40">
+                    <span class="material-symbols-outlined text-xl">chat</span>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-on-surface dark:text-white flex items-center gap-2">
+                        Format Chat WhatsApp Klien
+                        @if($invoice->isLocal())
+                        <span class="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold px-2 py-0.5 rounded-full border border-amber-500/20">
+                            🖥️ Mode Lokal (Tanpa URL)
+                        </span>
+                        @else
+                        <span class="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold px-2 py-0.5 rounded-full border border-emerald-500/20">
+                            🌐 Live Hosted Link
+                        </span>
+                        @endif
+                    </h3>
+                    <p class="text-xs text-secondary dark:text-gray-400 mt-0.5">
+                        @if($invoice->isLocal())
+                        Karena masih di server lokal, link URL otomatis tidak disertakan agar klien tidak error membuka localhost. Link otomatis aktif saat sudah di-hosting.
+                        @else
+                        Link portal publik otomatis disertakan di dalam pesan untuk memudahkan klien cek status dan scan QRIS.
+                        @endif
+                    </p>
+                </div>
             </div>
-            <div>
-                <h3 class="text-sm font-bold text-on-surface dark:text-white flex items-center gap-2">
-                    Portal Akses Klien (Customer View)
-                    <span class="text-[10px] bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold px-2 py-0.5 rounded-full">Link Publik</span>
-                </h3>
-                <p class="text-xs text-secondary dark:text-gray-400 mt-0.5">
-                    Klien dapat melihat status invoice, scan QRIS, dan download PDF secara mandiri melalui URL ini.
-                </p>
+
+            <div class="flex items-center gap-2 w-full md:w-auto">
+                <button type="button" 
+                        @click="navigator.clipboard.writeText(waMessage); msgCopied = true; setTimeout(() => msgCopied = false, 2500)"
+                        class="px-4 py-2 bg-[#25D366] text-white rounded-lg text-xs font-bold hover:brightness-95 transition shrink-0 flex items-center gap-1.5 shadow-xs">
+                    <span class="material-symbols-outlined text-sm" x-text="msgCopied ? 'check' : 'content_copy'"></span>
+                    <span x-text="msgCopied ? 'Tersalin ke Clipboard!' : 'Salin Pesan WA Klien'"></span>
+                </button>
+                <a :href="'https://api.whatsapp.com/send?text=' + encodeURIComponent(waMessage)" target="_blank"
+                   class="px-3.5 py-2 border border-border-subtle dark:border-[#333] rounded-lg text-xs font-semibold text-on-surface dark:text-gray-300 hover:bg-surface-variant dark:hover:bg-[#252525] transition shrink-0 flex items-center gap-1.5"
+                   title="Buka WhatsApp Web / App">
+                    <span class="material-symbols-outlined text-sm">open_in_new</span>
+                    Buka WA
+                </a>
             </div>
         </div>
 
-        <div class="flex items-center gap-2 w-full md:w-auto">
-            <input type="text" readonly :value="clientUrl" 
-                   class="w-full md:w-64 px-3 py-1.5 bg-surface dark:bg-[#252525] border border-border-subtle dark:border-[#333] rounded-lg text-xs font-mono text-secondary dark:text-gray-400 select-all outline-none">
-            
-            <button type="button" 
-                    @click="navigator.clipboard.writeText(clientUrl); linkCopied = true; setTimeout(() => linkCopied = false, 2500)"
-                    class="px-3.5 py-1.5 bg-on-surface text-white dark:bg-white dark:text-on-surface rounded-lg text-xs font-bold hover:brightness-110 transition shrink-0 flex items-center gap-1.5 shadow-xs">
-                <span class="material-symbols-outlined text-sm" x-text="linkCopied ? 'check' : 'content_copy'"></span>
-                <span x-text="linkCopied ? 'Tersalin!' : 'Salin Link'"></span>
-            </button>
+        <!-- Preview Textbox -->
+        <div>
+            <label class="block text-[10px] font-bold text-secondary dark:text-gray-400 uppercase tracking-wider mb-1.5">Teks Pesan Siap Kirim (Tinggal Paste ke WhatsApp Klien):</label>
+            <div class="bg-surface dark:bg-[#181818] p-3.5 rounded-lg border border-border-subtle dark:border-[#333] font-mono text-xs text-on-surface dark:text-gray-200 whitespace-pre-wrap select-all shadow-inner"
+                 x-text="waMessage"></div>
+        </div>
 
-            <a :href="clientUrl" target="_blank" 
-               class="p-1.5 border border-border-subtle dark:border-[#333] rounded-lg text-secondary dark:text-gray-400 hover:text-on-surface dark:hover:text-white transition shrink-0" 
-               title="Buka Halaman Klien">
-                <span class="material-symbols-outlined text-base">open_in_new</span>
-            </a>
+        <!-- Portal Link Bar (Admin only preview if local, public view if hosted) -->
+        <div class="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-secondary dark:text-gray-400">
+            <div class="flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-sm">link</span>
+                <span>URL Portal: <code class="font-mono text-[11px] text-on-surface dark:text-gray-300 select-all">{{ $invoice->getClientViewUrl() }}</code></span>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" 
+                        @click="navigator.clipboard.writeText(clientUrl); linkCopied = true; setTimeout(() => linkCopied = false, 2500)"
+                        class="text-[11px] font-bold text-primary dark:text-primary-container hover:underline flex items-center gap-1">
+                    <span class="material-symbols-outlined text-xs" x-text="linkCopied ? 'check' : 'content_copy'"></span>
+                    <span x-text="linkCopied ? 'Link Tersalin!' : 'Salin Hanya Link'"></span>
+                </button>
+                <span>•</span>
+                <a :href="clientUrl" target="_blank" class="text-[11px] font-bold text-secondary dark:text-gray-300 hover:underline flex items-center gap-0.5">
+                    Buka Halaman Klien <span class="material-symbols-outlined text-xs">open_in_new</span>
+                </a>
+            </div>
         </div>
     </div>
 

@@ -79,6 +79,61 @@ class Invoice extends Model
         return (float)$this->total_amount;
     }
 
+    public function isLocal(): bool
+    {
+        $url = $this->getClientViewUrl();
+        $host = parse_url($url, PHP_URL_HOST);
+
+        if (in_array($host, ['localhost', '127.0.0.1', '::1', '10.0.2.2']) || str_ends_with($host ?? '', '.test') || str_ends_with($host ?? '', '.local')) {
+            return true;
+        }
+
+        $appUrlHost = parse_url(config('app.url'), PHP_URL_HOST);
+        if (in_array($appUrlHost, ['localhost', '127.0.0.1', '::1']) || str_ends_with($appUrlHost ?? '', '.test')) {
+            return true;
+        }
+
+        return !app()->isProduction() && !str_contains($host ?? '', '.');
+    }
+
+    public function getCustomerShareMessage(): string
+    {
+        $brand = $this->category->brand_name ?? 'ABT-FREELANCE';
+        $totalFormatted = 'Rp ' . number_format($this->total_amount, 0, ',', '.');
+        $isDp = $this->payment_type === 'dp';
+        $effectiveDp = ($this->dp_amount && $this->dp_amount > 0) ? (float)$this->dp_amount : round((float)$this->total_amount * 0.5);
+        $formattedDp = 'Rp ' . number_format($effectiveDp, 0, ',', '.');
+        $sisa = max(0, (float)$this->total_amount - $effectiveDp);
+        $sisaFormatted = 'Rp ' . number_format($sisa, 0, ',', '.');
+        $deadlineStr = $this->deadline ? $this->deadline->translatedFormat('d F Y, H:i') . ' WIB' : '-';
+
+        $msg = "Halo {$this->client_name}, berikut Invoice resmi dari *{$brand}*:\n\n"
+             . "📄 *Nomor:* {$this->invoice_number}\n"
+             . "📋 *Proyek:* {$this->title}\n"
+             . "📅 *Deadline:* {$deadlineStr}\n"
+             . "💰 *Total Biaya:* {$totalFormatted}\n";
+
+        if ($isDp) {
+            $msg .= "💵 *Tagihan DP:* {$formattedDp}\n"
+                 . "⏳ *Sisa Pelunasan:* {$sisaFormatted}\n";
+        }
+
+        // Sertakan URL hanya jika SUDAH DI-HOSTING (Bukan localhost)
+        if (!$this->isLocal()) {
+            $msg .= "\n🔗 *Lihat Invoice & QRIS:* " . $this->getClientViewUrl() . "\n";
+        } else {
+            // Jika masih di server lokal, sertakan rincian rekening transfer agar klien tetap bisa transfer
+            $paymentSetting = PaymentSetting::getSettings();
+            if (!empty($paymentSetting->bank_info)) {
+                $msg .= "\n💳 *Pembayaran via:*\n" . $paymentSetting->bank_info . "\n";
+            }
+        }
+
+        $msg .= "\nMohon konfirmasi bukti transfer setelah melakukan pembayaran ya. Terima kasih! 🙏";
+
+        return $msg;
+    }
+
     public function getClientViewUrl(): string
     {
         return route('client.invoices.show', $this->access_token ?? 'unknown');
@@ -89,7 +144,11 @@ class Invoice extends Model
         $phone = '6288989504780'; // fallback default / dynamic
 
         $brand = $this->category->brand_name ?? 'ABT-FREELANCE';
-        $text = "Halo {$brand}, saya *{$this->client_name}* ingin konfirmasi pembayaran untuk *Invoice {$this->invoice_number}* (Proyek: {$this->title}).\n\nLink Invoice: " . $this->getClientViewUrl();
+        $text = "Halo {$brand}, saya *{$this->client_name}* ingin konfirmasi pembayaran untuk *Invoice {$this->invoice_number}* (Proyek: {$this->title}).";
+
+        if (!$this->isLocal()) {
+            $text .= "\n\nLink Invoice: " . $this->getClientViewUrl();
+        }
 
         return "https://api.whatsapp.com/send?phone={$phone}&text=" . urlencode($text);
     }
