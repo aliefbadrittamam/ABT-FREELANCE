@@ -153,6 +153,13 @@ class TelegramBotHandler
             return;
         }
 
+        // Status Management: Filter Status Menu (all, dp_paid, unpaid, paid)
+        if (str_starts_with($data, 'filter_status_')) {
+            $filter = substr($data, 14);
+            $this->showStatusMenu($chatId, $filter);
+            return;
+        }
+
         // Switch Payment Type: Full Pay ↔ DP
         if (str_starts_with($data, 'switch_paytype_')) {
             $this->handleSwitchPaymentTypeCallback($chatId, $data);
@@ -417,31 +424,94 @@ class TelegramBotHandler
     }
 
     /**
-     * Show interactive status menu with recent active invoices.
+     * Show interactive status menu with recent active invoices and status filters (DP Terbayar, Belum Bayar, Lunas, Semua).
      */
-    protected function showStatusMenu(string $chatId): void
+    protected function showStatusMenu(string $chatId, string $filter = 'all'): void
     {
-        // Fetch up to 6 most recent active/pending invoices
-        $activeInvoices = Invoice::where('status', '!=', 'canceled')
-            ->orderBy('id', 'desc')
-            ->take(6)
-            ->get();
+        // 1. Calculate counts for filter badges
+        $dpPaidCount = Invoice::where('status', 'dp_paid')->count();
+        $unpaidCount = Invoice::where('status', 'unpaid')->count();
+        $paidCount = Invoice::where('status', 'paid')->count();
+        $allCount = Invoice::where('status', '!=', 'canceled')->count();
 
+        // 2. Query matching invoices
+        $query = Invoice::query();
+        if ($filter === 'dp_paid') {
+            $query->where('status', 'dp_paid');
+            $statusTitle = "💳 <b>INVOICE DP TERBAYAR (Sisa Pelunasan)</b>";
+        } elseif ($filter === 'unpaid') {
+            $query->where('status', 'unpaid');
+            $statusTitle = "⏳ <b>INVOICE BELUM BAYAR (DP / Lunas)</b>";
+        } elseif ($filter === 'paid') {
+            $query->where('status', 'paid');
+            $statusTitle = "✅ <b>INVOICE SUDAH LUNAS</b>";
+        } else {
+            $query->where('status', '!=', 'canceled');
+            $statusTitle = "📊 <b>SEMUA INVOICE AKTIF</b>";
+        }
+
+        $invoices = $query->orderBy('id', 'desc')->take(8)->get();
+
+        // 3. Build Navigation Filter Buttons
         $buttons = [];
-        foreach ($activeInvoices as $inv) {
-            $icon = match($inv->status) {
-                'paid' => '✅',
-                'dp_paid' => '💳',
-                default => '⏳'
-            };
 
-            // Extract short number
+        // Row 1 Filter: DP Terbayar vs Belum Bayar
+        $buttons[] = [
+            [
+                'text' => ($filter === 'dp_paid' ? '👉 💳 DP Terbayar (' . $dpPaidCount . ')' : '💳 DP Terbayar (' . $dpPaidCount . ')'),
+                'callback_data' => 'filter_status_dp_paid'
+            ],
+            [
+                'text' => ($filter === 'unpaid' ? '👉 ⏳ Belum Bayar (' . $unpaidCount . ')' : '⏳ Belum Bayar (' . $unpaidCount . ')'),
+                'callback_data' => 'filter_status_unpaid'
+            ],
+        ];
+
+        // Row 2 Filter: Lunas vs Semua
+        $buttons[] = [
+            [
+                'text' => ($filter === 'paid' ? '👉 ✅ Lunas (' . $paidCount . ')' : '✅ Lunas (' . $paidCount . ')'),
+                'callback_data' => 'filter_status_paid'
+            ],
+            [
+                'text' => ($filter === 'all' ? '👉 📋 Semua (' . $allCount . ')' : '📋 Semua (' . $allCount . ')'),
+                'callback_data' => 'filter_status_all'
+            ],
+        ];
+
+        // 4. List of matching invoice buttons
+        foreach ($invoices as $inv) {
             $parts = explode('-', $inv->invoice_number);
             $shortNum = isset($parts[2]) ? "#" . ltrim($parts[2], '0') : "#{$inv->id}";
-            $label = "{$icon} {$shortNum} - " . substr($inv->client_name, 0, 12) . " (" . ($inv->status === 'paid' ? 'Lunas' : ($inv->status === 'dp_paid' ? 'DP' : 'Belum Bayar')) . ")";
+            $clientShort = \Illuminate\Support\Str::limit($inv->client_name, 12, '');
+
+            if ($inv->status === 'dp_paid') {
+                $dpRibuan = round((float)$inv->dp_amount / 1000);
+                $sisaRibuan = round((float)$inv->remaining_amount / 1000);
+                $label = "💳 {$shortNum} - {$clientShort} (DP {$dpRibuan}k | Sisa {$sisaRibuan}k)";
+            } elseif ($inv->status === 'unpaid') {
+                if ($inv->payment_type === 'dp') {
+                    $dpRibuan = round((float)$inv->dp_amount / 1000);
+                    $label = "⏳ {$shortNum} - {$clientShort} (DP {$dpRibuan}k Belum)";
+                } else {
+                    $totalRibuan = round((float)$inv->total_amount / 1000);
+                    $label = "⏳ {$shortNum} - {$clientShort} (Rp {$totalRibuan}k)";
+                }
+            } elseif ($inv->status === 'paid') {
+                $totalRibuan = round((float)$inv->total_amount / 1000);
+                $label = "✅ {$shortNum} - {$clientShort} (Lunas {$totalRibuan}k)";
+            } else {
+                $label = "❌ {$shortNum} - {$clientShort} (Batal)";
+            }
 
             $buttons[] = [
                 ['text' => $label, 'callback_data' => "view_inv_{$inv->id}"]
+            ];
+        }
+
+        if ($invoices->isEmpty()) {
+            $buttons[] = [
+                ['text' => '⚠️ Tidak ada invoice pada kategori ini', 'callback_data' => 'filter_status_all']
             ];
         }
 
@@ -449,9 +519,14 @@ class TelegramBotHandler
             ['text' => '❌ Tutup Menu', 'callback_data' => 'wizard_cancel']
         ];
 
-        $text = "📊 <b>KELOLA STATUS PEMBAYARAN INVOICE</b>\n\n"
-              . "Pilih invoice dari daftar di bawah untuk melihat/mengubah status pembayarannya:\n\n"
-              . "💡 <i>Atau Anda bisa langsung mengetik angka nomor invoice (contoh: <code>86</code> atau <code>81</code>).</i>";
+        $text = "{$statusTitle}\n"
+              . "────────────────────────\n"
+              . "• 💳 <b>DP Terbayar:</b> {$dpPaidCount} Invoice\n"
+              . "• ⏳ <b>Belum Bayar:</b> {$unpaidCount} Invoice\n"
+              . "• ✅ <b>Sudah Lunas:</b> {$paidCount} Invoice\n"
+              . "────────────────────────\n"
+              . "Pilih tab filter di atas untuk menyaring, atau pilih invoice di bawah untuk detail/kelola:\n\n"
+              . "💡 <i>Ketik nomor urut (contoh: <code>86</code>) untuk pencarian langsung.</i>";
 
         $this->telegram->sendMessage($chatId, $text, [
             'reply_markup' => json_encode(['inline_keyboard' => $buttons])
